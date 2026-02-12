@@ -1,0 +1,85 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: intellix-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - ./storage:/var/www/html/storage
+    networks:
+      - intellix-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-intellix}
+      - DB_USERNAME=${DB_USERNAME:-intellix}
+      - DB_PASSWORD=${DB_PASSWORD:-YOUR_DB_PASSWORD}
+      - REDIS_CLIENT=phpredis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=${REDIS_DB:-1}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    ports:
+      - "9000:9000"
+
+  nginx:
+    image: nginx:alpine
+    container_name: intellix-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - intellix-network
+    depends_on:
+      - app
+
+  db:
+    image: postgres:16-alpine
+    container_name: intellix-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-intellix}
+      POSTGRES_USER: ${DB_USERNAME:-intellix}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-YOUR_DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - intellix-network
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-intellix} -d ${POSTGRES_DB:-intellix}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: intellix-redis
+    restart: unless-stopped
+    networks:
+      - intellix-network
+    ports:
+      - "6379:6379"
+
+networks:
+  intellix-network:
+    driver: bridge
+
+volumes:
+  db_data:

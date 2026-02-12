@@ -26,3 +26,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Rust build artifacts
+/target
+**/*.rs.bk

@@ -1,0 +1,40 @@
+[package]
+name = "intellix"
+version = "0.1.0"
+edition = "2021"
+
+# Binary target configuration
+[[bin]]
+name = "intellix"
+path = "src/main.rs"
+
+[dependencies]
+zip = "7.2.0"
+scraper = "0.25.0"
+quick-xml = "0.39.0"
+thiserror = "1.0.69"
+serde_json = "1.0.149"
+clap = { version = "4.5.55", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
+pdf-extract = "0.10"
+reqwest = { version = "0.12", features = ["blocking", "rustls-tls"] }
+html2md-rs = "0.10"
+chrono = { version = "0.4", features = ["serde"] }
+fsrs = "5.2"
+
+# Release profile settings
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+# Cross-compilation dependencies (if needed)
+[target.'cfg(target_os = "windows")'.dependencies]
+# Add Windows-specific deps here if needed
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# Add Linux-specific deps here if needed
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# Add macOS-specific deps here if needed
