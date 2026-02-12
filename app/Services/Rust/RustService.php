@@ -2,42 +2,45 @@
 
 namespace App\Services\Rust;
 
-use App\Services\RustBinaryExecutor;
 use App\Services\Rust\Commands\ExtractCommand;
-use App\Services\Rust\Commands\ScrapeCommand;
 use App\Services\Rust\Commands\FsrsCommand;
+use App\Services\Rust\Commands\ScrapeCommand;
+use App\Services\RustBinaryExecutor;
 use InvalidArgumentException;
 use Symfony\Component\Process\Process;
 
 /**
  * Facade/Service for executing Rust binary commands safely.
- * 
+ *
  * This service provides a type-safe interface for executing Rust commands,
  * preventing arbitrary command execution and ensuring only valid commands
  * are executed.
- * 
+ *
  * Usage:
  * $rust = new RustService();
- * 
+ *
  * // Extract document
  * $result = $rust->extract('/path/to/document.pdf', ['job_id' => '123']);
- * 
+ *
  * // Scrape URL
  * $result = $rust->scrape('https://example.com', ['user_id' => '456']);
- * 
+ *
  * // Process FSRS review
  * $result = $rust->fsrs(['last_interval' => 1.0, 'difficulty' => 5.0, ...]);
  */
 class RustService
 {
     protected RustBinaryExecutor $executor;
+
     protected ?string $binaryPath = null;
+
     protected ?int $timeout = null;
+
     protected string $logChannel = 'rust';
 
     public function __construct(?RustBinaryExecutor $executor = null)
     {
-        $this->executor = $executor ?? new RustBinaryExecutor();
+        $this->executor = $executor ?? new RustBinaryExecutor;
         // Lazy load binary path - don't call base_path() in constructor
         // Will be loaded on first execute() call
     }
@@ -70,11 +73,12 @@ class RustService
 
     /**
      * Execute a Rust command.
-     * 
-     * @param RustCommandInterface $command The command to execute
-     * @param array $context Additional context for logging
-     * @param int|null $timeout Timeout in seconds
+     *
+     * @param  RustCommandInterface  $command  The command to execute
+     * @param  array  $context  Additional context for logging
+     * @param  int|null  $timeout  Timeout in seconds
      * @return array Execution result
+     *
      * @throws InvalidArgumentException if binary not found or command invalid
      */
     public function execute(
@@ -86,11 +90,11 @@ class RustService
         if ($this->binaryPath === null) {
             $this->binaryPath = $this->findBinaryPath();
         }
-        
+
         if ($this->binaryPath === null) {
             throw new InvalidArgumentException(
-                'Rust binary not found. ' .
-                'Build it with: cargo build --release ' .
+                'Rust binary not found. '.
+                'Build it with: cargo build --release '.
                 'or set RUST_BINARY_PATH environment variable.'
             );
         }
@@ -142,11 +146,12 @@ class RustService
         }
 
         $startTime = microtime(true);
-        
+
         try {
             $process->run();
         } catch (\Symfony\Component\Process\Exception\ProcessTimedOutException $e) {
             $duration = microtime(true) - $startTime;
+
             return [
                 'success' => false,
                 'stdout' => $process->getOutput(),
@@ -161,7 +166,7 @@ class RustService
             $exitCode = $process->getExitCode() ?? -1;
             $stderr = $process->getErrorOutput();
             $logs = $this->parseStderr($stderr, basename($commandArray[0]), implode(' ', $commandArray), $exitCode, $duration, $context);
-            
+
             return [
                 'success' => false,
                 'stdout' => $process->getOutput(),
@@ -172,7 +177,7 @@ class RustService
                 'error' => $e->getMessage(),
             ];
         }
-        
+
         $exitCode = $process->getExitCode();
         $stdout = $process->getOutput();
         $stderr = $process->getErrorOutput();
@@ -209,7 +214,7 @@ class RustService
         $reflection = new \ReflectionClass($this->executor);
         $method = $reflection->getMethod('parseStderr');
         $method->setAccessible(true);
-        
+
         return $method->invoke($this->executor, $stderr, $binaryName, $command, $exitCode, $duration, $context);
     }
 
@@ -231,41 +236,44 @@ class RustService
 
     /**
      * Extract text from a document.
-     * 
-     * @param string $filePath Path to the document file
-     * @param array $context Additional context for logging
+     *
+     * @param  string  $filePath  Path to the document file
+     * @param  array  $context  Additional context for logging
      * @return array Execution result
      */
     public function extract(string $filePath, array $context = []): array
     {
         $command = new ExtractCommand($filePath);
+
         return $this->execute($command, $context);
     }
 
     /**
      * Scrape content from a URL.
-     * 
-     * @param string $url URL to scrape
-     * @param array $context Additional context for logging
+     *
+     * @param  string  $url  URL to scrape
+     * @param  array  $context  Additional context for logging
      * @return array Execution result
      */
     public function scrape(string $url, array $context = []): array
     {
         $command = new ScrapeCommand($url);
+
         return $this->execute($command, $context);
     }
 
     /**
      * Process FSRS review data.
-     * 
-     * @param array|null $inputData Review data (for stdin)
-     * @param string|null $filePath Path to JSON file (alternative to inputData)
-     * @param array $context Additional context for logging
+     *
+     * @param  array|null  $inputData  Review data (for stdin)
+     * @param  string|null  $filePath  Path to JSON file (alternative to inputData)
+     * @param  array  $context  Additional context for logging
      * @return array Execution result
      */
     public function fsrs(?array $inputData = null, ?string $filePath = null, array $context = []): array
     {
         $command = new FsrsCommand($inputData, $filePath);
+
         return $this->execute($command, $context);
     }
 
@@ -274,11 +282,12 @@ class RustService
      */
     public function setBinaryPath(string $path): self
     {
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             throw new InvalidArgumentException("Binary not found: {$path}");
         }
 
         $this->binaryPath = $path;
+
         return $this;
     }
 
@@ -288,6 +297,7 @@ class RustService
     public function setTimeout(?int $timeout): self
     {
         $this->timeout = $timeout;
+
         return $this;
     }
 
@@ -297,6 +307,7 @@ class RustService
     public function setLogChannel(string $channel): self
     {
         $this->logChannel = $channel;
+
         return $this;
     }
 

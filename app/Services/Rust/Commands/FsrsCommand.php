@@ -7,11 +7,11 @@ use InvalidArgumentException;
 
 /**
  * Command for processing FSRS (Free Spaced Repetition Scheduler) review data.
- * 
+ *
  * Usage:
  * $command = new FsrsCommand(['last_interval' => 1.0, 'difficulty' => 5.0, ...]);
  * $result = $rust->execute($command);
- * 
+ *
  * Or with a file:
  * $command = new FsrsCommand(null, '/path/to/reviews.json');
  * $result = $rust->execute($command);
@@ -65,15 +65,15 @@ class FsrsCommand implements RustCommandInterface
     public function validate(): void
     {
         if ($this->filePath !== null) {
-            if (!file_exists($this->filePath)) {
+            if (! file_exists($this->filePath)) {
                 throw new InvalidArgumentException("File does not exist: {$this->filePath}");
             }
 
-            if (!is_file($this->filePath)) {
+            if (! is_file($this->filePath)) {
                 throw new InvalidArgumentException("Path is not a file: {$this->filePath}");
             }
 
-            if (!is_readable($this->filePath)) {
+            if (! is_readable($this->filePath)) {
                 throw new InvalidArgumentException("File is not readable: {$this->filePath}");
             }
 
@@ -82,7 +82,7 @@ class FsrsCommand implements RustCommandInterface
             $decoded = json_decode($content, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new InvalidArgumentException(
-                    "Invalid JSON in file: " . json_last_error_msg()
+                    'Invalid JSON in file: '.json_last_error_msg()
                 );
             }
 
@@ -104,6 +104,7 @@ class FsrsCommand implements RustCommandInterface
             foreach ($data['reviews'] as $review) {
                 $this->validateReviewInput($review);
             }
+
             return;
         }
 
@@ -118,7 +119,7 @@ class FsrsCommand implements RustCommandInterface
     {
         $required = ['last_interval', 'difficulty', 'rating'];
         foreach ($required as $field) {
-            if (!isset($review[$field])) {
+            if (! isset($review[$field])) {
                 throw new InvalidArgumentException(
                     "Missing required field: {$field}"
                 );
@@ -126,24 +127,24 @@ class FsrsCommand implements RustCommandInterface
         }
 
         // Validate types
-        if (!is_numeric($review['last_interval'])) {
+        if (! is_numeric($review['last_interval'])) {
             throw new InvalidArgumentException(
-                "last_interval must be numeric, got: " . gettype($review['last_interval'])
+                'last_interval must be numeric, got: '.gettype($review['last_interval'])
             );
         }
 
-        if (!is_numeric($review['difficulty'])) {
+        if (! is_numeric($review['difficulty'])) {
             throw new InvalidArgumentException(
-                "difficulty must be numeric, got: " . gettype($review['difficulty'])
+                'difficulty must be numeric, got: '.gettype($review['difficulty'])
             );
         }
 
         // Validate rating
         $validRatings = ['again', 'hard', 'good', 'easy'];
         $rating = strtolower($review['rating']);
-        if (!in_array($rating, $validRatings, true)) {
+        if (! in_array($rating, $validRatings, true)) {
             throw new InvalidArgumentException(
-                "Invalid rating: {$review['rating']}. Must be one of: " .
+                "Invalid rating: {$review['rating']}. Must be one of: ".
                 implode(', ', $validRatings)
             );
         }

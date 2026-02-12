@@ -25,31 +25,31 @@ function getRustBinaryPath(): ?string
 
 test('it executes real Rust binary extract command', function () {
     $binaryPath = getRustBinaryPath();
-    
+
     if ($binaryPath === null) {
         $this->markTestSkipped('Rust binary not found. Run: cargo build --release');
     }
 
-    $executor = new RustBinaryExecutor();
+    $executor = new RustBinaryExecutor;
 
     // Create a temporary test file
-    $testFile = sys_get_temp_dir() . '/rust_test_' . uniqid() . '.txt';
+    $testFile = sys_get_temp_dir().'/rust_test_'.uniqid().'.txt';
     file_put_contents($testFile, "Hello, World!\nThis is a test document.");
 
     try {
         $result = $executor->execute([
             $binaryPath,
             'extract',
-            $testFile
+            $testFile,
         ], [
             'test' => 'integration',
-            'file' => basename($testFile)
+            'file' => basename($testFile),
         ]);
 
         expect($result['success'])->toBeTrue();
         expect($result['exit_code'])->toBe(0);
         expect($result['stdout'])->not->toBeEmpty();
-        
+
         // Parse the JSON output
         $output = json_decode($result['stdout'], true);
         expect($output)->toBeArray();
@@ -57,12 +57,12 @@ test('it executes real Rust binary extract command', function () {
         expect($output['format'])->toBe('text');
         expect($output['pages'])->toBeArray();
         expect($output['pages'])->not->toBeEmpty();
-        
+
         // Verify logs were captured
         expect($result['logs'])->toBeArray();
-        
+
         // Verify execution context was included
-        if (!empty($result['logs'])) {
+        if (! empty($result['logs'])) {
             $logEntry = $result['logs'][0];
             expect($logEntry)->toHaveKey('execution_context');
             expect($logEntry['execution_context']['test'])->toBe('integration');
@@ -74,31 +74,31 @@ test('it executes real Rust binary extract command', function () {
 
 test('it captures Rust binary error logs correctly', function () {
     $binaryPath = getRustBinaryPath();
-    
+
     if ($binaryPath === null) {
         $this->markTestSkipped('Rust binary not found. Run: cargo build --release');
     }
 
-    $executor = new RustBinaryExecutor();
+    $executor = new RustBinaryExecutor;
 
     // Try to extract a non-existent file (should produce error)
-    $nonExistentFile = sys_get_temp_dir() . '/does_not_exist_' . uniqid() . '.pdf';
+    $nonExistentFile = sys_get_temp_dir().'/does_not_exist_'.uniqid().'.pdf';
 
     $result = $executor->execute([
         $binaryPath,
         'extract',
-        $nonExistentFile
+        $nonExistentFile,
     ], [
-        'test' => 'error_handling'
+        'test' => 'error_handling',
     ]);
 
     expect($result['success'])->toBeFalse();
     expect($result['exit_code'])->not->toBe(0);
-    
+
     // Should have error logs from Rust binary
     expect($result['logs'])->toBeArray();
-    
-    if (!empty($result['logs'])) {
+
+    if (! empty($result['logs'])) {
         $errorLog = $result['logs'][0];
         expect($errorLog['level'])->toBe('error');
         expect($errorLog)->toHaveKey('message');
@@ -113,20 +113,20 @@ test('it captures Rust binary error logs correctly', function () {
 
 test('it executes Rust binary scrape command', function () {
     $binaryPath = getRustBinaryPath();
-    
+
     if ($binaryPath === null) {
         $this->markTestSkipped('Rust binary not found. Run: cargo build --release');
     }
 
-    $executor = new RustBinaryExecutor();
+    $executor = new RustBinaryExecutor;
 
     // Scrape a simple test URL (using a reliable test endpoint)
     $result = $executor->execute([
         $binaryPath,
         'scrape',
-        'https://example.com'
+        'https://example.com',
     ], [
-        'test' => 'scrape_integration'
+        'test' => 'scrape_integration',
     ]);
 
     // Scraping might fail due to network issues or HTML parsing errors
@@ -136,12 +136,12 @@ test('it executes Rust binary scrape command', function () {
     expect($result)->toHaveKey('stdout');
     expect($result)->toHaveKey('stderr');
     expect($result)->toHaveKey('logs');
-    
+
     // If successful, verify the output structure
     if ($result['success']) {
         expect($result['exit_code'])->toBe(0);
         expect($result['stdout'])->not->toBeEmpty();
-        
+
         // Parse the JSON output
         $output = json_decode($result['stdout'], true);
         expect($output)->toBeArray();
@@ -158,27 +158,27 @@ test('it executes Rust binary scrape command', function () {
 
 test('it executes Rust binary fsrs command with stdin', function () {
     $binaryPath = getRustBinaryPath();
-    
+
     if ($binaryPath === null) {
         $this->markTestSkipped('Rust binary not found. Run: cargo build --release');
     }
 
-    $executor = new RustBinaryExecutor();
+    $executor = new RustBinaryExecutor;
 
     // Create FSRS input JSON
     $fsrsInput = json_encode([
         'last_interval' => 1.0,
         'difficulty' => 5.0,
         'stability' => 1.0,
-        'rating' => 'good'
+        'rating' => 'good',
     ]);
 
     // Use Symfony Process directly to pipe stdin
     $process = new \Symfony\Component\Process\Process([
         $binaryPath,
-        'fsrs'
+        'fsrs',
     ]);
-    
+
     $process->setInput($fsrsInput);
     $process->run();
 
@@ -188,7 +188,7 @@ test('it executes Rust binary fsrs command with stdin', function () {
 
     expect($exitCode)->toBe(0);
     expect($stdout)->not->toBeEmpty();
-    
+
     // Parse the JSON output
     $output = json_decode($stdout, true);
     expect($output)->toBeArray();
@@ -200,7 +200,7 @@ test('it executes Rust binary fsrs command with stdin', function () {
 
 test('it logs Rust binary execution to Laravel log channel', function () {
     $binaryPath = getRustBinaryPath();
-    
+
     if ($binaryPath === null) {
         $this->markTestSkipped('Rust binary not found. Run: cargo build --release');
     }
@@ -208,24 +208,24 @@ test('it logs Rust binary execution to Laravel log channel', function () {
     Log::shouldReceive('channel')
         ->with('rust')
         ->andReturnSelf();
-    
+
     Log::shouldReceive('log')
         ->atLeast()->once()
         ->with(\Mockery::any(), \Mockery::any(), \Mockery::type('array'));
 
-    $executor = new RustBinaryExecutor();
+    $executor = new RustBinaryExecutor;
 
     // Create a temporary test file
-    $testFile = sys_get_temp_dir() . '/rust_test_' . uniqid() . '.txt';
-    file_put_contents($testFile, "Test content");
+    $testFile = sys_get_temp_dir().'/rust_test_'.uniqid().'.txt';
+    file_put_contents($testFile, 'Test content');
 
     try {
         $result = $executor->execute([
             $binaryPath,
             'extract',
-            $testFile
+            $testFile,
         ], [
-            'test' => 'logging'
+            'test' => 'logging',
         ]);
 
         expect($result['success'])->toBeTrue();
@@ -236,24 +236,24 @@ test('it logs Rust binary execution to Laravel log channel', function () {
 
 test('it handles Rust binary timeout correctly', function () {
     $binaryPath = getRustBinaryPath();
-    
+
     if ($binaryPath === null) {
         $this->markTestSkipped('Rust binary not found. Run: cargo build --release');
     }
 
-    $executor = new RustBinaryExecutor();
+    $executor = new RustBinaryExecutor;
 
     // This test would need a Rust binary that can simulate long-running operations
     // For now, we'll skip it or test with a very short timeout on a quick operation
-    $testFile = sys_get_temp_dir() . '/rust_test_' . uniqid() . '.txt';
-    file_put_contents($testFile, "Quick test");
+    $testFile = sys_get_temp_dir().'/rust_test_'.uniqid().'.txt';
+    file_put_contents($testFile, 'Quick test');
 
     try {
         // Set a very short timeout (should not timeout for extract)
         $result = $executor->execute([
             $binaryPath,
             'extract',
-            $testFile
+            $testFile,
         ], [], 1); // 1 second timeout
 
         // Should complete successfully (extract is fast)
@@ -266,22 +266,22 @@ test('it handles Rust binary timeout correctly', function () {
 
 test('it captures Rust binary exit codes correctly', function () {
     $binaryPath = getRustBinaryPath();
-    
+
     if ($binaryPath === null) {
         $this->markTestSkipped('Rust binary not found. Run: cargo build --release');
     }
 
-    $executor = new RustBinaryExecutor();
+    $executor = new RustBinaryExecutor;
 
     // Test success case
-    $testFile = sys_get_temp_dir() . '/rust_test_' . uniqid() . '.txt';
-    file_put_contents($testFile, "Test");
+    $testFile = sys_get_temp_dir().'/rust_test_'.uniqid().'.txt';
+    file_put_contents($testFile, 'Test');
 
     try {
         $result = $executor->execute([
             $binaryPath,
             'extract',
-            $testFile
+            $testFile,
         ]);
 
         expect($result['success'])->toBeTrue();
@@ -291,11 +291,11 @@ test('it captures Rust binary exit codes correctly', function () {
     }
 
     // Test error case (non-existent file)
-    $nonExistentFile = sys_get_temp_dir() . '/does_not_exist_' . uniqid() . '.pdf';
+    $nonExistentFile = sys_get_temp_dir().'/does_not_exist_'.uniqid().'.pdf';
     $result = $executor->execute([
         $binaryPath,
         'extract',
-        $nonExistentFile
+        $nonExistentFile,
     ]);
 
     expect($result['success'])->toBeFalse();

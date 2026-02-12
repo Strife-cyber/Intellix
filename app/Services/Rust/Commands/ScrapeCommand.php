@@ -7,7 +7,7 @@ use InvalidArgumentException;
 
 /**
  * Command for scraping web content from URLs.
- * 
+ *
  * Usage:
  * $command = new ScrapeCommand('https://example.com');
  * $result = $rust->execute($command);
@@ -40,13 +40,13 @@ class ScrapeCommand implements RustCommandInterface
         $this->url = trim($this->url);
 
         // Validate URL format
-        if (!filter_var($this->url, FILTER_VALIDATE_URL)) {
+        if (! filter_var($this->url, FILTER_VALIDATE_URL)) {
             throw new InvalidArgumentException("Invalid URL format: {$this->url}");
         }
 
         // Only allow http/https protocols
         $scheme = parse_url($this->url, PHP_URL_SCHEME);
-        if (!in_array(strtolower($scheme), ['http', 'https'], true)) {
+        if (! in_array(strtolower($scheme), ['http', 'https'], true)) {
             throw new InvalidArgumentException(
                 "Only HTTP and HTTPS URLs are allowed. Got: {$scheme}"
             );
@@ -71,7 +71,7 @@ class ScrapeCommand implements RustCommandInterface
         }
 
         $host = strtolower($host);
-        
+
         // Check for localhost variants
         $localhostPatterns = [
             'localhost',

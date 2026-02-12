@@ -175,7 +175,7 @@ test('it handles process startup failures', function () {
     expect($result['success'])->toBeFalse();
     // The exit code might be -1 (exception) or a positive number (command not found)
     expect($result['exit_code'])->not->toBe(0);
-    
+
     // If an error key exists, it should contain the failure message
     if (isset($result['error'])) {
         expect($result['error'])->toContain('Failed to start process');

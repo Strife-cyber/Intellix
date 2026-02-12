@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\GithubController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\ResourceController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -15,6 +16,11 @@ Route::get('/', function () {
 Route::get('dashboard', function () {
     return Inertia::render('dashboard', []);
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::prefix('v1')->group(function () {
+    Route::post('/resources/upload', [ResourceController::class, 'upload']);
+    Route::get('/resources/{resource}/status', [ResourceController::class, 'status']);
+});
 
 Route::get('/auth/google/redirect', [GoogleController::class, 'redirect']);
 Route::get('/auth/google/callback', [GoogleController::class, 'callback']);

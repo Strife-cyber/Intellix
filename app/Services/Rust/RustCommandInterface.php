@@ -21,7 +21,7 @@ interface RustCommandInterface
 
     /**
      * Validate the command before execution.
-     * 
+     *
      * @throws \InvalidArgumentException if the command is invalid
      */
     public function validate(): void;
