@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('mime_type');
             $table->bigInteger('size_bytes');
             $table->string('s3_key');
-            $table->enum('status', ResourceStatus::cases())->index();
+            $table->enum('status', array_column(ResourceStatus::cases(), 'value'))->index();
             $table->timestamps();
         });
     }

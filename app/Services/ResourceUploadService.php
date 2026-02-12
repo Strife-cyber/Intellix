@@ -37,4 +37,24 @@ class ResourceUploadService
 
         return $resource;
     }
+
+    public function delete(Resource $resource): void
+    {
+        // Delete from S3
+        if ($resource->s3_key) {
+            Storage::disk('s3')->delete($resource->s3_key);
+            // Try to delete the directory if it's empty (optional, but good for cleanup)
+            // dirname('resources/UUID/filename') -> 'resources/UUID'
+            $dir = dirname($resource->s3_key);
+            if ($dir !== '.' && $dir !== '/') {
+                 $files = Storage::disk('s3')->files($dir);
+                 if (empty($files)) {
+                     Storage::disk('s3')->deleteDirectory($dir);
+                 }
+            }
+        }
+
+        // Delete from DB
+        $resource->delete();
+    }
 }
