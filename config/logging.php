@@ -1,5 +1,7 @@
 <?php
 
+use App\Logging\RustJsonFormatter;
+use App\Logging\RustStderrHandler;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -125,6 +127,28 @@ return [
 
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
+        ],
+
+        'rust' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'debug'),
+            'handler' => RustStderrHandler::class,
+            'handler_with' => [
+                'stream' => storage_path('logs/rust.log'),
+            ],
+            'formatter' => RustJsonFormatter::class,
+            'replace_placeholders' => true,
+        ],
+
+        'pipeline' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'debug'),
+            'handler' => RustStderrHandler::class,
+            'handler_with' => [
+                'stream' => storage_path('logs/pipeline.log'),
+            ],
+            'formatter' => RustJsonFormatter::class,
+            'replace_placeholders' => true,
         ],
 
     ],

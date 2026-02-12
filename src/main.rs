@@ -6,10 +6,12 @@
 mod extractors;
 mod scraper;
 mod fsrs;
+mod log;
 
 use clap::{Parser, Subcommand};
 use extractors::extract_file;
-use fsrs::{process_batch, process_review, BatchInput, FSRSError, ReviewInput};
+use fsrs::{process_batch, process_review, BatchInput, ReviewInput};
+use log::{log_and_exit, LogEntry};
 use std::io::{self, Read};
 use std::path::PathBuf;
 
@@ -55,15 +57,21 @@ fn main() {
                     }
                 }
                 Err(e) => {
-                    let err_json = serde_json::to_string(&e).unwrap_or_else(|_| {
-                        format!(
-                            r#"{{"ok":false,"error":"{}","code":{}}}"#,
-                            e.error.replace('"', "\\\""),
-                            e.code
-                        )
-                    });
-                    eprintln!("{}", err_json);
-                    std::process::exit(e.code);
+                    let mut context = std::collections::HashMap::new();
+                    context.insert("file".to_string(), serde_json::Value::String(
+                        file.to_string_lossy().to_string()
+                    ));
+                    context.insert("error_code".to_string(), serde_json::Value::Number(
+                        serde_json::Number::from(e.code)
+                    ));
+                    
+                    log_and_exit(
+                        LogEntry::error(&e.error)
+                            .with_command("extract")
+                            .with_context(context)
+                            .with_code(e.code),
+                        e.code
+                    );
                 }
             }
         }
@@ -75,15 +83,19 @@ fn main() {
                     }
                 }
                 Err(e) => {
-                    let err_json = serde_json::to_string(&e).unwrap_or_else(|_| {
-                        format!(
-                            r#"{{"ok":false,"error":"{}","code":{}}}"#,
-                            e.error.replace('"', "\\\""),
-                            e.code
-                        )
-                    });
-                    eprintln!("{}", err_json);
-                    std::process::exit(e.code);
+                    let mut context = std::collections::HashMap::new();
+                    context.insert("url".to_string(), serde_json::Value::String(url.clone()));
+                    context.insert("error_code".to_string(), serde_json::Value::Number(
+                        serde_json::Number::from(e.code)
+                    ));
+                    
+                    log_and_exit(
+                        LogEntry::error(&e.error)
+                            .with_command("scrape")
+                            .with_context(context)
+                            .with_code(e.code),
+                        e.code
+                    );
                 }
             }
         }
@@ -93,20 +105,21 @@ fn main() {
                     match std::fs::read_to_string(path) {
                         Ok(content) => content,
                         Err(e) => {
-                            let err = FSRSError {
-                                ok: false,
-                                error: format!("Failed to read file: {}", e),
-                                code: 43,
-                            };
-                            let err_json = serde_json::to_string(&err).unwrap_or_else(|_| {
-                                format!(
-                                    r#"{{"ok":false,"error":"{}","code":{}}}"#,
-                                    err.error.replace('"', "\\\""),
-                                    err.code
-                                )
-                            });
-                            eprintln!("{}", err_json);
-                            std::process::exit(err.code);
+                            let mut context = std::collections::HashMap::new();
+                            context.insert("file".to_string(), serde_json::Value::String(
+                                path.to_string_lossy().to_string()
+                            ));
+                            context.insert("io_error".to_string(), serde_json::Value::String(
+                                e.to_string()
+                            ));
+                            
+                            log_and_exit(
+                                LogEntry::error(format!("Failed to read file: {}", e))
+                                    .with_command("fsrs")
+                                    .with_context(context)
+                                    .with_code(43),
+                                43
+                            );
                         }
                     }
                 }
@@ -115,20 +128,21 @@ fn main() {
                     match io::stdin().read_to_string(&mut buffer) {
                         Ok(_) => buffer,
                         Err(e) => {
-                            let err = FSRSError {
-                                ok: false,
-                                error: format!("Failed to read stdin: {}", e),
-                                code: 44,
-                            };
-                            let err_json = serde_json::to_string(&err).unwrap_or_else(|_| {
-                                format!(
-                                    r#"{{"ok":false,"error":"{}","code":{}}}"#,
-                                    err.error.replace('"', "\\\""),
-                                    err.code
-                                )
-                            });
-                            eprintln!("{}", err_json);
-                            std::process::exit(err.code);
+                            let mut context = std::collections::HashMap::new();
+                            context.insert("io_error".to_string(), serde_json::Value::String(
+                                e.to_string()
+                            ));
+                            context.insert("input_source".to_string(), serde_json::Value::String(
+                                "stdin".to_string()
+                            ));
+                            
+                            log_and_exit(
+                                LogEntry::error(format!("Failed to read stdin: {}", e))
+                                    .with_command("fsrs")
+                                    .with_context(context)
+                                    .with_code(44),
+                                44
+                            );
                         }
                     }
                 }
@@ -143,15 +157,21 @@ fn main() {
                         }
                     }
                     Err(e) => {
-                        let err_json = serde_json::to_string(&e).unwrap_or_else(|_| {
-                            format!(
-                                r#"{{"ok":false,"error":"{}","code":{}}}"#,
-                                e.error.replace('"', "\\\""),
-                                e.code
-                            )
-                        });
-                        eprintln!("{}", err_json);
-                        std::process::exit(e.code);
+                        let mut context = std::collections::HashMap::new();
+                        context.insert("error_code".to_string(), serde_json::Value::Number(
+                            serde_json::Number::from(e.code)
+                        ));
+                        context.insert("input_type".to_string(), serde_json::Value::String(
+                            "batch".to_string()
+                        ));
+                        
+                        log_and_exit(
+                            LogEntry::error(&e.error)
+                                .with_command("fsrs")
+                                .with_context(context)
+                                .with_code(e.code),
+                            e.code
+                        );
                     }
                 }
             } else if let Ok(review) = serde_json::from_str::<ReviewInput>(&json_input) {
@@ -162,32 +182,36 @@ fn main() {
                         }
                     }
                     Err(e) => {
-                        let err_json = serde_json::to_string(&e).unwrap_or_else(|_| {
-                            format!(
-                                r#"{{"ok":false,"error":"{}","code":{}}}"#,
-                                e.error.replace('"', "\\\""),
-                                e.code
-                            )
-                        });
-                        eprintln!("{}", err_json);
-                        std::process::exit(e.code);
+                        let mut context = std::collections::HashMap::new();
+                        context.insert("error_code".to_string(), serde_json::Value::Number(
+                            serde_json::Number::from(e.code)
+                        ));
+                        context.insert("input_type".to_string(), serde_json::Value::String(
+                            "review".to_string()
+                        ));
+                        
+                        log_and_exit(
+                            LogEntry::error(&e.error)
+                                .with_command("fsrs")
+                                .with_context(context)
+                                .with_code(e.code),
+                            e.code
+                        );
                     }
                 }
             } else {
-                let e = FSRSError {
-                    ok: false,
-                    error: "Invalid JSON: expected ReviewInput or BatchInput".to_string(),
-                    code: 45,
-                };
-                let err_json = serde_json::to_string(&e).unwrap_or_else(|_| {
-                    format!(
-                        r#"{{"ok":false,"error":"{}","code":{}}}"#,
-                        e.error.replace('"', "\\\""),
-                        e.code
-                    )
-                });
-                eprintln!("{}", err_json);
-                std::process::exit(e.code);
+                let mut context = std::collections::HashMap::new();
+                context.insert("input_length".to_string(), serde_json::Value::Number(
+                    serde_json::Number::from(json_input.len())
+                ));
+                
+                log_and_exit(
+                    LogEntry::error("Invalid JSON: expected ReviewInput or BatchInput")
+                        .with_command("fsrs")
+                        .with_context(context)
+                        .with_code(45),
+                    45
+                );
             }
         }
     }
