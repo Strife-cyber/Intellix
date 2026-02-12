@@ -13,14 +13,11 @@ class ResourceChunk extends Model
     // use HasNeighbors; // Disabled as vector extension might be missing
 
     protected $fillable = [
+        'id',
         'resource_id',
         'chunk_index',
         'content',
-        'embedding',
-    ];
-
-    protected $casts = [
-        'embedding' => 'array', // Changed from Vector::class to array for JSON compatibility
+        'qdrant_point_id',
     ];
 
     public function resource(): BelongsTo

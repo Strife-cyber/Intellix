@@ -23,6 +23,14 @@ class ResourceProcessingTest extends TestCase
     {
         $this->withoutExceptionHandling();
         Storage::fake('s3');
+        
+        config()->set('services.qdrant.host', 'https://mock-qdrant');
+        config()->set('services.qdrant.key', 'mock-key');
+        
+        \Illuminate\Support\Facades\Http::fake([
+            '*/collections/resources' => \Illuminate\Support\Facades\Http::response(['status' => 'ok'], 200),
+            '*/collections/resources/points?wait=true' => \Illuminate\Support\Facades\Http::response(['status' => 'ok'], 200),
+        ]);
 
         // 1. Mock RustService (Bind to container BEFORE upload, so the dispatched job uses it)
         $mockRust = Mockery::mock(RustService::class);

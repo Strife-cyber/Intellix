@@ -52,4 +52,9 @@ return [
         'redirect' => env('GITHUB_REDIRECT_URI'),
     ],
 
+    'qdrant' => [
+        'host' => env('QDRANT_HOST'),
+        'key' => env('QDRANT_API_KEY'),
+    ],
+
 ];

@@ -16,26 +16,7 @@ return new class extends Migration
             $table->foreignUuid('resource_id')->constrained()->cascadeOnDelete();
             $table->integer('chunk_index');
             $table->text('content');
-            // Fallback to JSON if vector type is not available.
-            // Ideally this should be: $table->vector('embedding', 1536);
-            // But since the extension is missing, we use json.
-            // Check if vector type exists before creating? 
-            // For now, let's use json to ensure migration passes.
-            // Verify if we can check for type existence easily in migration... 
-            // Better yet, let's try to use vector if extension exists, else json.
-             
-            $hasVector = false;
-            try {
-                $hasVector = count(DB::select("SELECT * FROM pg_type WHERE typname = 'vector'")) > 0;
-            } catch (\Exception $e) {
-                // ignore
-            }
-
-            if ($hasVector) {
-                 $table->vector('embedding', 1536);
-            } else {
-                 $table->json('embedding');
-            }
+            $table->uuid('qdrant_point_id')->nullable()->index(); // ID in Qdrant
             $table->timestamps();
         });
     }
