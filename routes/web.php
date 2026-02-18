@@ -37,10 +37,10 @@ Route::prefix('v1')->group(function () {
     Route::get('/resources/{resource}/status', [ResourceController::class, 'status']);
 });
 
-Route::get('/auth/google/redirect', [GoogleController::class, 'redirect']);
+Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('google.redirect');
 Route::get('/auth/google/callback', [GoogleController::class, 'callback']);
 
-Route::get('/auth/github/redirect', [GithubController::class, 'redirect']);
+Route::get('/auth/github/redirect', [GithubController::class, 'redirect'])->name('github.redirect');
 Route::get('/auth/github/callback', [GithubController::class, 'callback']);
 
 require __DIR__.'/settings.php';

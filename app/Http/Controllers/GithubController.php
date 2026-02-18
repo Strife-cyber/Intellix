@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Socialite;
 
 class GithubController extends Controller
@@ -31,7 +33,7 @@ class GithubController extends Controller
                 'email' => $githubUser->email,
                 'github_id' => $githubUser->id,
                 'email_verified_at' => now(),
-                'password' => null,
+                'password' => Hash::make(Str::random(32)),
             ]);
         } else {
             if (! $user->github_id) {

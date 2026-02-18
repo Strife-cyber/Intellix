@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Socialite;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -30,7 +32,7 @@ class GoogleController extends Controller
                 'google_id' => $googleUser->id,
                 'avatar' => $googleUser->avatar,
                 'email_verified_at' => now(),
-                'password' => null,
+                'password' => Hash::make(Str::random(32)),
             ]);
         } else {
             if (! $user->google_id) {
