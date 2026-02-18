@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreResourceRequest;
 use App\Http\Requests\UpdateResourceRequest;
 use App\Models\Resource;
-use App\Models\User;
 use App\Services\ResourceUploadService;
-use Illuminate\Http\Client\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ResourceController extends Controller
 {
@@ -16,10 +16,7 @@ class ResourceController extends Controller
      */
     public function index()
     {
-        $auth_user = auth()->user();
-        $user = User::where('id', $auth_user->id)->first();
-        $resources = $user->resources;
-        dd($resources);
+        //
     }
 
     /**
@@ -70,18 +67,25 @@ class ResourceController extends Controller
         //
     }
 
-    public function upload(Request $request, ResourceUploadService $service)
+    public function upload(Request $request, ResourceUploadService $service): JsonResponse
     {
         $request->validate([
-            'file' => ['required', 'file', 'max:102400'],
+            'files' => ['required', 'array'],
+            'files.*' => ['file', 'max:102400'], // 100MB per file
         ]);
 
-        $resource = $service->upload($request->file('file'));
+        $results = [];
 
-        return response()->json([
-            'resource_id' => $resource->id,
-            'status_url' => route('resources.status', $resource),
-        ], 202);
+        foreach ($request->file('files') as $file) {
+            $resource = $service->upload($file);
+            $results[] = [
+                'resource_id' => $resource->id,
+                'file_name' => $resource->original_name,
+                'status_url' => "/v1/resources/{$resource->id}/status",
+            ];
+        }
+
+        return response()->json($results, 202);
     }
 
     public function status(Resource $resource)

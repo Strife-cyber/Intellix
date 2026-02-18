@@ -3,6 +3,7 @@
 use App\Http\Controllers\GithubController;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ResourceController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -18,7 +19,13 @@ Route::get('dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::get('library', function () {
-    return Inertia::render('library', []);
+    $auth_user = auth()->user();
+    $user = User::where('id', $auth_user->id)->first();
+    $resources = $user->resources;
+
+    return Inertia::render('library', [
+        'resources' => $resources,
+    ]);
 })->middleware(['auth', 'verified'])->name('library');
 
 Route::get('upload', function () {

@@ -10,11 +10,11 @@ import {
     CardDescription,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { library } from '@/routes';
-import type { BreadcrumbItem } from '@/types';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import type { BreadcrumbItem, Resource } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -23,7 +23,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Library() {
+export default function Library({ resources }: { resources: Resource[]}) {
     const [messages, setMessages] = useState<string[]>([
         'Hi 👋 Upload a file and I will help you analyze it.',
     ]);
@@ -34,6 +34,8 @@ export default function Library() {
         setMessages((prev) => [...prev, input]);
         setInput('');
     };
+
+    console.log(resources[0])
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
