@@ -2,17 +2,17 @@
 
 namespace App\Jobs;
 
+use App\Enums\ResourceStatus;
 use App\Models\Resource;
+use App\Services\Rust\RustService;
+use App\Services\VectorService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
-use App\Services\Rust\RustService;
-use App\Services\VectorService;
-use App\Enums\ResourceStatus;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ProcessResourceJob implements ShouldQueue
 {
@@ -38,7 +38,7 @@ class ProcessResourceJob implements ShouldQueue
             // We need a local file path. If it's on S3, we might need to download it first
             // or if the Rust binary supports S3 (unlikely for now), use that.
             // For now, let's assume we download it to a temp file.
-            
+
             $extension = pathinfo($this->resource->original_name, PATHINFO_EXTENSION);
             if (empty($extension)) {
                 $extension = 'tmp';
@@ -46,7 +46,7 @@ class ProcessResourceJob implements ShouldQueue
 
             // Create a temp file with the correct extension
             $tempBase = tempnam(sys_get_temp_dir(), 'res');
-            $tempPath = $tempBase . '.' . $extension;
+            $tempPath = $tempBase.'.'.$extension;
             rename($tempBase, $tempPath);
 
             try {
@@ -63,8 +63,8 @@ class ProcessResourceJob implements ShouldQueue
                 }
             }
 
-            if (!$result['success']) {
-                throw new \Exception("Rust extraction failed: " . ($result['stderr'] ?? 'Unknown error'));
+            if (! $result['success']) {
+                throw new \Exception('Rust extraction failed: '.($result['stderr'] ?? 'Unknown error'));
             }
 
             $textContent = $result['stdout'];
@@ -81,7 +81,7 @@ class ProcessResourceJob implements ShouldQueue
             ]);
             Log::error("Processing resource failed: {$this->resource->id}", ['error' => $e->getMessage()]);
             // Rethrow to fail the job (optional, depending on retry policy)
-            throw $e; 
+            throw $e;
         }
     }
 }

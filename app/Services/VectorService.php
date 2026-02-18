@@ -4,12 +4,13 @@ namespace App\Services;
 
 use App\Models\Resource;
 use App\Models\ResourceChunk;
-use Illuminate\Support\Facades\Log;
 
 class VectorService
 {
     protected string $host;
+
     protected string $key;
+
     protected string $collection;
 
     public function __construct()
@@ -56,7 +57,7 @@ class VectorService
                 ]);
             }
 
-            if (!empty($points)) {
+            if (! empty($points)) {
                 $this->upsertPoints($points);
             }
         } catch (\Throwable $e) {
@@ -107,6 +108,7 @@ class VectorService
             $val = hexdec(substr($hash, $i, 1)) / 16.0;
             $vector[$i] = $val;
         }
+
         return $vector;
     }
 }

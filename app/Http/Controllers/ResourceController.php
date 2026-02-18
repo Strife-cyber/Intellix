@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreResourceRequest;
 use App\Http\Requests\UpdateResourceRequest;
 use App\Models\Resource;
+use App\Models\User;
 use App\Services\ResourceUploadService;
 use Illuminate\Http\Client\Request;
 
@@ -15,7 +16,10 @@ class ResourceController extends Controller
      */
     public function index()
     {
-        //
+        $auth_user = auth()->user();
+        $user = User::where('id', $auth_user->id)->first();
+        $resources = $user->resources;
+        dd($resources);
     }
 
     /**

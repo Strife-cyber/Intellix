@@ -2,16 +2,11 @@
 
 namespace App\Policies;
 
-use App\Models\Resource;
+use App\Models\Access;
 use App\Models\User;
 
-class ResourcePolicy
+class AccessPolicy
 {
-    private function role(User $user, Resource $resource)
-    {
-        return $resource->roleOf($user);
-    }
-
     /**
      * Determine whether the user can view any models.
      */
@@ -23,11 +18,9 @@ class ResourcePolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Resource $resource)
+    public function view(User $user, Access $access): bool
     {
-        return in_array($this->role($user, $resource), [
-            'viewer', 'editor', 'admin', 'owner',
-        ]);
+        return false;
     }
 
     /**
@@ -41,27 +34,23 @@ class ResourcePolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Resource $resource): bool
+    public function update(User $user, Access $access): bool
     {
-        return in_array($this->role($user, $resource), [
-            'editor', 'admin', 'owner',
-        ]);
+        return false;
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Resource $resource): bool
+    public function delete(User $user, Access $access): bool
     {
-        return in_array($this->role($user, $resource), [
-            'admin', 'owner',
-        ]);
+        return false;
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Resource $resource): bool
+    public function restore(User $user, Access $access): bool
     {
         return false;
     }
@@ -69,7 +58,7 @@ class ResourcePolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Resource $resource): bool
+    public function forceDelete(User $user, Access $access): bool
     {
         return false;
     }

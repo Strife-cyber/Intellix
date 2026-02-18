@@ -1,7 +1,7 @@
 import AppLogoIcon from './app-logo-icon';
 
 type Props = {
-    onWelcome: boolean;
+    onWelcome?: boolean;
 };
 
 export default function AppLogo({ onWelcome = false }: Props) {

@@ -15,5 +15,5 @@ try {
         echo "VECTOR_EXTENSION_NOT_AVAILABLE\n";
     }
 } catch (\Exception $e) {
-    echo "ERROR: " . $e->getMessage() . "\n";
+    echo 'ERROR: '.$e->getMessage()."\n";
 }

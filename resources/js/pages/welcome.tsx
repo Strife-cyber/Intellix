@@ -71,33 +71,29 @@ export default function Welcome({
             </Head>
             <div className="relative min-h-screen w-screen overflow-hidden bg-white p-6 text-gray-800 lg:justify-center lg:p-8 dark:bg-[#0a0a0a] dark:text-[#9CA3AF]">
                 <div className="pointer-events-none absolute inset-0 z-0 h-full w-full opacity-30 dark:opacity-100">
-                    {
-                        appearance != 'dark'
-                            ? (
-                                <SplashCursor
-                                    SIM_RESOLUTION={128}
-                                    DYE_RESOLUTION={1440}
-                                    DENSITY_DISSIPATION={3.5}
-                                    VELOCITY_DISSIPATION={2}
-                                    PRESSURE={0.1}
-                                    CURL={3}
-                                    SPLAT_RADIUS={0.2}
-                                    SPLAT_FORCE={6000}
-                                    COLOR_UPDATE_SPEED={10}
-                                />
-                            )
-                            : (
-                                <DarkVeil
-                                    hueShift={0}
-                                    noiseIntensity={0}
-                                    scanlineIntensity={0}
-                                    speed={0.5}
-                                    scanlineFrequency={0}
-                                    warpAmount={0}
-                                    resolutionScale={1}
-                                />
-                            )
-                    }
+                    {appearance != 'dark' ? (
+                        <SplashCursor
+                            SIM_RESOLUTION={128}
+                            DYE_RESOLUTION={1440}
+                            DENSITY_DISSIPATION={3.5}
+                            VELOCITY_DISSIPATION={2}
+                            PRESSURE={0.1}
+                            CURL={3}
+                            SPLAT_RADIUS={0.2}
+                            SPLAT_FORCE={6000}
+                            COLOR_UPDATE_SPEED={10}
+                        />
+                    ) : (
+                        <DarkVeil
+                            hueShift={0}
+                            noiseIntensity={0}
+                            scanlineIntensity={0}
+                            speed={0.5}
+                            scanlineFrequency={0}
+                            warpAmount={0}
+                            resolutionScale={1}
+                        />
+                    )}
                 </div>
 
                 <header className="relative z-10 mb-6 flex w-full items-center justify-between text-sm not-has-[nav]:hidden">
@@ -172,7 +168,7 @@ export default function Welcome({
                                     <Link href={register()}>
                                         <Button
                                             size="lg"
-                                            className="gap-2 bg-tint hover:text-tint text-white"
+                                            className="gap-2 bg-tint text-white hover:text-tint"
                                         >
                                             Join the Beta
                                             <Rocket className="h-4 w-4" />
@@ -584,11 +580,13 @@ export default function Welcome({
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-4 w-72">
+                            <div className="flex w-72 flex-col gap-4">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-primary font-bold text-lg">Product</span>
+                                    <span className="text-lg font-bold text-primary">
+                                        Product
+                                    </span>
                                 </div>
-                                <div className="flex flex-col gap-2 text-gray-400 text-sm">
+                                <div className="flex flex-col gap-2 text-sm text-gray-400">
                                     <span>Download</span>
                                     <span>Manifesto</span>
                                     <span>Changelog</span>
@@ -596,32 +594,38 @@ export default function Welcome({
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-4 w-72">
-                                <span className="text-primary font-bold text-lg">Resources</span>
-                                <div className="flex flex-col gap-2 text-gray-400 text-sm">
+                            <div className="flex w-72 flex-col gap-4">
+                                <span className="text-lg font-bold text-primary">
+                                    Resources
+                                </span>
+                                <div className="flex flex-col gap-2 text-sm text-gray-400">
                                     <span>Documentation</span>
                                     <span>API Reference</span>
                                     <span>Community</span>
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-4 w-72">
-                                <span className="text-primary font-bold text-lg">Legal</span>
-                                <div className="flex flex-col gap-2 text-gray-400 text-sm">
+                            <div className="flex w-72 flex-col gap-4">
+                                <span className="text-lg font-bold text-primary">
+                                    Legal
+                                </span>
+                                <div className="flex flex-col gap-2 text-sm text-gray-400">
                                     <span>Privacy Policy</span>
                                     <span>Terms of Service</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex flex-col md:flex-row justify-between items-center border-t border-[#2A2A2A] pt-8 gap-4">
-                          <span className="text-gray-500 text-sm">
-                            &copy; 2026 Intellix. All rights reserved.
-                          </span>
+                        <div className="flex flex-col items-center justify-between gap-4 border-t border-[#2A2A2A] pt-8 md:flex-row">
+                            <span className="text-sm text-gray-500">
+                                &copy; 2026 Intellix. All rights reserved.
+                            </span>
 
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                                <span className="text-gray-400 text-sm font-mono">Made with care for modern minds</span>
+                                <div className="h-2 w-2 rounded-full bg-green-500" />
+                                <span className="font-mono text-sm text-gray-400">
+                                    Made with care for modern minds
+                                </span>
                             </div>
                         </div>
                     </div>

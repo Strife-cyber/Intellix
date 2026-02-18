@@ -47,10 +47,10 @@ class ResourceUploadService
             // dirname('resources/UUID/filename') -> 'resources/UUID'
             $dir = dirname($resource->s3_key);
             if ($dir !== '.' && $dir !== '/') {
-                 $files = Storage::disk('s3')->files($dir);
-                 if (empty($files)) {
-                     Storage::disk('s3')->deleteDirectory($dir);
-                 }
+                $files = Storage::disk('s3')->files($dir);
+                if (empty($files)) {
+                    Storage::disk('s3')->deleteDirectory($dir);
+                }
             }
         }
 
