@@ -1,11 +1,13 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { BookOpen, Rocket, Zap, ArrowRight } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 import AppLogo from '@/components/app-logo';
 import DarkVeil from '@/components/dark-veil';
 import { Icons } from '@/components/icons';
+import SplashCursor from '@/components/splash-cursor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useAppearance } from '@/hooks/use-appearance';
 import { dashboard, login, register } from '@/routes';
 import type { SharedData } from '@/types';
 
@@ -49,7 +51,14 @@ export default function Welcome({
 }: {
     canRegister?: boolean;
 }) {
+    const { appearance } = useAppearance();
     const { auth } = usePage<SharedData>().props;
+    const [email, setEmail] = useState('');
+
+    const handleRegisterRedirect = () => {
+        if (!email) return;
+        router.get(`/register`, { email });
+    };
 
     return (
         <>
@@ -60,17 +69,35 @@ export default function Welcome({
                     rel="stylesheet"
                 />
             </Head>
-            <div className="relative min-h-screen w-screen overflow-hidden bg-[#FDFDFC] p-6 text-[#9CA3AF] lg:justify-center lg:p-8 dark:bg-[#0a0a0a]">
-                <div className="pointer-events-none absolute inset-0 z-0 h-full w-full">
-                    <DarkVeil
-                        hueShift={0}
-                        noiseIntensity={0}
-                        scanlineIntensity={0}
-                        speed={0.5}
-                        scanlineFrequency={0}
-                        warpAmount={0}
-                        resolutionScale={1}
-                    />
+            <div className="relative min-h-screen w-screen overflow-hidden bg-white p-6 text-gray-800 lg:justify-center lg:p-8 dark:bg-[#0a0a0a] dark:text-[#9CA3AF]">
+                <div className="pointer-events-none absolute inset-0 z-0 h-full w-full opacity-30 dark:opacity-100">
+                    {
+                        appearance != 'dark'
+                            ? (
+                                <SplashCursor
+                                    SIM_RESOLUTION={128}
+                                    DYE_RESOLUTION={1440}
+                                    DENSITY_DISSIPATION={3.5}
+                                    VELOCITY_DISSIPATION={2}
+                                    PRESSURE={0.1}
+                                    CURL={3}
+                                    SPLAT_RADIUS={0.2}
+                                    SPLAT_FORCE={6000}
+                                    COLOR_UPDATE_SPEED={10}
+                                />
+                            )
+                            : (
+                                <DarkVeil
+                                    hueShift={0}
+                                    noiseIntensity={0}
+                                    scanlineIntensity={0}
+                                    speed={0.5}
+                                    scanlineFrequency={0}
+                                    warpAmount={0}
+                                    resolutionScale={1}
+                                />
+                            )
+                    }
                 </div>
 
                 <header className="relative z-10 mb-6 flex w-full items-center justify-between text-sm not-has-[nav]:hidden">
@@ -78,17 +105,17 @@ export default function Welcome({
                         <AppLogo onWelcome={true} />
                     </div>
 
-                    <nav className="flex items-center gap-4">
-                        <Link>Features</Link>
-                        <Link>Pricing</Link>
-                        <Link>Research</Link>
+                    <nav className="flex items-center gap-4 text-gray-700 dark:text-[#9CA3AF]">
+                        <Link href="#">Features</Link>
+                        <Link href="#">Pricing</Link>
+                        <Link href="#">Research</Link>
                     </nav>
 
                     <nav className="flex items-center gap-4">
                         {auth.user ? (
                             <Link
                                 href={dashboard()}
-                                className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
+                                className="inline-block rounded-sm border border-gray-200 px-5 py-1.5 text-sm leading-normal text-gray-900 hover:border-gray-300 dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                             >
                                 Dashboard
                             </Link>
@@ -96,14 +123,14 @@ export default function Welcome({
                             <>
                                 <Link
                                     href={login()}
-                                    className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
+                                    className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-gray-700 hover:border-gray-200 dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
                                     Log in
                                 </Link>
                                 {canRegister && (
                                     <Link
                                         href={register()}
-                                        className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
+                                        className="inline-block rounded-sm border border-gray-200 px-5 py-1.5 text-sm leading-normal text-gray-900 hover:border-gray-300 dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                                     >
                                         Join Us
                                     </Link>
@@ -120,19 +147,21 @@ export default function Welcome({
                             className="relative flex flex-col items-center gap-6 overflow-hidden pt-8 text-center md:pt-20"
                         >
                             <div className="relative z-10 flex flex-col items-center gap-6">
-                                <div className="flex items-center justify-center gap-2 rounded-full border border-[#2A2A2A] bg-[#121212] px-4 py-2">
+                                <div className="flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 dark:border-[#2A2A2A] dark:bg-[#121212]">
                                     <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                                    <p className="text-xs font-bold">v1.0</p>
-                                    <p className="text-xs font-bold">
+                                    <p className="text-xs font-bold text-gray-900 dark:text-white">
+                                        v1.0
+                                    </p>
+                                    <p className="text-xs font-bold text-gray-900 dark:text-white">
                                         BETA NOW LIVE
                                     </p>
                                 </div>
 
-                                <h1 className="max-w-4xl text-5xl leading-tight font-extrabold text-primary md:text-7xl">
+                                <h1 className="max-w-4xl text-5xl leading-tight font-extrabold text-gray-900 md:text-7xl dark:text-primary">
                                     The End of the <br /> Crisis of Attention
                                 </h1>
 
-                                <p>
+                                <p className="text-gray-600 dark:text-[#9CA3AF]">
                                     The first AI-native operating system
                                     designed for deep work and <br />
                                     academic rigor. Reclaim your mental
@@ -143,7 +172,7 @@ export default function Welcome({
                                     <Link href={register()}>
                                         <Button
                                             size="lg"
-                                            className="gap-2 bg-tint text-primary hover:text-tint"
+                                            className="gap-2 bg-tint hover:text-tint text-white"
                                         >
                                             Join the Beta
                                             <Rocket className="h-4 w-4" />
@@ -153,69 +182,69 @@ export default function Welcome({
                                     <Button
                                         variant="outline"
                                         size="lg"
-                                        className="gap-2 text-primary"
+                                        className="gap-2 border-gray-200 text-gray-900 hover:bg-gray-50 dark:text-primary"
                                     >
                                         <BookOpen className="h-4 w-4" />
                                         Read Manifesto
                                     </Button>
                                 </div>
 
-                                <div className="relative mx-auto mt-8 overflow-hidden rounded-2xl border border-[#2A2A2A] bg-[#121212] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]">
+                                <div className="relative mx-auto mt-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-[#2A2A2A] dark:bg-[#121212] dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]">
                                     {/* TOP WINDOW BAR */}
-                                    <div className="flex h-10 items-center gap-3 border-b border-[#2A2A2A] bg-[#141414] px-4">
+                                    <div className="flex h-10 items-center gap-3 border-b border-gray-200 bg-gray-50 px-4 dark:border-[#2A2A2A] dark:bg-[#141414]">
                                         <div className="flex gap-2">
                                             <div className="h-3 w-3 rounded-full border border-red-500/70 bg-red-500/40" />
                                             <div className="h-3 w-3 rounded-full border border-yellow-500/70 bg-yellow-500/40" />
                                             <div className="h-3 w-3 rounded-full border border-green-500/70 bg-green-500/40" />
                                         </div>
-                                        <div className="ml-4 rounded-md bg-[#2A2A2A]/40 px-3 py-1 text-xs text-gray-400">
+                                        <div className="ml-4 rounded-md bg-gray-200 px-3 py-1 text-xs text-gray-500 dark:bg-[#2A2A2A]/40 dark:text-gray-400">
                                             workspace.ai/app
                                         </div>
                                     </div>
 
                                     <div className="flex h-[calc(100%-40px)]">
                                         {/* LEFT NAV */}
-                                        <div className="flex w-56 flex-col border-r border-[#2A2A2A] bg-[#111111] p-4">
+                                        <div className="flex w-56 flex-col border-r border-gray-200 bg-gray-50 p-4 dark:border-[#2A2A2A] dark:bg-[#111111]">
                                             <div className="space-y-3">
-                                                <div className="h-8 rounded bg-[#2A2A2A]/40" />
-                                                <div className="h-4 w-32 rounded bg-[#2A2A2A]/40" />
-                                                <div className="h-4 w-24 rounded bg-[#2A2A2A]/40" />
+                                                <div className="h-8 rounded bg-gray-200 dark:bg-[#2A2A2A]/40" />
+                                                <div className="h-4 w-32 rounded bg-gray-200 dark:bg-[#2A2A2A]/40" />
+                                                <div className="h-4 w-24 rounded bg-gray-200 dark:bg-[#2A2A2A]/40" />
                                             </div>
 
                                             <div className="mt-auto">
-                                                <div className="flex h-12 items-center justify-center rounded-md border border-white/20 text-sm text-white">
+                                                <div className="flex h-12 items-center justify-center rounded-md border border-gray-300 text-sm text-gray-700 dark:border-white/20 dark:text-white">
                                                     Upgrade Plan
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* CENTER WORKSPACE */}
-                                        <div className="flex flex-1 flex-col bg-[#0F0F11]">
+                                        <div className="flex flex-1 flex-col bg-white dark:bg-[#0F0F11]">
                                             {/* TABS HEADER */}
-                                            <div className="flex h-12 items-center justify-between border-b border-[#2A2A2A] px-6">
+                                            <div className="flex h-12 items-center justify-between border-b border-gray-200 px-6 dark:border-[#2A2A2A]">
                                                 <div className="flex items-center gap-6 text-sm">
-                                                    <div className="border-b-2 border-white pb-3 font-medium text-white">
+                                                    <div className="border-b-2 border-gray-900 pb-3 font-medium text-gray-900 dark:border-white dark:text-white">
                                                         Files
                                                     </div>
-                                                    <div className="cursor-pointer text-gray-500 hover:text-gray-300">
+                                                    <div className="cursor-pointer text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
                                                         Flashcards
                                                     </div>
-                                                    <div className="cursor-pointer text-gray-500 hover:text-gray-300">
+                                                    <div className="cursor-pointer text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
                                                         Analytics
                                                     </div>
 
                                                     {/* hidden roadmap tabs */}
                                                     <div className="ml-4 flex gap-3">
-                                                        <div className="h-4 w-16 animate-pulse rounded bg-[#2A2A2A]" />
-                                                        <div className="h-4 w-12 animate-pulse rounded bg-[#2A2A2A]" />
-                                                        <div className="h-4 w-20 animate-pulse rounded bg-[#2A2A2A]" />
+                                                        <div className="h-4 w-16 animate-pulse rounded bg-gray-200 dark:bg-[#2A2A2A]" />
+                                                        <div className="h-4 w-12 animate-pulse rounded bg-gray-200 dark:bg-[#2A2A2A]" />
+                                                        <div className="h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-[#2A2A2A]" />
                                                     </div>
                                                 </div>
 
                                                 {/* STORAGE BAR */}
-                                                <div className="flex items-center gap-3 text-xs text-gray-400">
-                                                    <div className="h-2 w-32 overflow-hidden rounded-full bg-[#1A1A1A]">
-                                                        <div className="h-full w-[45%] bg-white" />
+                                                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                                                    <div className="h-2 w-32 overflow-hidden rounded-full bg-gray-200 dark:bg-[#1A1A1A]">
+                                                        <div className="h-full w-[45%] bg-gray-800 dark:bg-white" />
                                                     </div>
                                                     4.5 GB / 10 GB
                                                 </div>
@@ -224,9 +253,9 @@ export default function Welcome({
                                             {/* MAIN CONTENT */}
                                             <div className="grid flex-1 grid-cols-3 gap-6 p-6">
                                                 {/* DROPZONE */}
-                                                <div className="col-span-2 flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[#333] bg-[#141414] transition hover:bg-[#181818]">
-                                                    <div className="h-10 w-10 rounded-lg border border-[#333]" />
-                                                    <p className="text-sm font-medium text-white">
+                                                <div className="col-span-2 flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 transition hover:bg-gray-100 dark:border-[#333] dark:bg-[#141414] dark:hover:bg-[#181818]">
+                                                    <div className="h-10 w-10 rounded-lg border border-gray-300 dark:border-[#333]" />
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-white">
                                                         Drop files to upload
                                                     </p>
                                                     <p className="text-xs text-gray-500">
@@ -236,20 +265,20 @@ export default function Welcome({
                                                 </div>
 
                                                 {/* FLASHCARDS PREVIEW */}
-                                                <div className="rounded-xl border border-[#2A2A2A] bg-[#141414] p-4">
-                                                    <div className="mb-3 text-sm font-medium text-white">
+                                                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-[#2A2A2A] dark:bg-[#141414]">
+                                                    <div className="mb-3 text-sm font-medium text-gray-900 dark:text-white">
                                                         Flashcards generated
                                                     </div>
                                                     <div className="space-y-3">
-                                                        <div className="h-16 rounded-lg bg-[#1A1A1A]" />
-                                                        <div className="h-16 rounded-lg bg-[#1A1A1A]" />
-                                                        <div className="h-16 rounded-lg bg-[#1A1A1A]" />
+                                                        <div className="h-16 rounded-lg bg-gray-200 dark:bg-[#1A1A1A]" />
+                                                        <div className="h-16 rounded-lg bg-gray-200 dark:bg-[#1A1A1A]" />
+                                                        <div className="h-16 rounded-lg bg-gray-200 dark:bg-[#1A1A1A]" />
                                                     </div>
                                                 </div>
 
                                                 {/* FILE TABLE */}
-                                                <div className="col-span-3 overflow-hidden rounded-xl border border-[#2A2A2A]">
-                                                    <div className="grid grid-cols-4 bg-[#141414] px-4 py-3 text-xs text-gray-500">
+                                                <div className="col-span-3 overflow-hidden rounded-xl border border-gray-200 dark:border-[#2A2A2A]">
+                                                    <div className="grid grid-cols-4 bg-gray-100 px-4 py-3 text-xs text-gray-500 dark:bg-[#141414]">
                                                         <div>Name</div>
                                                         <div>Type</div>
                                                         <div>Size</div>
@@ -265,9 +294,9 @@ export default function Welcome({
                                                     ].map((file, i) => (
                                                         <div
                                                             key={i}
-                                                            className="grid grid-cols-4 border-t border-[#1E1E1E] px-4 py-3 text-sm transition hover:bg-[#161616]"
+                                                            className="grid grid-cols-4 border-t border-gray-200 px-4 py-3 text-sm transition hover:bg-gray-50 dark:border-[#1E1E1E] dark:hover:bg-[#161616]"
                                                         >
-                                                            <div className="text-gray-200">
+                                                            <div className="text-gray-900 dark:text-gray-200">
                                                                 {file}
                                                             </div>
                                                             <div className="text-gray-500">
@@ -286,9 +315,9 @@ export default function Welcome({
                                         </div>
 
                                         {/* AI SIDEBAR */}
-                                        <div className="flex w-80 flex-col border-l border-[#2A2A2A] bg-[#0D0D0E]">
-                                            <div className="border-b border-[#2A2A2A] p-4">
-                                                <div className="font-medium text-white">
+                                        <div className="flex w-80 flex-col border-l border-gray-200 bg-gray-50 dark:border-[#2A2A2A] dark:bg-[#0D0D0E]">
+                                            <div className="border-b border-gray-200 p-4 dark:border-[#2A2A2A]">
+                                                <div className="font-medium text-gray-900 dark:text-white">
                                                     Workspace AI
                                                 </div>
                                                 <div className="text-xs text-gray-500">
@@ -296,34 +325,34 @@ export default function Welcome({
                                                 </div>
                                             </div>
 
-                                            <div className="flex gap-2 border-b border-[#1A1A1A] px-4 py-3">
-                                                <div className="rounded-md bg-[#1A1A1A] px-3 py-1 text-xs text-gray-300">
+                                            <div className="flex gap-2 border-b border-gray-200 px-4 py-3 dark:border-[#1A1A1A]">
+                                                <div className="rounded-md bg-gray-200 px-3 py-1 text-xs text-gray-700 dark:bg-[#1A1A1A] dark:text-gray-300">
                                                     Summarize
                                                 </div>
-                                                <div className="rounded-md bg-[#1A1A1A] px-3 py-1 text-xs text-gray-300">
+                                                <div className="rounded-md bg-gray-200 px-3 py-1 text-xs text-gray-700 dark:bg-[#1A1A1A] dark:text-gray-300">
                                                     Quiz
                                                 </div>
-                                                <div className="rounded-md bg-[#1A1A1A] px-3 py-1 text-xs text-gray-300">
+                                                <div className="rounded-md bg-gray-200 px-3 py-1 text-xs text-gray-700 dark:bg-[#1A1A1A] dark:text-gray-300">
                                                     Extract
                                                 </div>
                                             </div>
 
                                             <div className="flex-1 space-y-4 overflow-hidden p-4">
-                                                <div className="max-w-[90%] rounded-lg bg-[#161616] p-3 text-sm text-gray-300">
+                                                <div className="max-w-[90%] rounded-lg bg-gray-200 p-3 text-sm text-gray-700 dark:bg-[#161616] dark:text-gray-300">
                                                     I found 12 key concepts in
                                                     Research.pdf.
                                                 </div>
-                                                <div className="ml-auto max-w-[90%] rounded-lg bg-white p-3 text-sm text-black">
+                                                <div className="ml-auto max-w-[90%] rounded-lg bg-gray-800 p-3 text-sm text-white dark:bg-white dark:text-black">
                                                     Generate flashcards.
                                                 </div>
-                                                <div className="max-w-[90%] rounded-lg bg-[#161616] p-3 text-sm text-gray-300">
+                                                <div className="max-w-[90%] rounded-lg bg-gray-200 p-3 text-sm text-gray-700 dark:bg-[#161616] dark:text-gray-300">
                                                     Creating spaced repetition
                                                     cards…
                                                 </div>
                                             </div>
 
-                                            <div className="border-t border-[#2A2A2A] p-3">
-                                                <div className="h-10 rounded-lg bg-[#161616]" />
+                                            <div className="border-t border-gray-200 p-3 dark:border-[#2A2A2A]">
+                                                <div className="h-10 rounded-lg bg-gray-200 dark:bg-[#161616]" />
                                             </div>
                                         </div>
                                     </div>
@@ -333,14 +362,14 @@ export default function Welcome({
 
                         <div
                             id="trustees"
-                            className="mx-auto my-32 flex w-screen flex-col items-center justify-center space-y-8 bg-white/8 py-6 backdrop-blur-lg"
+                            className="mx-auto my-32 flex w-screen flex-col items-center justify-center space-y-8 bg-gray-100/50 py-6 backdrop-blur-lg dark:bg-white/5"
                             style={{ height: '140px' }}
                         >
-                            <p className="text-xs font-semibold tracking-wider text-gray-200 md:text-sm">
+                            <p className="text-xs font-semibold tracking-wider text-gray-500 md:text-sm dark:text-gray-200">
                                 TRUSTED BY RESEARCHERS AT TOP INSTITUTES
                             </p>
 
-                            <div className="flex flex-wrap justify-center gap-6 text-xs font-medium text-gray-300 md:text-sm">
+                            <div className="flex flex-wrap justify-center gap-6 text-xs font-medium text-gray-600 md:text-sm dark:text-gray-300">
                                 <span>Newbridge University</span>
                                 <span>Stanton Research Labs</span>
                                 <span>Westbrook Academic Consortium</span>
@@ -352,53 +381,59 @@ export default function Welcome({
                             id="features"
                             className="flex flex-col items-start space-y-12 p-8"
                         >
-                            <h2 className="text-6xl font-bold text-white">
+                            <h2 className="text-6xl font-bold text-gray-900 dark:text-white">
                                 The Academic Trinity
                             </h2>
 
-                            <p className="text-xl">
+                            <p className="text-xl text-gray-600 dark:text-[#9CA3AF]">
                                 Unlock your true potential with tools designed
                                 specifically for the modern <br /> researcher's
                                 workflow.
                             </p>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                                 {features.map((feature, i) => (
                                     <div
                                         key={i}
-                                        className="relative flex h-[310px] w-full flex-col justify-between rounded-lg border border-[#2A2A2A] bg-[#121212] p-6 overflow-hidden"
+                                        className="relative flex h-[310px] w-full flex-col justify-between overflow-hidden rounded-lg border border-gray-200 bg-white p-6 dark:border-[#2A2A2A] dark:bg-[#121212]"
                                     >
-                                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#6F06F91A] border border-[#6F06F933]">
+                                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-[#6F06F933] bg-[#6F06F91A]">
                                             <feature.icon className="h-5 w-5 text-[#6F06F9]" />
                                         </div>
 
                                         <div className="mb-3 flex flex-col">
-                                            <h3 className="text-lg font-bold text-white">{feature.title}</h3>
+                                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                                {feature.title}
+                                            </h3>
                                             {feature.subtitle && (
-                                                <span className="mt-1 font-mono text-sm text-purple-500">
+                                                <span className="mt-1 font-mono text-sm text-purple-600 dark:text-purple-500">
                                                     {feature.subtitle}
                                                 </span>
                                             )}
                                         </div>
 
-                                        <p className="mb-3 text-sm text-gray-400">{feature.description}</p>
+                                        <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+                                            {feature.description}
+                                        </p>
 
                                         {feature.listItems && (
                                             <div className="flex flex-col gap-1">
-                                                {feature.listItems.map((item, idx) => (
-                                                    <div
-                                                        key={idx}
-                                                        className="flex items-center gap-2 text-xs text-gray-500"
-                                                    >
-                                                        <div className="h-2 w-2 rounded-full bg-green-500" />
-                                                        <span>{item}</span>
-                                                    </div>
-                                                ))}
+                                                {feature.listItems.map(
+                                                    (item, idx) => (
+                                                        <div
+                                                            key={idx}
+                                                            className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-500"
+                                                        >
+                                                            <div className="h-2 w-2 rounded-full bg-green-500" />
+                                                            <span>{item}</span>
+                                                        </div>
+                                                    ),
+                                                )}
                                             </div>
                                         )}
 
                                         <div className="absolute top-4 right-4 opacity-10">
-                                            <feature.icon className="h-20 w-20 text-gray-500" />
+                                            <feature.icon className="h-20 w-20 text-gray-400 dark:text-gray-500" />
                                         </div>
                                     </div>
                                 ))}
@@ -407,7 +442,7 @@ export default function Welcome({
 
                         <div
                             id="global-network"
-                            className="mt-12 relative h-[500px] w-full rounded-lg overflow-hidden"
+                            className="relative mt-12 h-[500px] w-full overflow-hidden rounded-lg"
                         >
                             <img
                                 src="/network.svg"
@@ -415,23 +450,22 @@ export default function Welcome({
                                 className="absolute inset-0 h-full w-full object-cover"
                             />
 
-                            <div
-                                className="absolute inset-0"
-                                style={{
-                                    background:
-                                        'linear-gradient(0deg, #121212 0%, rgba(18, 18, 18, 0) 50%, rgba(18, 18, 18, 0) 100%)',
-                                    zIndex: 1,
-                                }}
-                            />
+                            <div className="absolute inset-0 z-[1] bg-gradient-to-t from-white via-white/50 to-transparent dark:from-[#121212] dark:via-[#121212]/0 dark:to-transparent" />
 
-                            <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1 m-12 space-y-4">
-                                <h2 className="text-white font-bold text-4xl">Join the global intelligence network.</h2>
-                                <span className="text-white text-md">Connect your research with thousands of peers. Share knowledge graphs <br/> securely and accelerate discovery.</span>
+                            <div className="absolute bottom-4 left-4 z-10 m-12 flex flex-col gap-1 space-y-4">
+                                <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
+                                    Join the global intelligence network.
+                                </h2>
+                                <span className="text-md text-gray-700 dark:text-white">
+                                    Connect your research with thousands of
+                                    peers. Share knowledge graphs <br />{' '}
+                                    securely and accelerate discovery.
+                                </span>
                                 <Link href={register()}>
                                     <Button
                                         size="lg"
                                         variant="ghost"
-                                        className="gap-2 font-mono text-tint"
+                                        className="gap-2 font-mono text-tint hover:bg-gray-100 dark:hover:bg-white/10"
                                     >
                                         EXPLORE THE NETWORK
                                         <ArrowRight className="h-4 w-4" />
@@ -442,55 +476,64 @@ export default function Welcome({
 
                         <div
                             id="cta"
-                            className="min-h-screen flex flex-col items-center justify-center px-4 text-center gap-6 bg-[#0a0a0a]"
+                            className="flex min-h-screen flex-col items-center justify-center gap-6 bg-gray-50 px-4 text-center dark:bg-[#0a0a0a]"
                         >
-                            <h1 className="text-4xl md:text-5xl font-extrabold text-white">
+                            <h1 className="text-4xl font-extrabold text-gray-900 md:text-5xl dark:text-white">
                                 Your second brain is waiting
                             </h1>
-                            <p className="text-gray-400 max-w-xl text-sm md:text-base">
-                                Don't let your research get lost in the noise. Join us today.
+                            <p className="max-w-xl text-sm text-gray-600 md:text-base dark:text-gray-400">
+                                Don't let your research get lost in the noise.
+                                Join us today.
                             </p>
 
-                            <div className="flex flex-col sm:flex-row items-center gap-3 mt-4">
+                            <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row">
                                 <Input
                                     type="email"
                                     placeholder="Enter your email"
-                                    className="sm:w-80 w-full"
+                                    className="w-full bg-white sm:w-80 dark:bg-transparent"
+                                    onChange={(e) => setEmail(e.target.value)}
                                 />
-                                <Button className="sm:px-6 px-4 py-2 w-full sm:w-auto bg-tint text-white hover:text-tint">
+                                <Button
+                                    onClick={handleRegisterRedirect}
+                                    className="w-full bg-tint px-4 py-2 text-white hover:text-tint sm:w-auto sm:px-6"
+                                >
                                     Get Early Access
                                 </Button>
                             </div>
 
-                            <p className="mt-2 text-gray-500 text-xs md:text-sm">
-                                Limited spots available for the Fall 2026 cohort.
+                            <p className="mt-2 text-xs text-gray-500 md:text-sm">
+                                Limited spots available for the Fall 2026
+                                cohort.
                             </p>
                         </div>
                     </main>
                 </div>
 
-                <footer className="relative z-10 w-full bg-[rgba(10,10,10,0.8)] backdrop-blur-md border-t border-[#2A2A2A]">
-                    <div className="mx-auto flex flex-col px-6 py-12 gap-12">
-
-                        <div className="flex flex-col md:flex-row justify-center gap-8">
-                            <div className="flex flex-col gap-4 w-140">
+                <footer className="relative z-10 border-t border-gray-200 backdrop-blur-md dark:border-[#2A2A2A] dark:bg-[rgba(10,10,10,0.8)]">
+                    <div className="mx-auto flex flex-col gap-12 px-6 py-12">
+                        <div className="flex flex-col justify-center gap-8 md:flex-row">
+                            <div className="flex w-140 flex-col gap-4">
                                 <div className="flex items-center gap-2">
                                     <AppLogo onWelcome={true} />
                                 </div>
 
-                                <p className="text-sm text-gray-400">
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
                                     Operating system for the modern mind
                                 </p>
 
-                                <div className="flex items-center gap-3 mt-2">
+                                <div className="mt-2 flex items-center gap-3">
                                     <Button
                                         variant="ghost"
                                         size="icon"
                                         asChild
-                                        className="p-0 w-8 h-8 rounded-full"
+                                        className="h-8 w-8 rounded-full p-0 text-gray-600 hover:bg-gray-100 dark:text-white dark:hover:bg-white/10"
                                     >
-                                        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
-                                            <Icons.twitter className="w-5 h-5 text-white" />
+                                        <a
+                                            href="https://twitter.com"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <Icons.twitter className="h-5 w-5" />
                                         </a>
                                     </Button>
 
@@ -498,10 +541,14 @@ export default function Welcome({
                                         variant="ghost"
                                         size="icon"
                                         asChild
-                                        className="p-0 w-8 h-8 rounded-full"
+                                        className="h-8 w-8 rounded-full p-0 text-gray-600 hover:bg-gray-100 dark:text-white dark:hover:bg-white/10"
                                     >
-                                        <a href="https://github.com" target="_blank" rel="noopener noreferrer">
-                                            <Icons.github className="w-5 h-5 text-white" />
+                                        <a
+                                            href="https://github.com"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <Icons.github className="h-5 w-5" />
                                         </a>
                                     </Button>
 
@@ -509,10 +556,14 @@ export default function Welcome({
                                         variant="ghost"
                                         size="icon"
                                         asChild
-                                        className="p-0 w-8 h-8 rounded-full"
+                                        className="h-8 w-8 rounded-full p-0 text-gray-600 hover:bg-gray-100 dark:text-white dark:hover:bg-white/10"
                                     >
-                                        <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
-                                            <Icons.linkedin className="w-5 h-5 text-white" />
+                                        <a
+                                            href="https://linkedin.com"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <Icons.linkedin className="h-5 w-5" />
                                         </a>
                                     </Button>
 
@@ -520,10 +571,14 @@ export default function Welcome({
                                         variant="ghost"
                                         size="icon"
                                         asChild
-                                        className="p-0 w-8 h-8 rounded-full"
+                                        className="h-8 w-8 rounded-full p-0 text-gray-600 hover:bg-gray-100 dark:text-white dark:hover:bg-white/10"
                                     >
-                                        <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
-                                            <Icons.facebook className="w-5 h-5 text-white" />
+                                        <a
+                                            href="https://facebook.com"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <Icons.facebook className="h-5 w-5" />
                                         </a>
                                     </Button>
                                 </div>
@@ -531,7 +586,7 @@ export default function Welcome({
 
                             <div className="flex flex-col gap-4 w-72">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-white font-bold text-lg">Product</span>
+                                    <span className="text-primary font-bold text-lg">Product</span>
                                 </div>
                                 <div className="flex flex-col gap-2 text-gray-400 text-sm">
                                     <span>Download</span>
@@ -542,7 +597,7 @@ export default function Welcome({
                             </div>
 
                             <div className="flex flex-col gap-4 w-72">
-                                <span className="text-white font-bold text-lg">Resources</span>
+                                <span className="text-primary font-bold text-lg">Resources</span>
                                 <div className="flex flex-col gap-2 text-gray-400 text-sm">
                                     <span>Documentation</span>
                                     <span>API Reference</span>
@@ -551,7 +606,7 @@ export default function Welcome({
                             </div>
 
                             <div className="flex flex-col gap-4 w-72">
-                                <span className="text-white font-bold text-lg">Legal</span>
+                                <span className="text-primary font-bold text-lg">Legal</span>
                                 <div className="flex flex-col gap-2 text-gray-400 text-sm">
                                     <span>Privacy Policy</span>
                                     <span>Terms of Service</span>
@@ -560,9 +615,9 @@ export default function Welcome({
                         </div>
 
                         <div className="flex flex-col md:flex-row justify-between items-center border-t border-[#2A2A2A] pt-8 gap-4">
-                            <span className="text-gray-500 text-sm">
-                                &copy; 2026 Your Company. All rights reserved.
-                            </span>
+                          <span className="text-gray-500 text-sm">
+                            &copy; 2026 Intellix. All rights reserved.
+                          </span>
 
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-green-500 rounded-full" />

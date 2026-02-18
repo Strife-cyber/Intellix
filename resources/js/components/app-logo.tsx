@@ -8,7 +8,7 @@ export default function AppLogo({ onWelcome = false }: Props) {
     return (
         <>
             <div
-                className={`flex aspect-square size-8 items-center justify-center rounded-md ${onWelcome ? 'bg-white dark:bg-black' : 'bg-sidebar-primary-foreground'} text-sidebar-primary-foreground`}
+                className={`flex aspect-square size-8 items-center justify-center rounded-md ${onWelcome ? 'bg-white dark:bg-black' : 'bg-sidebar-primary-background'} text-sidebar-primary-foreground`}
             >
                 <AppLogoIcon className="size-5 fill-current text-white dark:text-black" />
             </div>

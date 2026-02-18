@@ -1,4 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
+import { useState } from 'react';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,12 @@ import { login } from '@/routes';
 import { store } from '@/routes/register';
 
 export default function Register() {
+    const searchParams = new URLSearchParams(window.location.search);
+    const prefillEmail = searchParams.get('email') || '';
+
+    const [name, setName] = useState(prefillEmail.split('@')[0]);
+    const [email, setEmail] = useState(prefillEmail);
+
     return (
         <AuthLayout
             title="Create an account"
@@ -35,7 +42,9 @@ export default function Register() {
                                     tabIndex={1}
                                     autoComplete="name"
                                     name="name"
+                                    value={name}
                                     placeholder="Full name"
+                                    onChange={(e) => setName(e.target.value)}
                                 />
                                 <InputError
                                     message={errors.name}
@@ -53,6 +62,8 @@ export default function Register() {
                                     autoComplete="email"
                                     name="email"
                                     placeholder="email@example.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                 />
                                 <InputError message={errors.email} />
                             </div>
