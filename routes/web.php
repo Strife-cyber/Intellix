@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\FileController;
 use App\Http\Controllers\GithubController;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ResourceController;
@@ -36,6 +37,10 @@ Route::prefix('v1')->group(function () {
     Route::post('/resources/upload', [ResourceController::class, 'upload']);
     Route::get('/resources/{resource}/status', [ResourceController::class, 'status']);
 });
+
+Route::get('/files/preview/{path}', [FileController::class, 'preview'])
+    ->where('path', '(.*)')
+    ->middleware(['auth', 'verified']);
 
 Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('google.redirect');
 Route::get('/auth/google/callback', [GoogleController::class, 'callback']);
