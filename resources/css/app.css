@@ -38,6 +38,8 @@
     --color-accent: var(--accent);
     --color-accent-foreground: var(--accent-foreground);
 
+    --color-tint: oklch(0.53 0.29 301);
+
     --color-destructive: var(--destructive);
     --color-destructive-foreground: var(--destructive-foreground);
 
