@@ -10,11 +10,8 @@ use tiktoken_rs::cl100k_base;
 use qdrant_client::prelude::*;
 use qdrant_client::qdrant::{PointStruct, CreateCollectionBuilder, Distance, VectorParamsBuilder, UpsertPointsBuilder};
 use std::env;
-use rust_bert::pipelines::sentence_embeddings::{
-    SentenceEmbeddingsBuilder, SentenceEmbeddingsModelType,
-};
-use rust_bert::Device;
 use std::path::Path;
+use fastembed::{TextEmbedding, InitOptions, EmbeddingModel};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IngestResult {
@@ -75,7 +72,8 @@ pub async fn process_ingest(
         });
     }
 
-    // 4. Generate embeddings (Local using rust-bert)
+    // 4. Generate embeddings (Local using fastembed)
+    // fastembed is synchronous but fast, can run in spawn_blocking to avoid blocking async runtime
     let chunks_clone = chunks.clone();
     let embeddings = tokio::task::spawn_blocking(move || {
         generate_local_embeddings(&chunks_clone)
@@ -138,14 +136,16 @@ fn chunk_text(text: &str, size: usize, overlap: usize) -> Result<Vec<String>> {
     Ok(chunks)
 }
 
-fn generate_local_embeddings(chunks: &[String]) -> Result<Vec<Vec<f32>>> {
-    // Load the model
-    let model = SentenceEmbeddingsBuilder::remote(SentenceEmbeddingsModelType::AllMiniLmL12V2)
-        .with_device(Device::Cpu)
-        .create_model()?;
+use qdrant_client::Payload;
 
-    // model.encode returns Vec<Vec<f32>>
-    let embeddings = model.encode(chunks)?;
+fn generate_local_embeddings(chunks: &[String]) -> Result<Vec<Vec<f32>>> {
+    let mut options = InitOptions::new(EmbeddingModel::AllMiniLML6V2);
+    options.show_download_progress = true;
+
+    let mut model = TextEmbedding::try_new(options)?;
+
+    // embed takes generic iter of strings
+    let embeddings = model.embed(chunks.to_vec(), None)?;
     
     Ok(embeddings)
 }
@@ -158,15 +158,15 @@ async fn upsert_to_qdrant(
     let host = env::var("QDRANT_HOST").unwrap_or_else(|_| "http://localhost:6334".to_string());
     let api_key = env::var("QDRANT_API_KEY").ok();
     
-    let mut client_config = QdrantClientConfig::from_url(&host);
+    let mut config = qdrant_client::config::QdrantConfig::from_url(&host);
     if let Some(key) = api_key {
-        client_config.api_key = Some(key);
+        config.api_key = Some(key);
     }
     
-    let client = QdrantClient::new(Some(client_config))?;
+    let client = qdrant_client::Qdrant::new(config)?;
     let collection_name = "resources";
 
-    // AllMiniLmL12V2 produces 384 dimensional vectors
+    // AllMiniLmL6V2 produces 384 dimensional vectors
     let vector_size = embeddings.first().map(|v| v.len() as u64).unwrap_or(384);
 
     // Ensure collection exists
@@ -174,17 +174,25 @@ async fn upsert_to_qdrant(
         client.create_collection(
             CreateCollectionBuilder::new(collection_name)
                 .vectors_config(VectorParamsBuilder::new(vector_size, Distance::Cosine))
+                .build()
         ).await?;
     }
 
     let mut points = Vec::new();
     for (i, (chunk, embedding)) in chunks.iter().zip(embeddings.iter()).enumerate() {
-        let payload: Payload = serde_json::json!({
+        let payload_json = serde_json::json!({
             "resource_id": resource_id,
             "chunk_index": i,
             "content_preview": &chunk[..std::cmp::min(chunk.len(), 500)],
             "full_content": chunk,
-        }).into();
+        });
+
+        // Convert serde Value to Payload
+        let payload = if let serde_json::Value::Object(map) = payload_json {
+            Payload::from(map)
+        } else {
+            Payload::default()
+        };
 
         points.push(PointStruct::new(
             uuid::Uuid::new_v4().to_string(),
@@ -196,7 +204,7 @@ async fn upsert_to_qdrant(
     // Batch upsert
     for batch in points.chunks(50) {
         client.upsert_points(
-            UpsertPointsBuilder::new(collection_name, batch.to_vec())
+            UpsertPointsBuilder::new(collection_name, batch.to_vec()).build()
         ).await?;
     }
 

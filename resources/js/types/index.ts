@@ -21,4 +21,5 @@ export type Resource = {
     pivot: {
         role: string;
     };
+    s3_key: string;
 }

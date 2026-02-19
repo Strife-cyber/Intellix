@@ -1,0 +1,101 @@
+﻿cargo :     Checking intellix v0.1.0 (C:\Users\dunam\Desktop\Projects\Personal\Laravel\intellix)
+At line:1 char:1
++ cargo check 2>&1 | Out-File -Encoding UTF8 check_log.txt
++ ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (    Checking in...ravel\intellix):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+error[E0252]: the name `TextEmbedding` is defined multiple times
+   --> src\ingest.rs:139:17
+    |
+ 14 | use fastembed::{TextEmbedding, InitOptions, EmbeddingModel};
+    |                 ------------- previous import of the type `TextEmbedding` here
+...
+139 | use fastembed::{TextEmbedding, InitOptions, EmbeddingModel};
+    |                 ^^^^^^^^^^^^^--
+    |                 |
+    |                 `TextEmbedding` reimported here
+    |                 help: remove unnecessary import
+    |
+    = note: `TextEmbedding` must be defined only once in the type namespace of this module
+
+error[E0252]: the name `InitOptions` is defined multiple times
+   --> src\ingest.rs:139:32
+    |
+ 14 | use fastembed::{TextEmbedding, InitOptions, EmbeddingModel};
+    |                                ----------- previous import of the type `InitOptions` here
+...
+139 | use fastembed::{TextEmbedding, InitOptions, EmbeddingModel};
+    |                                ^^^^^^^^^^^--
+    |                                |
+    |                                `InitOptions` reimported here
+    |                                help: remove unnecessary import
+    |
+    = note: `InitOptions` must be defined only once in the type namespace of this module
+
+error[E0252]: the name `EmbeddingModel` is defined multiple times
+   --> src\ingest.rs:139:45
+    |
+ 14 | use fastembed::{TextEmbedding, InitOptions, EmbeddingModel};
+    |                                             -------------- previous import of the type `EmbeddingModel` here
+...
+139 | use fastembed::{TextEmbedding, InitOptions, EmbeddingModel};
+    |                                             ^^^^^^^^^^^^^^ `EmbeddingModel` reimported here
+    |
+    = note: `EmbeddingModel` must be defined only once in the type namespace of this module
+
+warning: unused import: `qdrant_client::prelude::*`
+  --> src\ingest.rs:10:5
+   |
+10 | use qdrant_client::prelude::*;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `EmbeddingModel`, `InitOptions`, and `TextEmbedding`
+   --> src\ingest.rs:139:17
+    |
+139 | use fastembed::{TextEmbedding, InitOptions, EmbeddingModel};
+    |                 ^^^^^^^^^^^^^  ^^^^^^^^^^^  ^^^^^^^^^^^^^^
+
+warning: use of deprecated module `qdrant_client::prelude`: use types directly
+  --> src\ingest.rs:10:20
+   |
+10 | use qdrant_client::prelude::*;
+   |                    ^^^^^^^
+   |
+   = note: `#[warn(deprecated)]` on by default
+
+warning: variable does not need to be mutable
+  --> src\ingest.rs:31:9
+   |
+31 |     let mut errors = Vec::new();
+   |         ----^^^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+  --> src\ingest.rs:99:9
+   |
+99 |     let mut response = client.get(url).send().await?.error_for_status()?;
+   |         ----^^^^^^^^
+   |         |
+   |         help: remove this `mut`
+
+error[E0596]: cannot borrow `model` as mutable, as it is not declared as mutable
+   --> src\ingest.rs:149:22
+    |
+149 |     let embeddings = model.embed(chunks.to_vec(), None)?;
+    |                      ^^^^^ cannot borrow as mutable
+    |
+help: consider changing this to be mutable
+    |
+146 |     let mut model = TextEmbedding::try_new(options)?;
+    |         +++
+
+Some errors have detailed explanations: E0252, E0596.
+For more information about an error, try `rustc --explain E0252`.
+warning: `intellix` (bin "intellix") generated 5 warnings
+error: could not compile `intellix` (bin "intellix") due to 4 previous errors; 5 warnings emitted
