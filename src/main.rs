@@ -7,10 +7,12 @@ mod extractors;
 mod scraper;
 mod fsrs;
 mod log;
+mod ingest;
 
 use clap::{Parser, Subcommand};
 use extractors::extract_file;
 use fsrs::{process_batch, process_review, BatchInput, ReviewInput};
+use ingest::process_ingest;
 use log::{log_and_exit, LogEntry};
 use std::io::{self, Read};
 use std::path::PathBuf;
@@ -43,9 +45,25 @@ enum Command {
         #[arg(short, long)]
         file: Option<PathBuf>,
     },
+    /// Ingest a file from a URL, extract text, chunk, embed, and upsert to Qdrant
+    Ingest {
+        /// Signed URL to the document
+        #[arg(required = true)]
+        url: String,
+        /// Resource ID for the document
+        #[arg(required = true)]
+        resource_id: String,
+        /// Optional chunk size (default: 1000)
+        #[arg(long, default_value = "1000")]
+        chunk_size: usize,
+        /// Optional token overlap (default: 200)
+        #[arg(long, default_value = "200")]
+        token_overlap: usize,
+    },
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = Args::parse();
 
     match &args.command {
@@ -212,6 +230,27 @@ fn main() {
                         .with_code(45),
                     45
                 );
+            }
+        }
+        Command::Ingest { url, resource_id, chunk_size, token_overlap } => {
+            match process_ingest(url.clone(), resource_id.clone(), *chunk_size, *token_overlap).await {
+                Ok(result) => {
+                    if let Ok(out) = serde_json::to_string(&result) {
+                        println!("{}", out);
+                    }
+                }
+                Err(e) => {
+                    let mut context = std::collections::HashMap::new();
+                    context.insert("resource_id".to_string(), serde_json::Value::String(resource_id.clone()));
+                    
+                    log_and_exit(
+                        LogEntry::error(format!("Ingestion failed: {}", e))
+                            .with_command("ingest")
+                            .with_context(context)
+                            .with_code(50),
+                        50
+                    );
+                }
             }
         }
     }

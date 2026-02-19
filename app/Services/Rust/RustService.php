@@ -4,6 +4,7 @@ namespace App\Services\Rust;
 
 use App\Services\Rust\Commands\ExtractCommand;
 use App\Services\Rust\Commands\FsrsCommand;
+use App\Services\Rust\Commands\IngestCommand;
 use App\Services\Rust\Commands\ScrapeCommand;
 use App\Services\RustBinaryExecutor;
 use InvalidArgumentException;
@@ -258,6 +259,13 @@ class RustService
     public function scrape(string $url, array $context = []): array
     {
         $command = new ScrapeCommand($url);
+
+        return $this->execute($command, $context);
+    }
+
+    public function ingest(string $url, string $resourceId, array $options = [], array $context = []): array
+    {
+        $command = new IngestCommand($url, $resourceId, $options);
 
         return $this->execute($command, $context);
     }

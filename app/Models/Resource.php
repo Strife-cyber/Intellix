@@ -23,10 +23,12 @@ class Resource extends Model
         'size_bytes',
         's3_key',
         'status',
+        'metadata',
     ];
 
     protected $casts = [
         'status' => ResourceStatus::class,
+        'metadata' => 'array',
     ];
 
     public function users(): BelongsToMany
