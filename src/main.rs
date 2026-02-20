@@ -8,7 +8,7 @@ use dotenvy::dotenv;
 use clap::{Parser, Subcommand};
 use extractors::extract_file;
 use fsrs::{process_batch, process_review, BatchInput, ReviewInput};
-use ingest::{process_ingest};
+
 use log::{log_and_exit, LogEntry};
 use std::io::{self, Read};
 use std::path::PathBuf;
@@ -44,6 +44,10 @@ enum Command {
         chunk_size: usize,
         #[arg(long, default_value = "200")]
         token_overlap: usize,
+    },
+    Embed {
+        #[arg(long)]
+        text: String,
     }
 }
 
@@ -179,7 +183,7 @@ async fn main() {
         }
 
         Command::Ingest { url, resource_id, chunk_size, token_overlap } => {
-            match process_ingest(url, resource_id.clone(), chunk_size, token_overlap).await {
+            match ingest::process_ingest(url, resource_id.clone(), chunk_size, token_overlap).await {
                 Ok(result) => {
                     println!("{}", serde_json::to_string(&result).unwrap());
                 }
@@ -193,6 +197,21 @@ async fn main() {
                             .with_context(context)
                             .with_code(50),
                         50,
+                    );
+                }
+            }
+        }
+        Command::Embed { text } => {
+            match ingest::process_embed(text).await {
+                Ok(result) => {
+                    println!("{}", serde_json::to_string(&result).unwrap());
+                }
+                Err(e) => {
+                    log_and_exit(
+                        LogEntry::error(format!("Embedding failed: {}", e))
+                            .with_command("embed")
+                            .with_code(60),
+                        60,
                     );
                 }
             }

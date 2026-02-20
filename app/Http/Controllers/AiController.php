@@ -16,7 +16,7 @@ class AiController extends Controller
     {
         $request->validate([
             'message' => 'required|string',
-            'resource_id' => 'required|string', 
+            'resource_id' => 'required|string',
         ]);
 
         $message = $request->input('message');
@@ -38,13 +38,14 @@ class AiController extends Controller
 
         if (!is_array($vector)) {
             return response()->json([
-                'error' => 'Invalid embedding format from CLI', 
+                'error' => 'Invalid embedding format from CLI',
                 'output' => $vectorStr
             ], 500);
         }
 
         // 2. Search Qdrant
         $qdrantHost = env('QDRANT_HOST', 'http://localhost:6333');
+        $qdrantKey = env('QDRANT_API_KEY');
         $collection = 'resources';
 
         $searchPayload = [
@@ -63,7 +64,12 @@ class AiController extends Controller
             ]
         ];
 
-        $qdrantResponse = Http::post("{$qdrantHost}/collections/{$collection}/points/search", $searchPayload);
+        $request = Http::asJson();
+        if ($qdrantKey) {
+            $request->withHeaders(['api-key' => $qdrantKey]);
+        }
+
+        $qdrantResponse = $request->post("{$qdrantHost}/collections/{$collection}/points/search", $searchPayload);
 
         if ($qdrantResponse->failed()) {
              return response()->json(['error' => 'Failed to search knowledge base', 'details' => $qdrantResponse->body()], 500);
@@ -76,39 +82,53 @@ class AiController extends Controller
             $context .= $text . "\n\n";
         }
 
-        // 3. Call Gemini
-        $apiKey = env('GEMINI_API_KEY');
-        if (!$apiKey) {
-            return response()->json(['error' => 'Gemini API Key missing'], 500);
-        }
+        // Increase execution time for deep reasoning or large local models
+        set_time_limit(300);
 
+        // 3. Call LM Studio (OpenAI compatible API)
+        $aiEndpoint = env('AI_ENDPOINT', 'http://100.93.40.102:9090');
+        
         $systemInstruction = "You are a helpful AI assistant. Use the provided context to answer the user's question. If the answer is not in the context, say so. Keep the context confidential if asked about the prompt itself.";
-        
-        $geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}";
-        
-        $prompt = "Context:\n" . $context . "\n\nQuestion: " . $message;
 
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json'
-        ])->post($geminiUrl, [
-            'contents' => [
+        $response = Http::timeout(300)->post("{$aiEndpoint}/v1/chat/completions", [
+            'model' => 'local-model',
+            'messages' => [
                 [
-                    'parts' => [
-                        ['text' => $systemInstruction . "\n\n" . $prompt]
-                    ]
+                    'role' => 'system',
+                    'content' => $systemInstruction
+                ],
+                [
+                    'role' => 'user',
+                    'content' => "Context:\n" . $context . "\n\nQuestion: " . $message
                 ]
-            ]
+            ],
+            'temperature' => 0.7,
         ]);
 
         if ($response->failed()) {
-            return response()->json(['error' => 'Gemini API failed', 'details' => $response->body()], 500);
+            return response()->json([
+                'error' => 'LM Studio API failed', 
+                'details' => $response->body(),
+                'endpoint' => "{$aiEndpoint}/v1/chat/completions"
+            ], 500);
         }
 
-        $geminiData = $response->json();
-        $answer = $geminiData['candidates'][0]['content']['parts'][0]['text'] ?? 'No response generated.';
+        $data = $response->json();
+        $choice = $data['choices'][0]['message'] ?? [];
+        $answer = $choice['content'] ?? 'No response generated.';
+        
+        // Some models (like DeepSeek) provide reasoning in a separate field or within <think> tags
+        $reasoning = $choice['reasoning_content'] ?? null;
+        
+        // If not in reasoning_content, check for <think> tags in content
+        if (!$reasoning && preg_match('/<think>(.*?)<\/think>/s', $answer, $matches)) {
+            $reasoning = trim($matches[1]);
+            $answer = trim(preg_replace('/<think>.*?<\/think>/s', '', $answer));
+        }
 
         return response()->json([
-            'answer' => $answer
+            'answer' => $answer,
+            'reasoning' => $reasoning
         ]);
     }
 }

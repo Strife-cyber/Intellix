@@ -31,13 +31,29 @@ static HTTP_CLIENT: Lazy<Client> = Lazy::new(|| {
         .unwrap()
 });
 
-static EMBEDDING_MODEL: Lazy<Arc<Mutex<TextEmbedding>>> = Lazy::new(|| {
+static EMBEDDING_MODEL: Lazy<Result<Arc<Mutex<TextEmbedding>>, String>> = Lazy::new(|| {
+    // Resolve a shared cache directory so every user/process reuses the same
+    // downloaded model files and never needs to contact HuggingFace again.
+    // Priority: FASTEMBED_CACHE_DIR env var → <binary dir>/model_cache
+    let cache_dir = env::var("FASTEMBED_CACHE_DIR")
+        .ok()
+        .map(std::path::PathBuf::from)
+        .or_else(|| {
+            std::env::current_exe()
+                .ok()
+                .and_then(|p| p.parent().map(|d| d.join("model_cache")))
+        })
+        .unwrap_or_else(|| std::path::PathBuf::from("model_cache"));
+
+    std::fs::create_dir_all(&cache_dir).ok();
+
     let mut options = InitOptions::new(EmbeddingModel::AllMiniLML6V2);
+    options.cache_dir = cache_dir;
     options.show_download_progress = false;
 
-    Arc::new(Mutex::new(
-        TextEmbedding::try_new(options).unwrap()
-    ))
+    TextEmbedding::try_new(options)
+        .map(|m| Arc::new(Mutex::new(m)))
+        .map_err(|e| e.to_string())
 });
 
 async fn qdrant_request(
@@ -120,6 +136,15 @@ pub async fn process_ingest(
     })
 }
 
+pub async fn process_embed(text: String) -> Result<Vec<f32>> {
+    let embeddings = embed_chunks(vec![text]).await?;
+    if let Some(embedding) = embeddings.into_iter().next() {
+        Ok(embedding)
+    } else {
+        Err(anyhow!("Failed to generate embedding"))
+    }
+}
+
 async fn download_file(url: &str) -> Result<tempfile::NamedTempFile> {
     let response = HTTP_CLIENT
         .get(url)
@@ -200,10 +225,20 @@ fn chunk_text(text: &str, size: usize, overlap: usize) -> Result<Vec<String>> {
 
 async fn embed_chunks(chunks: Vec<String>) -> Result<Vec<Vec<f32>>> {
     tokio::task::spawn_blocking(move || {
-        let mut model = EMBEDDING_MODEL.lock().unwrap();
-        model.embed(chunks, None).map_err(|e| anyhow!(e))
+        match &*EMBEDDING_MODEL {
+            Ok(model) => {
+                let mut m = model.lock().map_err(|e| anyhow!("Model lock poisoned: {}", e))?;
+                m.embed(chunks, None).map_err(|e| anyhow!(e))
+            }
+            Err(e) => Err(anyhow!(
+                "Embedding model failed to initialise: {}. \
+                 Ensure the model files exist in the cache directory \
+                 (set FASTEMBED_CACHE_DIR in .env).",
+                e
+            )),
+        }
     })
-        .await?
+    .await?
 }
 
 async fn ensure_collection_exists() -> Result<()> {
