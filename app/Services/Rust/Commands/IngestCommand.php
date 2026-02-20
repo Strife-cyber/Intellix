@@ -5,6 +5,13 @@ namespace App\Services\Rust\Commands;
 use App\Services\Rust\RustCommandInterface;
 use InvalidArgumentException;
 
+/**
+ * Command for ingesting a resource into the vector store.
+ *
+ * Usage:
+ * $command = new IngestCommand($signedUrl, $resourceId, ['chunk_size' => 1000]);
+ * $result = $rust->execute($command);
+ */
 class IngestCommand implements RustCommandInterface
 {
     public function __construct(
@@ -12,6 +19,28 @@ class IngestCommand implements RustCommandInterface
         protected string $resourceId,
         protected array $options = []
     ) {
+    }
+
+    public function getCommand(): string
+    {
+        return 'ingest';
+    }
+
+    public function getArguments(): array
+    {
+        $args = [$this->url, $this->resourceId];
+
+        if (isset($this->options['chunk_size'])) {
+            $args[] = '--chunk-size';
+            $args[] = (string) $this->options['chunk_size'];
+        }
+
+        if (isset($this->options['token_overlap'])) {
+            $args[] = '--token-overlap';
+            $args[] = (string) $this->options['token_overlap'];
+        }
+
+        return $args;
     }
 
     public function validate(): void
@@ -27,18 +56,6 @@ class IngestCommand implements RustCommandInterface
 
     public function toCommandArray(string $binaryPath): array
     {
-        $command = [$binaryPath, 'ingest', $this->url, $this->resourceId];
-
-        if (isset($this->options['chunk_size'])) {
-            $command[] = '--chunk-size';
-            $command[] = (string) $this->options['chunk_size'];
-        }
-
-        if (isset($this->options['token_overlap'])) {
-            $command[] = '--token-overlap';
-            $command[] = (string) $this->options['token_overlap'];
-        }
-
-        return $command;
+        return array_merge([$binaryPath, $this->getCommand()], $this->getArguments());
     }
 }

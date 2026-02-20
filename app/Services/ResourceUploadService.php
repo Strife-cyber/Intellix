@@ -33,7 +33,7 @@ class ResourceUploadService
             'status' => ResourceStatus::PROCESSING->value,
         ]);
 
-        ProcessResourceJob::dispatch($resource);
+        ProcessResourceJob::dispatch($resource->id);
 
         return $resource;
     }

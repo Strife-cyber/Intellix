@@ -62,7 +62,7 @@ class ProcessResourceJob implements ShouldQueue
 
             if ($result['success']) {
                 $stdout = json_decode($result['stdout'], true);
-                
+
                 if (isset($stdout['success']) && $stdout['success']) {
                     $resource->update([
                         'status' => ResourceStatus::READY,
@@ -72,19 +72,44 @@ class ProcessResourceJob implements ShouldQueue
                             'processed_at' => now()->toDateTimeString(),
                         ]),
                     ]);
-                    
+
                     Log::info("Resource {$resource->id} processed successfully.", $stdout);
                 } else {
-                    throw new \Exception($stdout['error'] ?? 'Rust ingestion failed without specific error.');
+                    $error = $stdout['error'] ?? 'Rust ingestion returned success=false without a specific error.';
+                    throw new \Exception($error);
                 }
             } else {
-                throw new \Exception($result['error'] ?? 'Rust process execution failed.');
+                // Build a detailed error message that includes stderr so the failure is debuggable
+                $stderr = trim($result['stderr'] ?? '');
+                $error  = $result['error'] ?? 'Rust process exited with a non-zero code.';
+
+                // Try to parse the JSON error log from stderr
+                $stderrLines = array_filter(array_map('trim', explode("\n", $stderr)));
+                $stderrDetail = '';
+                foreach ($stderrLines as $line) {
+                    $decoded = json_decode($line, true);
+                    if (is_array($decoded) && isset($decoded['message'])) {
+                        $stderrDetail = $decoded['message'];
+                        break;
+                    }
+                }
+
+                $fullError = $stderrDetail ?: ($stderr ?: $error);
+
+                Log::error("Resource {$resource->id} – Rust process failed", [
+                    'exit_code' => $result['exit_code'] ?? null,
+                    'stderr'    => $stderr,
+                    'stdout'    => $result['stdout'] ?? '',
+                    'error'     => $error,
+                ]);
+
+                throw new \Exception("Rust ingest failed (exit {$result['exit_code']}): {$fullError}");
             }
         } catch (Throwable $e) {
             Log::error("Failed to process resource {$resource->id}: " . $e->getMessage());
-            
+
             $resource->update(['status' => ResourceStatus::FAILED]);
-            
+
             throw $e;
         }
     }

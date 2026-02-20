@@ -128,7 +128,11 @@ async fn download_file(url: &str) -> Result<tempfile::NamedTempFile> {
         .await?
         .error_for_status()?;
 
-    let extension = Path::new(url)
+    // Strip the query string (e.g. S3 presigned params like ?X-Amz-...) before
+    // extracting the extension, otherwise the entire query string ends up as
+    // the temp file suffix — which is illegal on Windows (os error 123).
+    let url_path = url.split('?').next().unwrap_or(url);
+    let extension = Path::new(url_path)
         .extension()
         .and_then(|e| e.to_str())
         .unwrap_or("tmp");
