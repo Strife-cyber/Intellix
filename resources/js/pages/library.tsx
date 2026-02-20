@@ -16,6 +16,14 @@ import {
     MessageSquare,
     ChevronRight,
     Search,
+    ChevronLeft,
+    Settings,
+    X,
+    UserPlus,
+    MoreVertical,
+    Shield,
+    Trash,
+    Edit2,
 } from 'lucide-react';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -28,6 +36,7 @@ import {
     CardContent,
     CardHeader,
     CardTitle,
+    CardFooter,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -38,11 +47,33 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { db, type ChatMessage } from '@/lib/db';
 import { cn } from '@/lib/utils';
 import { library } from '@/routes';
 import type { BreadcrumbItem, Resource } from '@/types';
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -51,12 +82,141 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+/* ═════════════════════════════════════════════════════════════════════════
+   Access Management Component
+ ═══════════════════════════════════════════════════════════════════════════ */
+function AccessManagement({ resource }: { resource: Resource }) {
+    const [users, setUsers] = useState<any[]>([]);
+    const [email, setEmail] = useState('');
+    const [role, setRole] = useState('viewer');
+    const [loading, setLoading] = useState(false);
+
+    const fetchAccess = async () => {
+        try {
+            const res = await window.axios.get(`/resources/${resource.id}/access`);
+            setUsers(res.data.data);
+        } catch (err) {
+            console.error('Failed to fetch access:', err);
+        }
+    };
+
+    const handleInvite = async () => {
+        if (!email) return;
+        setLoading(true);
+        try {
+            await window.axios.post(`/resources/${resource.id}/access`, { email, role });
+            toast.success(`Access granted to ${email}`);
+            setEmail('');
+            fetchAccess();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to grant access');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRemove = async (userId: number) => {
+        try {
+            await window.axios.delete(`/resources/${resource.id}/access/${userId}`);
+            toast.success('Access revoked');
+            fetchAccess();
+        } catch (err) {
+            toast.error('Failed to revoke access');
+        }
+    };
+
+    const handleUpdateRole = async (userId: number, newRole: string) => {
+        try {
+            await window.axios.put(`/resources/${resource.id}/access/${userId}`, { role: newRole });
+            toast.success('Role updated');
+            fetchAccess();
+        } catch (err) {
+            toast.error('Failed to update role');
+        }
+    };
+
+    useEffect(() => {
+        fetchAccess();
+    }, [resource.id]);
+
+    return (
+        <div className="space-y-6 py-4">
+            <div className="space-y-4">
+                <h4 className="text-sm font-semibold">Share with others</h4>
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <UserPlus className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            placeholder="user@example.com"
+                            className="pl-9"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                    </div>
+                    <Select value={role} onValueChange={setRole}>
+                        <SelectTrigger className="w-[120px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="viewer">Viewer</SelectItem>
+                            <SelectItem value="editor">Editor</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Button onClick={handleInvite} disabled={loading}>
+                        {loading ? 'Adding...' : 'Add'}
+                    </Button>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                <h4 className="text-sm font-semibold">People with access</h4>
+                <div className="space-y-3">
+                    {users.map((u) => (
+                        <div key={u.id} className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 p-3">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold">
+                                    {u.name.substring(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                    <p className="text-xs font-semibold">{u.name} {u.role === 'owner' && <Badge className="ml-1 text-[8px] h-3 px-1">Owner</Badge>}</p>
+                                    <p className="text-[10px] text-muted-foreground">{u.email}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {u.role !== 'owner' && (
+                                    <>
+                                        <Select value={u.role} onValueChange={(val) => handleUpdateRole(u.id, val)}>
+                                            <SelectTrigger className="h-7 w-[90px] text-[10px]">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="viewer">Viewer</SelectItem>
+                                                <SelectItem value="editor">Editor</SelectItem>
+                                                <SelectItem value="admin">Admin</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleRemove(u.id)}>
+                                            <X className="h-3 w-3" />
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function Library({ resources }: { resources: Resource[] }) {
     const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [selectedResources, setSelectedResources] = useState<Resource[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isChatMinimized, setIsChatMinimized] = useState(true);
 
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -88,11 +248,10 @@ export default function Library({ resources }: { resources: Resource[] }) {
         }
     }, [messages, isTyping]);
 
-    // Preview state
-    const [previewResource, setPreviewResource] = useState<Resource | null>(
-        null,
-    );
+    // Management state
+    const [manageResource, setManageResource] = useState<Resource | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState('preview');
 
     const filteredResources = useMemo(() => {
         if (!searchQuery) return resources;
@@ -122,25 +281,37 @@ export default function Library({ resources }: { resources: Resource[] }) {
         return <File className="h-5 w-5" />;
     };
 
-    const handlePreview = async (resource: Resource) => {
-        setPreviewResource(resource);
-        setPreviewUrl(null);
-        try {
-            const response = await fetch(`/files/preview/${resource.s3_key}`);
-            if (!response.ok) {
-                console.error('Failed to fetch preview URL:', response.statusText);
-                return;
+    const handleManage = async (resource: Resource, tab: string = 'preview') => {
+        setManageResource(resource);
+        setActiveTab(tab);
+        if (tab === 'preview') {
+            setPreviewUrl(null);
+            try {
+                const response = await window.axios.get(`/files/preview/${resource.s3_key}`);
+                setPreviewUrl(response.data.url);
+            } catch (error) {
+                console.error('Error fetching preview URL:', error);
             }
-            const data = await response.json();
-            setPreviewUrl(data.url);
-        } catch (error) {
-            console.error('Error fetching preview URL:', error);
         }
     };
 
-    const closePreview = () => {
-        setPreviewResource(null);
+    const closeManage = () => {
+        setManageResource(null);
         setPreviewUrl(null);
+    };
+
+    const handleResourceDelete = async (resourceId: string) => {
+        if (!confirm('Are you sure you want to delete this resource? This cannot be undone.')) return;
+        try {
+            await window.axios.delete(`/resources/${resourceId}`);
+            toast.success('Resource deleted successfully');
+            closeManage();
+            // Refresh page to update resources list
+            window.location.reload();
+        } catch (error) {
+            toast.error('Failed to delete resource');
+            console.error('Delete error:', error);
+        }
     };
 
     const startSessionForResource = async (resource: Resource) => {
@@ -159,6 +330,7 @@ export default function Library({ resources }: { resources: Resource[] }) {
             });
             setActiveSessionId(newId as number);
         }
+        setIsChatMinimized(false);
     };
 
     const toggleContext = (e: React.MouseEvent, resource: Resource) => {
@@ -279,7 +451,7 @@ export default function Library({ resources }: { resources: Resource[] }) {
                 </h2>
             </div>
 
-            <ScrollArea className="flex-1 overflow-hidden rounded-2xl border bg-card/30 shadow-inner backdrop-blur-sm">
+            <ScrollArea className="flex-1 h-full overflow-hidden rounded-2xl border bg-card/30 shadow-inner backdrop-blur-sm">
                 <div className="flex flex-col gap-1 p-2">
                     {sessions.length === 0 ? (
                         <div className="p-8 text-center">
@@ -298,6 +470,7 @@ export default function Library({ resources }: { resources: Resource[] }) {
                                         (r) => r.id.toString() === s.resourceId,
                                     );
                                     if (res) setSelectedResources([res]);
+                                    setIsChatMinimized(false);
                                 }}
                                 className={cn(
                                     'group relative w-full rounded-xl border border-transparent p-3 text-left transition-all',
@@ -336,405 +509,353 @@ export default function Library({ resources }: { resources: Resource[] }) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Intellix AI - Workspace" />
 
-            <div className="relative flex h-[calc(100vh-160px)] flex-col p-4">
-                {/* Global History Trigger - Top Left */}
-                <div className="absolute top-0 left-0 z-40">
-                    <Sheet>
-                        <SheetTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="group h-10 w-10 rounded-xl border border-white/10 bg-background/50 shadow-sm backdrop-blur transition-all hover:scale-105 active:scale-95"
-                            >
-                                <History className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent
-                            side="right"
-                            className="flex w-[300px] flex-col border-l border-white/10 bg-background/95 p-6 backdrop-blur-xl"
-                        >
-                            <SheetHeader className="mb-6 flex-shrink-0">
-                                <SheetTitle className="flex items-center gap-2 text-xs font-bold tracking-[0.2em] uppercase">
-                                    <Sparkles className="h-3.5 w-3.5 text-primary" />{' '}
-                                    Archives
-                                </SheetTitle>
-                            </SheetHeader>
-                            <div className="flex-1 overflow-hidden">
-                                <HistoryList />
-                            </div>
-                        </SheetContent>
-                    </Sheet>
-                </div>
+            <div className="relative flex h-[calc(100vh-160px)] flex-row gap-6 p-6">
 
-                <div className="grid h-full grid-cols-1 gap-6 pt-12 lg:grid-cols-[300px_1fr] lg:pt-0">
-                    {/* LEFT PANEL — RESOURCE GRID (Shifted to Left) */}
-                    <div className="flex h-full flex-col gap-4 overflow-hidden">
-                        <div className="group relative flex-shrink-0">
-                            <Search className="absolute top-1/2 left-3.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
-                            <Input
-                                placeholder="Search library..."
-                                className="h-10 rounded-xl border-white/10 bg-background/40 pl-10 backdrop-blur-sm focus:ring-primary/20"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
+                {/* ── Main Library Content ────────────────────────────────── */}
+                <div className="flex flex-1 flex-col gap-6 overflow-hidden min-h-0">
+                    <div className="flex flex-row items-center justify-between">
+                        <div className="space-y-1">
+                            <h2 className="text-2xl font-bold tracking-tight">Resource Library</h2>
+                            <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium opacity-60">
+                                Managed multi-tenant storage
+                            </p>
                         </div>
 
-                        <ScrollArea className="flex-1 pr-2">
-                            <div className="grid grid-cols-1 gap-3">
-                                {filteredResources.map((resource) => {
-                                    const isSelected = selectedResources.some(
-                                        (r) => r.id === resource.id,
-                                    );
-                                    return (
-                                        <Card
-                                            key={resource.id}
-                                            className={cn(
-                                                'group relative cursor-pointer overflow-hidden border-2 transition-all duration-300',
-                                                'hover:-translate-y-0.5 hover:shadow-lg',
-                                                isSelected
-                                                    ? 'border-primary/40 bg-primary/5 shadow-[0_0_20px_rgba(var(--primary),0.05)]'
-                                                    : 'border-white/5 bg-card/30 backdrop-blur-md',
-                                            )}
-                                        >
-                                            <div
-                                                className="flex items-center gap-3 p-3"
-                                                onClick={() =>
-                                                    handlePreview(resource)
-                                                }
-                                            >
-                                                <div
-                                                    className={cn(
-                                                        'flex flex-shrink-0 items-center justify-center rounded-xl p-2.5 transition-all group-hover:rotate-6',
-                                                        getFileColor(
-                                                            resource.mime_type,
-                                                        ),
-                                                    )}
-                                                >
-                                                    {getFileIcon(
-                                                        resource.mime_type,
-                                                    )}
-                                                </div>
-
-                                                <div className="flex min-w-0 flex-1 flex-col">
-                                                    <span className="mb-1 truncate text-xs leading-none font-bold transition-colors group-hover:text-primary">
-                                                        {resource.original_name}
-                                                    </span>
-                                                    <span className="text-[9px] font-medium text-muted-foreground uppercase opacity-60">
-                                                        {formatBytes(
-                                                            resource.size_bytes,
-                                                        )}
-                                                    </span>
-                                                </div>
-
-                                                <Button
-                                                    size="icon"
-                                                    variant={
-                                                        isSelected
-                                                            ? 'default'
-                                                            : 'ghost'
-                                                    }
-                                                    className={cn(
-                                                        'h-7 w-7 flex-shrink-0 rounded-lg transition-all',
-                                                        !isSelected &&
-                                                        'opacity-0 group-hover:opacity-100',
-                                                    )}
-                                                    onClick={(e) =>
-                                                        toggleContext(
-                                                            e,
-                                                            resource,
-                                                        )
-                                                    }
-                                                >
-                                                    {isSelected ? (
-                                                        <Check className="h-3.5 w-3.5" />
-                                                    ) : (
-                                                        <MessageSquare className="h-3.5 w-3.5" />
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        </Card>
-                                    );
-                                })}
+                        <div className="flex items-center gap-3">
+                            <div className="group relative w-64">
+                                <Search className="absolute top-1/2 left-3.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                                <Input
+                                    placeholder="Search library..."
+                                    className="h-10 rounded-xl border-white/10 bg-background/40 pl-10 backdrop-blur-sm focus:ring-primary/20"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
                             </div>
-                        </ScrollArea>
+
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-10 w-10 rounded-xl border-white/10 bg-background/50"
+                                    >
+                                        <History className="h-4 w-4" />
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent className="w-[300px]">
+                                    <SheetHeader className="mb-6">
+                                        <SheetTitle className="text-xs font-bold tracking-[0.2em] uppercase">Session Archives</SheetTitle>
+                                    </SheetHeader>
+                                    <HistoryList />
+                                </SheetContent>
+                            </Sheet>
+
+                            {isChatMinimized && (
+                                <Button
+                                    onClick={() => setIsChatMinimized(false)}
+                                    className="h-10 gap-2 rounded-xl bg-primary shadow-lg shadow-primary/20"
+                                >
+                                    <Bot className="h-4 w-4" />
+                                    <span>AI Assistant</span>
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
-                    {/* RIGHT PANEL — AI CHAT (Takes remaining space) */}
-                    <div className="flex h-full min-w-0 flex-col">
-                        <Card className="relative flex h-full flex-col overflow-hidden rounded-3xl border-white/10 bg-gradient-to-b from-background/80 to-background/40 shadow-2xl backdrop-blur-xl">
-                            <div className="pointer-events-none absolute inset-0 bg-primary/5" />
+                    <ScrollArea className="flex-1 h-full pr-4">
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                            {filteredResources.map((resource) => {
+                                const isSelected = selectedResources.some(
+                                    (r) => r.id === resource.id,
+                                );
+                                return (
+                                    <Card
+                                        key={resource.id}
+                                        className={cn(
+                                            'group relative flex flex-col overflow-hidden border-2 transition-all duration-300 h-48',
+                                            'hover:-translate-y-1 hover:shadow-xl cursor-pointer',
+                                            isSelected
+                                                ? 'border-primary/40 bg-primary/5'
+                                                : 'border-white/5 bg-card/30 backdrop-blur-md',
+                                        )}
+                                        onClick={() => handleManage(resource, 'preview')}
+                                    >
+                                        <div className="absolute top-3 right-3 z-10 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                                            <Button
+                                                variant="secondary"
+                                                size="icon"
+                                                className="h-8 w-8 rounded-lg bg-black/40 border border-white/10 hover:bg-primary hover:text-white transition-all shadow-xl"
+                                                onClick={(e) => { e.stopPropagation(); handleManage(resource, 'access'); }}
+                                                title="Edit Access / Sharing"
+                                            >
+                                                <Edit2 className="h-3.5 w-3.5" />
+                                            </Button>
 
-                            <CardHeader className="z-10 border-b border-white/5 pb-3">
+                                            <Button
+                                                variant={isSelected ? 'default' : 'secondary'}
+                                                size="icon"
+                                                className={cn(
+                                                    "h-8 w-8 rounded-lg bg-black/40 border border-white/10 hover:bg-primary hover:text-white transition-all shadow-xl",
+                                                    isSelected && "bg-primary border-primary"
+                                                )}
+                                                onClick={(e) => toggleContext(e, resource)}
+                                                title="Chat with AI"
+                                            >
+                                                <Bot className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
+
+                                        <CardContent className="flex flex-col items-center justify-center gap-4 p-6 flex-1">
+                                            <div
+                                                className={cn(
+                                                    'flex h-16 w-16 items-center justify-center rounded-2xl p-4 transition-all group-hover:scale-110 group-hover:rotate-3 shadow-lg',
+                                                    getFileColor(resource.mime_type),
+                                                )}
+                                            >
+                                                {getFileIcon(resource.mime_type)}
+                                            </div>
+
+                                            <div className="text-center w-full">
+                                                <h4 className="mb-1 truncate text-sm font-bold transition-colors group-hover:text-primary">
+                                                    {resource.original_name}
+                                                </h4>
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-40 italic">
+                                                        {formatBytes(resource.size_bytes)}
+                                                    </span>
+                                                    <Badge variant="outline" className="text-[8px] h-3 px-1 uppercase border-white/10 text-muted-foreground">
+                                                        {resource.pivot?.role || 'VIEWER'}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    </ScrollArea>
+                </div>
+
+                {/* ── Collapsible AI Chat Sidebar ─────────────────────────── */}
+                {!isChatMinimized && (
+                    <div className="w-[380px] flex h-full animate-in slide-in-from-right duration-300">
+                        <Card className="flex h-full w-full flex-col overflow-hidden rounded-3xl border-white/10 bg-gradient-to-b from-background/90 to-background/50 shadow-2xl backdrop-blur-2xl ring-1 ring-white/10">
+                            <CardHeader className="border-b border-white/5 py-4">
                                 <CardTitle className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/30 bg-primary/20">
-                                            <Bot className="h-6 w-6 animate-pulse text-primary" />
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/20 text-primary">
+                                            <Bot className="h-5 w-5" />
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-bold tracking-tight">
-                                                Intellix AI
-                                            </h3>
-                                            <Badge
-                                                variant="outline"
-                                                className="h-4 border-primary/20 bg-primary/5 px-1.5 text-[9px] font-bold text-primary uppercase"
-                                            >
-                                                Encrypted Session
-                                            </Badge>
+                                            <h3 className="text-sm font-bold">AI Assistant</h3>
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Active Context</p>
                                         </div>
                                     </div>
-                                    {activeSessionId && (
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={clearChat}
-                                                title="Clear Session"
-                                                className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() =>
-                                                    setActiveSessionId(null)
-                                                }
-                                                title="Close Chat"
-                                                className="h-8 w-8 rounded-lg hover:bg-white/10"
-                                            >
-                                                <ChevronRight className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    )}
+                                    <div className="flex gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={clearChat}
+                                            className="h-8 w-8 rounded-lg hover:text-destructive"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setIsChatMinimized(true)}
+                                            className="h-8 w-8 rounded-lg"
+                                        >
+                                            <ChevronRight className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </CardTitle>
                             </CardHeader>
 
-                            <CardContent className="relative z-10 flex flex-1 flex-col gap-0 overflow-hidden p-0">
-                                <div className="relative flex-1">
-                                    <ScrollArea className="h-full">
-                                        <div className="flex flex-col gap-6 p-6">
-                                            {!activeSessionId ? (
-                                                <div className="flex h-[400px] flex-col items-center justify-center px-10 text-center">
-                                                    <div className="relative mb-6">
-                                                        <div className="absolute -inset-4 animate-pulse rounded-full bg-primary/20 blur-2xl" />
-                                                        <Sparkles className="relative h-12 w-12 text-primary" />
+                            <CardContent className="flex flex-1 flex-col gap-0 overflow-hidden p-0 min-h-0">
+                                <ScrollArea className="flex-1 h-full">
+                                    <div className="flex flex-col gap-6 p-4">
+                                        {!activeSessionId ? (
+                                            <div className="flex h-[400px] flex-col items-center justify-center text-center p-8">
+                                                <MessageSquare className="h-8 w-8 text-muted-foreground/20 mb-4" />
+                                                <p className="text-xs text-muted-foreground font-medium">
+                                                    Select a resource to begin a session.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            messages.map((msg, i) => (
+                                                <div key={i} className={cn('flex flex-col gap-2', msg.role === 'user' ? 'items-end' : 'items-start')}>
+                                                    <div className="text-[9px] font-bold tracking-widest uppercase opacity-40 px-1">
+                                                        {msg.role === 'assistant' ? 'Intellix' : 'You'}
                                                     </div>
-                                                    <h3 className="mb-2 text-xl font-bold">
-                                                        Private Knowledge
-                                                        Workspace
-                                                    </h3>
-                                                    <p className="max-w-[280px] text-sm text-muted-foreground">
-                                                        Select a file from the
-                                                        library to start an
-                                                        encrypted analysis
-                                                        session.
-                                                    </p>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    {messages.length === 0 && (
-                                                        <div className="py-10 text-center text-[10px] tracking-widest uppercase italic opacity-30">
-                                                            Session established.
-                                                            Analyzing local
-                                                            context...
-                                                        </div>
-                                                    )}
-                                                    {messages.map((msg, i) => (
-                                                        <div
-                                                            key={i}
-                                                            className={cn(
-                                                                'flex w-full flex-col gap-2',
-                                                                msg.role ===
-                                                                    'user'
-                                                                    ? 'items-end'
-                                                                    : 'items-start',
-                                                            )}
-                                                        >
-                                                            <div className="flex items-center gap-2 px-1 text-[9px] font-bold tracking-[0.2em] text-muted-foreground/50 uppercase">
-                                                                {msg.role ===
-                                                                    'assistant' ? (
-                                                                    <>
-                                                                        <Bot className="h-3 w-3 text-primary/70" />{' '}
-                                                                        Intellix
-                                                                    </>
-                                                                ) : msg.role ===
-                                                                    'user' ? (
-                                                                    <>
-                                                                        <User className="h-3 w-3" />{' '}
-                                                                        User
-                                                                    </>
-                                                                ) : (
-                                                                    <>System</>
-                                                                )}
-                                                            </div>
-                                                            <div
-                                                                className={cn(
-                                                                    'group max-w-[95%] rounded-2xl shadow-sm transition-all duration-300',
-                                                                    msg.role ===
-                                                                        'assistant'
-                                                                        ? 'rounded-tl-none border border-white/10 bg-card p-4 text-foreground'
-                                                                        : msg.role ===
-                                                                            'user'
-                                                                            ? 'rounded-tr-none bg-primary px-4 py-2.5 text-primary-foreground shadow-lg shadow-primary/10'
-                                                                            : 'mx-auto rounded-lg border-none bg-muted/20 px-3 py-1 text-[10px] text-muted-foreground italic',
-                                                                )}
-                                                            >
-                                                                {msg.reasoning && (
-                                                                    <details className="mb-4 overflow-hidden rounded-xl border border-primary/10 bg-primary/5 p-3 text-[11px]">
-                                                                        <summary className="mb-1 flex cursor-pointer items-center gap-2 font-bold transition-colors hover:text-primary">
-                                                                            <Sparkles className="animate-spin-slow h-3 w-3" />
-                                                                            Thinking
-                                                                            Process
-                                                                        </summary>
-                                                                        <div className="mt-2 border-l-2 border-primary/20 pl-3 font-serif leading-relaxed whitespace-pre-wrap italic opacity-60">
-                                                                            {
-                                                                                msg.reasoning
-                                                                            }
-                                                                        </div>
-                                                                    </details>
-                                                                )}
-                                                                <div
-                                                                    className={cn(
-                                                                        'prose prose-sm dark:prose-invert prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/5 max-w-none',
-                                                                        msg.role ===
-                                                                        'user' &&
-                                                                        'prose-p:text-primary-foreground prose-strong:text-white prose-code:text-white',
-                                                                    )}
-                                                                >
-                                                                    <ReactMarkdown
-                                                                        remarkPlugins={[
-                                                                            remarkGfm,
-                                                                        ]}
-                                                                    >
-                                                                        {
-                                                                            msg.content
-                                                                        }
-                                                                    </ReactMarkdown>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </>
-                                            )}
-                                            {isTyping && (
-                                                <div className="flex w-full animate-in flex-col items-start gap-2 fade-in slide-in-from-bottom-2">
-                                                    <div className="flex items-center gap-2 px-1 text-[9px] font-bold tracking-[0.2em] text-muted-foreground/50 uppercase">
-                                                        <Bot className="h-3 w-3 text-primary/70" />{' '}
-                                                        Intellix
-                                                    </div>
-                                                    <div className="flex min-w-[140px] flex-col gap-2 rounded-2xl rounded-tl-none border border-white/10 bg-card p-5 shadow-xl">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="flex gap-1.5">
-                                                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]"></span>
-                                                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]"></span>
-                                                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary"></span>
-                                                            </div>
-                                                            <span className="animate-pulse text-[10px] font-bold tracking-widest text-primary uppercase">
-                                                                Analyzing...
-                                                            </span>
-                                                        </div>
+                                                    <div className={cn(
+                                                        'max-w-[95%] rounded-2xl p-3 text-xs leading-relaxed shadow-sm',
+                                                        msg.role === 'assistant'
+                                                            ? 'rounded-tl-none bg-white/5 border border-white/10'
+                                                            : 'rounded-tr-none bg-primary text-primary-foreground'
+                                                    )}>
+                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                            {msg.content}
+                                                        </ReactMarkdown>
                                                     </div>
                                                 </div>
-                                            )}
-                                            <div
-                                                ref={scrollRef}
-                                                className="h-4"
-                                            />
-                                        </div>
-                                    </ScrollArea>
-                                </div>
-
-                                {/* Floating Input Area */}
-                                <div className="border-t border-white/5 bg-background/60 p-4 backdrop-blur-md">
-                                    <div className="relative flex items-end gap-2">
-                                        <div className="group relative flex-1">
-                                            <textarea
-                                                placeholder={
-                                                    !activeSessionId
-                                                        ? 'Initiate a session to query...'
-                                                        : 'Ask about your document...'
-                                                }
-                                                rows={1}
-                                                value={input}
-                                                onChange={(e) =>
-                                                    setInput(e.target.value)
-                                                }
-                                                onKeyDown={(e) => {
-                                                    if (
-                                                        e.key === 'Enter' &&
-                                                        !e.shiftKey
-                                                    ) {
-                                                        e.preventDefault();
-                                                        sendMessage().catch(
-                                                            (err) =>
-                                                                console.error(
-                                                                    'Failed to send message:',
-                                                                    err,
-                                                                ),
-                                                        );
-                                                    }
-                                                }}
-                                                disabled={
-                                                    !activeSessionId || isTyping
-                                                }
-                                                className={cn(
-                                                    'scrollbar-hide max-h-[150px] min-h-[48px] w-full resize-none overflow-y-auto rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm shadow-inner transition-all outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/40',
-                                                    (!activeSessionId ||
-                                                        isTyping) &&
-                                                    'cursor-not-allowed opacity-50',
-                                                )}
-                                            />
-                                        </div>
-                                        <Button
-                                            onClick={() =>
-                                                sendMessage().catch((err) =>
-                                                    console.error(
-                                                        'Failed to send message:',
-                                                        err,
-                                                    ),
-                                                )
-                                            }
-                                            size="icon"
-                                            disabled={
-                                                !input.trim() ||
-                                                isTyping ||
-                                                !activeSessionId
-                                            }
-                                            className="h-12 w-12 shrink-0 rounded-2xl bg-primary shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
-                                        >
-                                            <Send
-                                                className={cn(
-                                                    'h-5 w-5',
-                                                    isTyping && 'animate-pulse',
-                                                )}
-                                            />
-                                        </Button>
+                                            ))
+                                        )}
+                                        {isTyping && (
+                                            <div className="flex flex-col items-start gap-2">
+                                                <div className="flex gap-1 bg-white/5 p-3 rounded-2xl rounded-tl-none border border-white/10">
+                                                    <span className="h-1 w-1 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]"></span>
+                                                    <span className="h-1 w-1 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]"></span>
+                                                    <span className="h-1 w-1 animate-bounce rounded-full bg-primary"></span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div ref={scrollRef} className="h-2" />
                                     </div>
-                                    <div className="mt-3 flex items-center justify-between px-1">
-                                        <p className="text-[8px] font-bold tracking-[0.2em] text-muted-foreground/30 uppercase">
-                                            Private IndexedDB Storage Active
-                                        </p>
-                                        <p className="text-[8px] font-bold tracking-[0.2em] text-muted-foreground/30 uppercase">
-                                            Secure Session Ready
-                                        </p>
+                                </ScrollArea>
+
+                                <div className="p-4 border-t border-white/5 bg-black/20">
+                                    <div className="relative flex items-center gap-2">
+                                        <textarea
+                                            placeholder="Ask anything..."
+                                            rows={1}
+                                            value={input}
+                                            onChange={(e) => setInput(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    sendMessage();
+                                                }
+                                            }}
+                                            disabled={!activeSessionId || isTyping}
+                                            className="w-full h-10 resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-primary/40 disabled:opacity-50"
+                                        />
+                                        <Button
+                                            onClick={sendMessage}
+                                            size="icon"
+                                            disabled={!input.trim() || isTyping || !activeSessionId}
+                                            className="h-10 w-10 shrink-0 rounded-xl bg-primary"
+                                        >
+                                            <Send className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
-                </div>
+                )}
             </div>
 
-            {/* File Viewer Dialog */}
-            {previewResource && (
-                <FileViewer
-                    isOpen={!!previewResource}
-                    onClose={closePreview}
-                    url={previewUrl}
-                    mime={previewResource.mime_type}
-                    filename={previewResource.original_name}
-                />
-            )}
+            {/* ── Resource Management Dialog ─────────────────────────── */}
+            <Dialog open={!!manageResource} onOpenChange={closeManage}>
+                <DialogContent className={cn(
+                    "bg-card border-white/10 p-0 overflow-hidden flex flex-col sm:max-w-none",
+                    activeTab === 'preview' ? "w-[95vw] h-[95vh]" : "max-w-4xl w-full h-[80vh]"
+                )}>
+                    {activeTab === 'preview' ? (
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                            {/* Visually Hidden for Accessibility */}
+                            <div className="sr-only">
+                                <DialogTitle>{manageResource?.original_name}</DialogTitle>
+                                <DialogDescription>Previewing document: {manageResource?.original_name}</DialogDescription>
+                            </div>
+
+                            {/* Standard Top Bar for Preview */}
+                            <div className="flex items-center justify-between border-b border-white/5 bg-black/40 p-3 px-6 stretch-0">
+                                <div className="flex items-center gap-3">
+                                    <div className={cn('p-1.5 rounded-lg', manageResource && getFileColor(manageResource.mime_type))}>
+                                        {manageResource && getFileIcon(manageResource.mime_type)}
+                                    </div>
+                                    <h3 className="text-sm font-bold text-white max-w-[500px] truncate">
+                                        {manageResource?.original_name}
+                                    </h3>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={closeManage}
+                                    className="h-8 w-8 rounded-full hover:bg-white/10"
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+
+                            <div className="flex-1 min-h-0 w-full overflow-hidden">
+                                {previewUrl && manageResource ? (
+                                    <FileViewer
+                                        isOpen={true}
+                                        onClose={closeManage}
+                                        url={previewUrl}
+                                        mime={manageResource.mime_type}
+                                        filename={manageResource.original_name}
+                                        inline
+                                    />
+                                ) : (
+                                    <div className="flex h-full items-center justify-center bg-black/20">
+                                        <div className="flex flex-col items-center gap-4">
+                                            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                            <p className="text-xs text-muted-foreground animate-pulse">Loading Secure Preview...</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <DialogHeader className="p-6 border-b border-white/5 bg-black/20 shrink-0">
+                                <div className="flex items-center gap-4">
+                                    <div className={cn('p-3 rounded-xl', manageResource && getFileColor(manageResource.mime_type))}>
+                                        {manageResource && getFileIcon(manageResource.mime_type)}
+                                    </div>
+                                    <div className="text-left">
+                                        <DialogTitle className="text-xl font-bold">{manageResource?.original_name}</DialogTitle>
+                                        <DialogDescription className="text-xs uppercase tracking-widest font-bold opacity-60">
+                                            Resource Management & Sharing
+                                        </DialogDescription>
+                                    </div>
+                                </div>
+                            </DialogHeader>
+
+                            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col overflow-hidden">
+                                <TabsList className="w-full justify-start border-b border-white/5 rounded-none bg-transparent px-6 h-12 shrink-0">
+                                    <TabsTrigger value="access" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                                        Access Management
+                                    </TabsTrigger>
+                                    <TabsTrigger value="settings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                                        Settings
+                                    </TabsTrigger>
+                                </TabsList>
+
+                                <div className="flex-1 overflow-hidden p-6">
+                                    <TabsContent value="access" className="mt-0 h-full overflow-y-auto ring-offset-0 focus-visible:ring-0">
+                                        {manageResource && <AccessManagement resource={manageResource} />}
+                                    </TabsContent>
+
+                                    <TabsContent value="settings" className="mt-0 h-full overflow-y-auto ring-offset-0 focus-visible:ring-0">
+                                        <div className="space-y-4">
+                                            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 flex items-center justify-between">
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-destructive">Danger Zone</h4>
+                                                    <p className="text-[10px] text-muted-foreground">Permanently delete this resource and all its data.</p>
+                                                </div>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    className="gap-2"
+                                                    onClick={() => manageResource && handleResourceDelete(manageResource.id)}
+                                                >
+                                                    <Trash className="h-3.5 w-3.5" />
+                                                    Delete Resource
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                </div>
+                            </Tabs>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

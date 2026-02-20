@@ -3,62 +3,84 @@
 namespace App\Policies;
 
 use App\Models\FlashCard;
+use App\Models\Resource;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class FlashCardPolicy
 {
+    // ── Collection-level ────────────────────────────────────────────────────
+
     /**
-     * Determine whether the user can view any models.
+     * viewAny requires resource_id context — enforced in controller, not here.
+     * Return true so controller can apply its own scoping.
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
+    // ── Instance-level ──────────────────────────────────────────────────────
+
     /**
-     * Determine whether the user can view the model.
+     * View a card: user has any access to the underlying resource.
      */
     public function view(User $user, FlashCard $flashCard): bool
     {
-        return false;
+        /** @var Resource $resource */
+        $resource = $flashCard->resource;
+
+        return $resource->isAccessibleBy($user);
     }
 
     /**
-     * Determine whether the user can create models.
+     * Create a card for a resource: user must be owner or editor.
+     * NOTE: The Resource instance is passed as 2nd arg when checking
+     * `Gate::authorize('create', [FlashCard::class, $resource])`.
      */
-    public function create(User $user): bool
+    public function create(User $user, Resource $resource): bool
     {
-        return false;
+        return $resource->isEditableBy($user);
     }
 
     /**
-     * Determine whether the user can update the model.
+     * Update: user must own or be able to edit the resource.
      */
     public function update(User $user, FlashCard $flashCard): bool
     {
-        return false;
+        /** @var Resource $resource */
+        $resource = $flashCard->resource;
+
+        return $resource->isEditableBy($user);
     }
 
     /**
-     * Determine whether the user can delete the model.
+     * Delete: same as update.
      */
     public function delete(User $user, FlashCard $flashCard): bool
     {
-        return false;
+        /** @var Resource $resource */
+        $resource = $flashCard->resource;
+
+        return $resource->isEditableBy($user);
     }
 
     /**
-     * Determine whether the user can restore the model.
+     * Review: any user with access can review.
      */
+    public function review(User $user, FlashCard $flashCard): bool
+    {
+        /** @var Resource $resource */
+        $resource = $flashCard->resource;
+
+        return $resource->isAccessibleBy($user);
+    }
+
+    // keep stubs for completeness
     public function restore(User $user, FlashCard $flashCard): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
     public function forceDelete(User $user, FlashCard $flashCard): bool
     {
         return false;

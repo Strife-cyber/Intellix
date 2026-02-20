@@ -57,4 +57,8 @@ return [
         'key' => env('QDRANT_API_KEY'),
     ],
 
+    'ai' => [
+        'endpoint' => env('AI_ENDPOINT', 'http://100.93.40.102:9090'),
+    ],
+
 ];

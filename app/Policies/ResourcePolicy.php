@@ -73,4 +73,12 @@ class ResourcePolicy
     {
         return false;
     }
+
+    /**
+     * Determine whether the user can manage access (share) the resource.
+     */
+    public function manageAccess(User $user, Resource $resource): bool
+    {
+        return in_array($this->role($user, $resource), ['owner', 'admin']);
+    }
 }

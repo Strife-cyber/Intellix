@@ -6,23 +6,18 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreFlashCardRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return false;
+        // Authorization is handled explicitly in controller via policy
+        return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            //
+            'resource_id' => ['required', 'string', 'exists:resources,id'],
+            'front'       => ['required', 'string', 'max:2000'],
+            'back'        => ['required', 'string', 'max:2000'],
         ];
     }
 }

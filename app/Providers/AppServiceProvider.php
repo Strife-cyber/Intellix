@@ -6,6 +6,7 @@ use App\Models\FlashCard;
 use App\Models\Resource;
 use App\Observers\FlashCardObserver;
 use App\Observers\ResourceObserver;
+use App\Policies\FlashCardPolicy;
 use App\Policies\ResourcePolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -35,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
         FlashCard::observe(FlashCardObserver::class);
 
         Gate::policy(Resource::class, ResourcePolicy::class);
+        Gate::policy(FlashCard::class, FlashCardPolicy::class);
     }
 
     /**

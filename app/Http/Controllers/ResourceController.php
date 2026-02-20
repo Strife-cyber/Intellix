@@ -40,23 +40,12 @@ class ResourceController extends Controller
      */
     public function show(Resource $resource)
     {
-        //
-    }
+        $this->authorize('view', $resource);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Resource $resource)
-    {
-        //
-    }
+        // Include current user role for UI
+        $resource->role = $resource->roleOf(auth()->user());
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateResourceRequest $request, Resource $resource)
-    {
-        //
+        return response()->json($resource);
     }
 
     /**
@@ -64,7 +53,12 @@ class ResourceController extends Controller
      */
     public function destroy(Resource $resource)
     {
-        //
+        $this->authorize('delete', $resource);
+
+        // In a real app, delete from S3 too.
+        $resource->delete();
+
+        return response()->json(['message' => 'Resource deleted successfully']);
     }
 
     public function upload(Request $request, ResourceUploadService $service): JsonResponse
@@ -81,7 +75,7 @@ class ResourceController extends Controller
             $results[] = [
                 'resource_id' => $resource->id,
                 'file_name' => $resource->original_name,
-                'status_url' => "/v1/resources/{$resource->id}/status",
+                'status_url' => "/resources/{$resource->id}/status",
             ];
         }
 

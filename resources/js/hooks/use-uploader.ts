@@ -188,10 +188,10 @@ export const useUploader = (options: UploaderOptions = {}) => {
                         prev.map((f) =>
                             f.id === id
                                 ? {
-                                      ...f,
-                                      status: 'error',
-                                      error: 'Processing failed on server',
-                                  }
+                                    ...f,
+                                    status: 'error',
+                                    error: 'Processing failed on server',
+                                }
                                 : f,
                         ),
                     );
@@ -221,14 +221,14 @@ export const useUploader = (options: UploaderOptions = {}) => {
 
             try {
                 const response = await axios.post(
-                    '/v1/resources/upload',
+                    '/resources/upload',
                     formData,
                     {
                         headers: { 'Content-Type': 'multipart/form-data' },
                         onUploadProgress: (progressEvent) => {
                             const progress = Math.round(
                                 (progressEvent.loaded * 100) /
-                                    (progressEvent.total || 1),
+                                (progressEvent.total || 1),
                             );
                             setFiles((prev) =>
                                 prev.map((f) =>
@@ -246,12 +246,12 @@ export const useUploader = (options: UploaderOptions = {}) => {
                     prev.map((f) =>
                         f.id === id
                             ? {
-                                  ...f,
-                                  status: 'processing',
-                                  progress: 100,
-                                  resourceId: result.resource_id,
-                                  statusUrl: result.status_url,
-                              }
+                                ...f,
+                                status: 'processing',
+                                progress: 100,
+                                resourceId: result.resource_id,
+                                statusUrl: result.status_url,
+                            }
                             : f,
                     ),
                 );

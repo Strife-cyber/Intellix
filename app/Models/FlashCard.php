@@ -9,7 +9,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property mixed $next_review
+ * @property int    $id
+ * @property int    $user_id
+ * @property string $resource_id
+ * @property string $front
+ * @property string $back
+ * @property int    $interval_days
+ * @property float|null  $stability
+ * @property float|null  $difficulty
+ * @property \Carbon\CarbonImmutable|null $next_review
+ * @property \Carbon\CarbonImmutable|null $last_reviewed_at
  */
 class FlashCard extends Model
 {
@@ -29,12 +38,14 @@ class FlashCard extends Model
     ];
 
     protected $casts = [
-        'next_reviewed' => 'datetime',
+        'next_review'      => 'datetime',
         'last_reviewed_at' => 'datetime',
-        'interval_days' => 'integer',
-        'stability' => 'float',
-        'difficulty' => 'float',
+        'interval_days'    => 'integer',
+        'stability'        => 'float',
+        'difficulty'       => 'float',
     ];
+
+    // ── Relations ──────────────────────────────────────────────────────────
 
     public function user(): BelongsTo
     {
@@ -46,10 +57,27 @@ class FlashCard extends Model
         return $this->belongsTo(Resource::class);
     }
 
-    /** Cards due for review (for a user) */
+    // ── Scopes ─────────────────────────────────────────────────────────────
+
+    /**
+     * Cards that are due for review (next_review is in the past).
+     */
     public function scopeDue(Builder $query): Builder
     {
         return $query->whereNotNull('next_review')
-            ->where('next_review', '<', now());
+            ->where('next_review', '<=', now());
+    }
+
+    /**
+     * Scope to cards a user can view:
+     * - cards on resources where the user has an Access row (owner/admin/editor/viewer)
+     */
+    public function scopeForUser(Builder $query, int $userId): Builder
+    {
+        return $query->whereHas('resource', function (Builder $q) use ($userId) {
+            $q->whereHas('users', function (Builder $inner) use ($userId) {
+                $inner->where('user_id', $userId);
+            });
+        });
     }
 }

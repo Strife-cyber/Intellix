@@ -14,10 +14,12 @@ class ResourceObserver
     public function created(Resource $resource): void
     {
         $auth_user = auth()->user();
-        $user = User::where('id', $auth_user->id)->first();
 
-        if ($user) {
-            $resource->grantAccess($user, AccessRole::OWNER->value);
+        if ($auth_user) {
+            $user = User::where('id', $auth_user->id)->first();
+            if ($user && ! $resource->users()->where('user_id', $user->id)->exists()) {
+                $resource->grantAccess($user, AccessRole::OWNER->value);
+            }
         }
     }
 
