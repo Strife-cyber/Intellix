@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\FlashCard;
 use App\Models\Resource;
+use App\Observers\FlashCardObserver;
 use App\Observers\ResourceObserver;
 use App\Policies\ResourcePolicy;
 use Carbon\CarbonImmutable;
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
 
         Resource::observe(ResourceObserver::class);
+        FlashCard::observe(FlashCardObserver::class);
 
         Gate::policy(Resource::class, ResourcePolicy::class);
     }

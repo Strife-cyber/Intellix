@@ -30,6 +30,10 @@ Route::get('library', function () {
     ]);
 })->middleware(['auth', 'verified'])->name('library');
 
+Route::get('flashcards', function () {
+    return Inertia::render('flashcards', []);
+})->middleware(['auth', 'verified'])->name('flashcards');
+
 Route::get('upload', function () {
     return Inertia::render('upload', []);
 })->middleware(['auth', 'verified'])->name('upload');

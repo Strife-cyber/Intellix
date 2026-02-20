@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { UploadCloud, FolderOpen, LayoutGrid } from 'lucide-react';
+import { UploadCloud, FolderOpen, LayoutGrid, Layers2Icon } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -12,7 +12,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard, library, upload } from '@/routes';
+import { dashboard, flashcards, library, upload } from '@/routes';
 import type { NavItem } from '@/types';
 import AppLogo from './app-logo';
 
@@ -27,6 +27,11 @@ const mainNavItems: NavItem[] = [
         href: library(),
         icon: FolderOpen,
     },
+    {
+        title: 'Flashcards',
+        href: flashcards(),
+        icon: Layers2Icon
+    }
 ];
 
 const footerNavItems: NavItem[] = [
