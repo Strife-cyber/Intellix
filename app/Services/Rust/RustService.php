@@ -271,6 +271,20 @@ class RustService
     }
 
     /**
+     * Generate embedding for a text string.
+     *
+     * @param  string  $text  Text to embed
+     * @param  array  $context  Additional context for logging
+     * @return array Execution result
+     */
+    public function embed(string $text, array $context = []): array
+    {
+        $command = new \App\Services\Rust\Commands\EmbedCommand($text);
+
+        return $this->execute($command, $context);
+    }
+
+    /**
      * Process FSRS review data.
      *
      * @param  array|null  $inputData  Review data (for stdin)

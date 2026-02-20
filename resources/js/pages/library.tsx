@@ -129,15 +129,38 @@ export default function Library({
         }
     };
 
-    const sendMessage = () => {
+    const sendMessage = async () => {
         if (!input.trim()) return;
-        setMessages((prev) => [...prev, { role: 'user', content: input.trim() }]);
+
+        const userMsg = input.trim();
+        setMessages((prev) => [...prev, { role: 'user', content: userMsg }]);
         setInput('');
 
-        // Simulate AI response for now (since backend isn't linked yet for chat)
-        setTimeout(() => {
-            setMessages((prev) => [...prev, { role: 'assistant', content: "I've received your request. I'm currently analyzing the document context to provide you with the best answer." }]);
-        }, 600);
+        if (selectedResources.length === 0) {
+            setMessages((prev) => [...prev, { role: 'assistant', content: "Please select a file to provide context." }]);
+            return;
+        }
+
+        // For now, we take the first selected resource as context, 
+        // consistent with "maintains only the context of the file we choose"
+        const resourceId = selectedResources[0].id;
+
+        try {
+            const response = await window.axios.post('/ai/chat', {
+                message: userMsg,
+                resource_id: resourceId
+            });
+
+            if (response.data.answer) {
+                setMessages((prev) => [...prev, { role: 'assistant', content: response.data.answer }]);
+            } else {
+                setMessages((prev) => [...prev, { role: 'assistant', content: "I couldn't generate a response." }]);
+            }
+
+        } catch (error) {
+            console.error("AI Chat Error:", error);
+            setMessages((prev) => [...prev, { role: 'system', content: "Sorry, I encountered an error while processing your request." }]);
+        }
     };
 
     const clearChat = () => {

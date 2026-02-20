@@ -31,7 +31,7 @@ try {
         echo "   Collection does NOT exist. Attempting to create...\n";
         $createResponse = Http::withHeaders(['api-key' => $key])->put("$host/collections/resources", [
             'vectors' => [
-                'size' => 1536,
+                'size' => 384,
                 'distance' => 'Cosine',
             ],
         ]);

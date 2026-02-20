@@ -3,6 +3,7 @@
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\GithubController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\AiController;
 use App\Http\Controllers\ResourceController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -47,5 +48,9 @@ Route::get('/auth/google/callback', [GoogleController::class, 'callback']);
 
 Route::get('/auth/github/redirect', [GithubController::class, 'redirect'])->name('github.redirect');
 Route::get('/auth/github/callback', [GithubController::class, 'callback']);
+
+Route::post('/ai/chat', [AiController::class, 'chat'])
+    ->middleware(['auth', 'verified'])
+    ->name('ai.chat');
 
 require __DIR__.'/settings.php';
