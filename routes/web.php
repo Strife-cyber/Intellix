@@ -1,9 +1,9 @@
 <?php
 
+use App\Http\Controllers\AiController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\GithubController;
 use App\Http\Controllers\GoogleController;
-use App\Http\Controllers\AiController;
 use App\Http\Controllers\ResourceController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;

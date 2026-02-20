@@ -38,8 +38,7 @@ class ProcessResourceJob implements ShouldQueue
     public function __construct(
         protected string $resourceId,
         protected array $options = []
-    ) {
-    }
+    ) {}
 
     /**
      * Execute the job.
@@ -81,7 +80,7 @@ class ProcessResourceJob implements ShouldQueue
             } else {
                 // Build a detailed error message that includes stderr so the failure is debuggable
                 $stderr = trim($result['stderr'] ?? '');
-                $error  = $result['error'] ?? 'Rust process exited with a non-zero code.';
+                $error = $result['error'] ?? 'Rust process exited with a non-zero code.';
 
                 // Try to parse the JSON error log from stderr
                 $stderrLines = array_filter(array_map('trim', explode("\n", $stderr)));
@@ -98,15 +97,15 @@ class ProcessResourceJob implements ShouldQueue
 
                 Log::error("Resource {$resource->id} – Rust process failed", [
                     'exit_code' => $result['exit_code'] ?? null,
-                    'stderr'    => $stderr,
-                    'stdout'    => $result['stdout'] ?? '',
-                    'error'     => $error,
+                    'stderr' => $stderr,
+                    'stdout' => $result['stdout'] ?? '',
+                    'error' => $error,
                 ]);
 
                 throw new \Exception("Rust ingest failed (exit {$result['exit_code']}): {$fullError}");
             }
         } catch (Throwable $e) {
-            Log::error("Failed to process resource {$resource->id}: " . $e->getMessage());
+            Log::error("Failed to process resource {$resource->id}: ".$e->getMessage());
 
             $resource->update(['status' => ResourceStatus::FAILED]);
 

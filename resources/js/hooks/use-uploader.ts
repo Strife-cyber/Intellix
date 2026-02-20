@@ -187,7 +187,11 @@ export const useUploader = (options: UploaderOptions = {}) => {
                     setFiles((prev) =>
                         prev.map((f) =>
                             f.id === id
-                                ? { ...f, status: 'error', error: 'Processing failed on server' }
+                                ? {
+                                      ...f,
+                                      status: 'error',
+                                      error: 'Processing failed on server',
+                                  }
                                 : f,
                         ),
                     );
@@ -199,62 +203,76 @@ export const useUploader = (options: UploaderOptions = {}) => {
         }, 3000);
     }, []);
 
-    const uploadFile = useCallback(async (id: string) => {
-        const fileToUpload = files.find(f => f.id === id);
-        if (!fileToUpload || fileToUpload.status === 'success') return;
-
-        setFiles((prev) =>
-            prev.map((f) =>
-                f.id === id ? { ...f, status: 'uploading', progress: 0 } : f,
-            ),
-        );
-
-        const formData = new FormData();
-        formData.append('files[]', fileToUpload.file);
-
-        try {
-            const response = await axios.post('/v1/resources/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-                onUploadProgress: (progressEvent) => {
-                    const progress = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
-                    setFiles((prev) =>
-                        prev.map((f) => (f.id === id ? { ...f, progress } : f)),
-                    );
-                },
-            });
-
-            // The server returns an array because we sent 'files[]'
-            const result = response.data[0];
+    const uploadFile = useCallback(
+        async (id: string) => {
+            const fileToUpload = files.find((f) => f.id === id);
+            if (!fileToUpload || fileToUpload.status === 'success') return;
 
             setFiles((prev) =>
                 prev.map((f) =>
                     f.id === id
-                        ? {
-                            ...f,
-                            status: 'processing',
-                            progress: 100,
-                            resourceId: result.resource_id,
-                            statusUrl: result.status_url
-                        }
+                        ? { ...f, status: 'uploading', progress: 0 }
                         : f,
                 ),
             );
 
-            if (result.status_url) {
-                pollStatus(id, result.status_url);
+            const formData = new FormData();
+            formData.append('files[]', fileToUpload.file);
+
+            try {
+                const response = await axios.post(
+                    '/v1/resources/upload',
+                    formData,
+                    {
+                        headers: { 'Content-Type': 'multipart/form-data' },
+                        onUploadProgress: (progressEvent) => {
+                            const progress = Math.round(
+                                (progressEvent.loaded * 100) /
+                                    (progressEvent.total || 1),
+                            );
+                            setFiles((prev) =>
+                                prev.map((f) =>
+                                    f.id === id ? { ...f, progress } : f,
+                                ),
+                            );
+                        },
+                    },
+                );
+
+                // The server returns an array because we sent 'files[]'
+                const result = response.data[0];
+
+                setFiles((prev) =>
+                    prev.map((f) =>
+                        f.id === id
+                            ? {
+                                  ...f,
+                                  status: 'processing',
+                                  progress: 100,
+                                  resourceId: result.resource_id,
+                                  statusUrl: result.status_url,
+                              }
+                            : f,
+                    ),
+                );
+
+                if (result.status_url) {
+                    pollStatus(id, result.status_url);
+                }
+            } catch (error: any) {
+                const errorMessage =
+                    error.response?.data?.message || 'Upload failed';
+                setFiles((prev) =>
+                    prev.map((f) =>
+                        f.id === id
+                            ? { ...f, status: 'error', error: errorMessage }
+                            : f,
+                    ),
+                );
             }
-
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.message || 'Upload failed';
-            setFiles((prev) =>
-                prev.map((f) =>
-                    f.id === id
-                        ? { ...f, status: 'error', error: errorMessage }
-                        : f,
-                ),
-            );
-        }
-    }, [files, pollStatus]);
+        },
+        [files, pollStatus],
+    );
 
     const uploadAll = useCallback(async () => {
         const queuedFiles = files.filter(
@@ -263,9 +281,9 @@ export const useUploader = (options: UploaderOptions = {}) => {
 
         // We could send them all in one request since the controller supports it,
         // but parallel requests are better for individual progress tracking.
-        // If we want to strictly follow the "multiple files" controller, we could 
+        // If we want to strictly follow the "multiple files" controller, we could
         // implement a batchUpload function. For now, parallel is better UX.
-        await Promise.all(queuedFiles.map(file => uploadFile(file.id)));
+        await Promise.all(queuedFiles.map((file) => uploadFile(file.id)));
     }, [files, uploadFile]);
 
     const removeCompleted = useCallback(() => {
@@ -289,7 +307,9 @@ export const useUploader = (options: UploaderOptions = {}) => {
             files.length > 0
                 ? files.reduce((acc, f) => acc + f.progress, 0) / files.length
                 : 0,
-        uploadingCount: files.filter((f) => f.status === 'uploading' || f.status === 'processing').length,
+        uploadingCount: files.filter(
+            (f) => f.status === 'uploading' || f.status === 'processing',
+        ).length,
         completedCount: files.filter((f) => f.status === 'success').length,
         errorCount: files.filter((f) => f.status === 'error').length,
     };

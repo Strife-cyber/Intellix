@@ -22,4 +22,4 @@ export type Resource = {
         role: string;
     };
     s3_key: string;
-}
+};

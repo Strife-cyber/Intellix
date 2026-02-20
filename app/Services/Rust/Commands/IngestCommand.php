@@ -18,8 +18,7 @@ class IngestCommand implements RustCommandInterface
         protected string $url,
         protected string $resourceId,
         protected array $options = []
-    ) {
-    }
+    ) {}
 
     public function getCommand(): string
     {

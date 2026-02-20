@@ -25,7 +25,7 @@ export class ChatDatabase extends Dexie {
         super('IntellixChatDB');
         this.version(1).stores({
             sessions: '++id, resourceId, updatedAt',
-            messages: '++id, sessionId, createdAt'
+            messages: '++id, sessionId, createdAt',
         });
     }
 }
