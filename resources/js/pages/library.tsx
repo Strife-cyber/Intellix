@@ -55,12 +55,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from '@/components/ui/dialog';
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Select,
     SelectContent,
@@ -93,7 +88,9 @@ function AccessManagement({ resource }: { resource: Resource }) {
 
     const fetchAccess = async () => {
         try {
-            const res = await window.axios.get(`/resources/${resource.id}/access`);
+            const res = await window.axios.get(
+                `/resources/${resource.id}/access`,
+            );
             setUsers(res.data.data);
         } catch (err) {
             console.error('Failed to fetch access:', err);
@@ -104,12 +101,17 @@ function AccessManagement({ resource }: { resource: Resource }) {
         if (!email) return;
         setLoading(true);
         try {
-            await window.axios.post(`/resources/${resource.id}/access`, { email, role });
+            await window.axios.post(`/resources/${resource.id}/access`, {
+                email,
+                role,
+            });
             toast.success(`Access granted to ${email}`);
             setEmail('');
             fetchAccess();
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Failed to grant access');
+            toast.error(
+                err.response?.data?.message || 'Failed to grant access',
+            );
         } finally {
             setLoading(false);
         }
@@ -117,7 +119,9 @@ function AccessManagement({ resource }: { resource: Resource }) {
 
     const handleRemove = async (userId: number) => {
         try {
-            await window.axios.delete(`/resources/${resource.id}/access/${userId}`);
+            await window.axios.delete(
+                `/resources/${resource.id}/access/${userId}`,
+            );
             toast.success('Access revoked');
             fetchAccess();
         } catch (err) {
@@ -127,7 +131,10 @@ function AccessManagement({ resource }: { resource: Resource }) {
 
     const handleUpdateRole = async (userId: number, newRole: string) => {
         try {
-            await window.axios.put(`/resources/${resource.id}/access/${userId}`, { role: newRole });
+            await window.axios.put(
+                `/resources/${resource.id}/access/${userId}`,
+                { role: newRole },
+            );
             toast.success('Role updated');
             fetchAccess();
         } catch (err) {
@@ -173,30 +180,58 @@ function AccessManagement({ resource }: { resource: Resource }) {
                 <h4 className="text-sm font-semibold">People with access</h4>
                 <div className="space-y-3">
                     {users.map((u) => (
-                        <div key={u.id} className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 p-3">
+                        <div
+                            key={u.id}
+                            className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 p-3"
+                        >
                             <div className="flex items-center gap-3">
                                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold">
                                     {u.name.substring(0, 2).toUpperCase()}
                                 </div>
                                 <div>
-                                    <p className="text-xs font-semibold">{u.name} {u.role === 'owner' && <Badge className="ml-1 text-[8px] h-3 px-1">Owner</Badge>}</p>
-                                    <p className="text-[10px] text-muted-foreground">{u.email}</p>
+                                    <p className="text-xs font-semibold">
+                                        {u.name}{' '}
+                                        {u.role === 'owner' && (
+                                            <Badge className="ml-1 h-3 px-1 text-[8px]">
+                                                Owner
+                                            </Badge>
+                                        )}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        {u.email}
+                                    </p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 {u.role !== 'owner' && (
                                     <>
-                                        <Select value={u.role} onValueChange={(val) => handleUpdateRole(u.id, val)}>
+                                        <Select
+                                            value={u.role}
+                                            onValueChange={(val) =>
+                                                handleUpdateRole(u.id, val)
+                                            }
+                                        >
                                             <SelectTrigger className="h-7 w-[90px] text-[10px]">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="viewer">Viewer</SelectItem>
-                                                <SelectItem value="editor">Editor</SelectItem>
-                                                <SelectItem value="admin">Admin</SelectItem>
+                                                <SelectItem value="viewer">
+                                                    Viewer
+                                                </SelectItem>
+                                                <SelectItem value="editor">
+                                                    Editor
+                                                </SelectItem>
+                                                <SelectItem value="admin">
+                                                    Admin
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleRemove(u.id)}>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-destructive"
+                                            onClick={() => handleRemove(u.id)}
+                                        >
                                             <X className="h-3 w-3" />
                                         </Button>
                                     </>
@@ -229,9 +264,9 @@ export default function Library({ resources }: { resources: Resource[] }) {
         () =>
             activeSessionId
                 ? db.messages
-                    .where('sessionId')
-                    .equals(activeSessionId)
-                    .sortBy('createdAt')
+                      .where('sessionId')
+                      .equals(activeSessionId)
+                      .sortBy('createdAt')
                 : Promise.resolve([] as ChatMessage[]),
         [activeSessionId],
     );
@@ -281,13 +316,18 @@ export default function Library({ resources }: { resources: Resource[] }) {
         return <File className="h-5 w-5" />;
     };
 
-    const handleManage = async (resource: Resource, tab: string = 'preview') => {
+    const handleManage = async (
+        resource: Resource,
+        tab: string = 'preview',
+    ) => {
         setManageResource(resource);
         setActiveTab(tab);
         if (tab === 'preview') {
             setPreviewUrl(null);
             try {
-                const response = await window.axios.get(`/files/preview/${resource.s3_key}`);
+                const response = await window.axios.get(
+                    `/files/preview/${resource.s3_key}`,
+                );
                 setPreviewUrl(response.data.url);
             } catch (error) {
                 console.error('Error fetching preview URL:', error);
@@ -301,7 +341,12 @@ export default function Library({ resources }: { resources: Resource[] }) {
     };
 
     const handleResourceDelete = async (resourceId: string) => {
-        if (!confirm('Are you sure you want to delete this resource? This cannot be undone.')) return;
+        if (
+            !confirm(
+                'Are you sure you want to delete this resource? This cannot be undone.',
+            )
+        )
+            return;
         try {
             await window.axios.delete(`/resources/${resourceId}`);
             toast.success('Resource deleted successfully');
@@ -451,7 +496,7 @@ export default function Library({ resources }: { resources: Resource[] }) {
                 </h2>
             </div>
 
-            <ScrollArea className="flex-1 h-full overflow-hidden rounded-2xl border bg-card/30 shadow-inner backdrop-blur-sm">
+            <ScrollArea className="h-full flex-1 overflow-hidden rounded-2xl border bg-card/30 shadow-inner backdrop-blur-sm">
                 <div className="flex flex-col gap-1 p-2">
                     {sessions.length === 0 ? (
                         <div className="p-8 text-center">
@@ -510,13 +555,14 @@ export default function Library({ resources }: { resources: Resource[] }) {
             <Head title="Intellix AI - Workspace" />
 
             <div className="relative flex h-[calc(100vh-160px)] flex-row gap-6 p-6">
-
                 {/* ── Main Library Content ────────────────────────────────── */}
-                <div className="flex flex-1 flex-col gap-6 overflow-hidden min-h-0">
+                <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
                     <div className="flex flex-row items-center justify-between">
                         <div className="space-y-1">
-                            <h2 className="text-2xl font-bold tracking-tight">Resource Library</h2>
-                            <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium opacity-60">
+                            <h2 className="text-2xl font-bold tracking-tight">
+                                Resource Library
+                            </h2>
+                            <p className="text-xs font-medium tracking-widest text-muted-foreground uppercase opacity-60">
                                 Managed multi-tenant storage
                             </p>
                         </div>
@@ -528,7 +574,9 @@ export default function Library({ resources }: { resources: Resource[] }) {
                                     placeholder="Search library..."
                                     className="h-10 rounded-xl border-white/10 bg-background/40 pl-10 backdrop-blur-sm focus:ring-primary/20"
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
                                 />
                             </div>
 
@@ -544,7 +592,9 @@ export default function Library({ resources }: { resources: Resource[] }) {
                                 </SheetTrigger>
                                 <SheetContent className="w-[300px]">
                                     <SheetHeader className="mb-6">
-                                        <SheetTitle className="text-xs font-bold tracking-[0.2em] uppercase">Session Archives</SheetTitle>
+                                        <SheetTitle className="text-xs font-bold tracking-[0.2em] uppercase">
+                                            Session Archives
+                                        </SheetTitle>
                                     </SheetHeader>
                                     <HistoryList />
                                 </SheetContent>
@@ -562,7 +612,7 @@ export default function Library({ resources }: { resources: Resource[] }) {
                         </div>
                     </div>
 
-                    <ScrollArea className="flex-1 h-full pr-4">
+                    <ScrollArea className="h-full flex-1 pr-4">
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
                             {filteredResources.map((resource) => {
                                 const isSelected = selectedResources.some(
@@ -572,59 +622,84 @@ export default function Library({ resources }: { resources: Resource[] }) {
                                     <Card
                                         key={resource.id}
                                         className={cn(
-                                            'group relative flex flex-col overflow-hidden border-2 transition-all duration-300 h-48',
-                                            'hover:-translate-y-1 hover:shadow-xl cursor-pointer',
+                                            'group relative flex h-48 flex-col overflow-hidden border-2 transition-all duration-300',
+                                            'cursor-pointer hover:-translate-y-1 hover:shadow-xl',
                                             isSelected
                                                 ? 'border-primary/40 bg-primary/5'
                                                 : 'border-white/5 bg-card/30 backdrop-blur-md',
                                         )}
-                                        onClick={() => handleManage(resource, 'preview')}
+                                        onClick={() =>
+                                            handleManage(resource, 'preview')
+                                        }
                                     >
                                         <div className="absolute top-3 right-3 z-10 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
                                             <Button
                                                 variant="secondary"
                                                 size="icon"
-                                                className="h-8 w-8 rounded-lg bg-black/40 border border-white/10 hover:bg-primary hover:text-white transition-all shadow-xl"
-                                                onClick={(e) => { e.stopPropagation(); handleManage(resource, 'access'); }}
+                                                className="h-8 w-8 rounded-lg border border-white/10 bg-black/40 shadow-xl transition-all hover:bg-primary hover:text-white"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleManage(
+                                                        resource,
+                                                        'access',
+                                                    );
+                                                }}
                                                 title="Edit Access / Sharing"
                                             >
                                                 <Edit2 className="h-3.5 w-3.5" />
                                             </Button>
 
                                             <Button
-                                                variant={isSelected ? 'default' : 'secondary'}
+                                                variant={
+                                                    isSelected
+                                                        ? 'default'
+                                                        : 'secondary'
+                                                }
                                                 size="icon"
                                                 className={cn(
-                                                    "h-8 w-8 rounded-lg bg-black/40 border border-white/10 hover:bg-primary hover:text-white transition-all shadow-xl",
-                                                    isSelected && "bg-primary border-primary"
+                                                    'h-8 w-8 rounded-lg border border-white/10 bg-black/40 shadow-xl transition-all hover:bg-primary hover:text-white',
+                                                    isSelected &&
+                                                        'border-primary bg-primary',
                                                 )}
-                                                onClick={(e) => toggleContext(e, resource)}
+                                                onClick={(e) =>
+                                                    toggleContext(e, resource)
+                                                }
                                                 title="Chat with AI"
                                             >
                                                 <Bot className="h-3.5 w-3.5" />
                                             </Button>
                                         </div>
 
-                                        <CardContent className="flex flex-col items-center justify-center gap-4 p-6 flex-1">
+                                        <CardContent className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
                                             <div
                                                 className={cn(
-                                                    'flex h-16 w-16 items-center justify-center rounded-2xl p-4 transition-all group-hover:scale-110 group-hover:rotate-3 shadow-lg',
-                                                    getFileColor(resource.mime_type),
+                                                    'flex h-16 w-16 items-center justify-center rounded-2xl p-4 shadow-lg transition-all group-hover:scale-110 group-hover:rotate-3',
+                                                    getFileColor(
+                                                        resource.mime_type,
+                                                    ),
                                                 )}
                                             >
-                                                {getFileIcon(resource.mime_type)}
+                                                {getFileIcon(
+                                                    resource.mime_type,
+                                                )}
                                             </div>
 
-                                            <div className="text-center w-full">
+                                            <div className="w-full text-center">
                                                 <h4 className="mb-1 truncate text-sm font-bold transition-colors group-hover:text-primary">
                                                     {resource.original_name}
                                                 </h4>
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-40 italic">
-                                                        {formatBytes(resource.size_bytes)}
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase italic opacity-40">
+                                                        {formatBytes(
+                                                            resource.size_bytes,
+                                                        )}
                                                     </span>
-                                                    <Badge variant="outline" className="text-[8px] h-3 px-1 uppercase border-white/10 text-muted-foreground">
-                                                        {resource.pivot?.role || 'VIEWER'}
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="h-3 border-white/10 px-1 text-[8px] text-muted-foreground uppercase"
+                                                    >
+                                                        {resource.pivot?.role ||
+                                                            'VIEWER'}
                                                     </Badge>
                                                 </div>
                                             </div>
@@ -638,8 +713,8 @@ export default function Library({ resources }: { resources: Resource[] }) {
 
                 {/* ── Collapsible AI Chat Sidebar ─────────────────────────── */}
                 {!isChatMinimized && (
-                    <div className="w-[380px] flex h-full animate-in slide-in-from-right duration-300">
-                        <Card className="flex h-full w-full flex-col overflow-hidden rounded-3xl border-white/10 bg-gradient-to-b from-background/90 to-background/50 shadow-2xl backdrop-blur-2xl ring-1 ring-white/10">
+                    <div className="flex h-full w-[380px] animate-in duration-300 slide-in-from-right">
+                        <Card className="flex h-full w-full flex-col overflow-hidden rounded-3xl border-white/10 bg-gradient-to-b from-background/90 to-background/50 shadow-2xl ring-1 ring-white/10 backdrop-blur-2xl">
                             <CardHeader className="border-b border-white/5 py-4">
                                 <CardTitle className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -647,8 +722,12 @@ export default function Library({ resources }: { resources: Resource[] }) {
                                             <Bot className="h-5 w-5" />
                                         </div>
                                         <div>
-                                            <h3 className="text-sm font-bold">AI Assistant</h3>
-                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Active Context</p>
+                                            <h3 className="text-sm font-bold">
+                                                AI Assistant
+                                            </h3>
+                                            <p className="text-[10px] tracking-widest text-muted-foreground uppercase">
+                                                Active Context
+                                            </p>
                                         </div>
                                     </div>
                                     <div className="flex gap-1">
@@ -663,7 +742,9 @@ export default function Library({ resources }: { resources: Resource[] }) {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => setIsChatMinimized(true)}
+                                            onClick={() =>
+                                                setIsChatMinimized(true)
+                                            }
                                             className="h-8 w-8 rounded-lg"
                                         >
                                             <ChevronRight className="h-4 w-4" />
@@ -672,29 +753,48 @@ export default function Library({ resources }: { resources: Resource[] }) {
                                 </CardTitle>
                             </CardHeader>
 
-                            <CardContent className="flex flex-1 flex-col gap-0 overflow-hidden p-0 min-h-0">
-                                <ScrollArea className="flex-1 h-full">
+                            <CardContent className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden p-0">
+                                <ScrollArea className="h-full flex-1">
                                     <div className="flex flex-col gap-6 p-4">
                                         {!activeSessionId ? (
-                                            <div className="flex h-[400px] flex-col items-center justify-center text-center p-8">
-                                                <MessageSquare className="h-8 w-8 text-muted-foreground/20 mb-4" />
-                                                <p className="text-xs text-muted-foreground font-medium">
-                                                    Select a resource to begin a session.
+                                            <div className="flex h-[400px] flex-col items-center justify-center p-8 text-center">
+                                                <MessageSquare className="mb-4 h-8 w-8 text-muted-foreground/20" />
+                                                <p className="text-xs font-medium text-muted-foreground">
+                                                    Select a resource to begin a
+                                                    session.
                                                 </p>
                                             </div>
                                         ) : (
                                             messages.map((msg, i) => (
-                                                <div key={i} className={cn('flex flex-col gap-2', msg.role === 'user' ? 'items-end' : 'items-start')}>
-                                                    <div className="text-[9px] font-bold tracking-widest uppercase opacity-40 px-1">
-                                                        {msg.role === 'assistant' ? 'Intellix' : 'You'}
+                                                <div
+                                                    key={i}
+                                                    className={cn(
+                                                        'flex flex-col gap-2',
+                                                        msg.role === 'user'
+                                                            ? 'items-end'
+                                                            : 'items-start',
+                                                    )}
+                                                >
+                                                    <div className="px-1 text-[9px] font-bold tracking-widest uppercase opacity-40">
+                                                        {msg.role ===
+                                                        'assistant'
+                                                            ? 'Intellix'
+                                                            : 'You'}
                                                     </div>
-                                                    <div className={cn(
-                                                        'max-w-[95%] rounded-2xl p-3 text-xs leading-relaxed shadow-sm',
-                                                        msg.role === 'assistant'
-                                                            ? 'rounded-tl-none bg-white/5 border border-white/10'
-                                                            : 'rounded-tr-none bg-primary text-primary-foreground'
-                                                    )}>
-                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                    <div
+                                                        className={cn(
+                                                            'max-w-[95%] rounded-2xl p-3 text-xs leading-relaxed shadow-sm',
+                                                            msg.role ===
+                                                                'assistant'
+                                                                ? 'rounded-tl-none border border-white/10 bg-white/5'
+                                                                : 'rounded-tr-none bg-primary text-primary-foreground',
+                                                        )}
+                                                    >
+                                                        <ReactMarkdown
+                                                            remarkPlugins={[
+                                                                remarkGfm,
+                                                            ]}
+                                                        >
                                                             {msg.content}
                                                         </ReactMarkdown>
                                                     </div>
@@ -703,7 +803,7 @@ export default function Library({ resources }: { resources: Resource[] }) {
                                         )}
                                         {isTyping && (
                                             <div className="flex flex-col items-start gap-2">
-                                                <div className="flex gap-1 bg-white/5 p-3 rounded-2xl rounded-tl-none border border-white/10">
+                                                <div className="flex gap-1 rounded-2xl rounded-tl-none border border-white/10 bg-white/5 p-3">
                                                     <span className="h-1 w-1 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]"></span>
                                                     <span className="h-1 w-1 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]"></span>
                                                     <span className="h-1 w-1 animate-bounce rounded-full bg-primary"></span>
@@ -714,26 +814,37 @@ export default function Library({ resources }: { resources: Resource[] }) {
                                     </div>
                                 </ScrollArea>
 
-                                <div className="p-4 border-t border-white/5 bg-black/20">
+                                <div className="border-t border-white/5 bg-black/20 p-4">
                                     <div className="relative flex items-center gap-2">
                                         <textarea
                                             placeholder="Ask anything..."
                                             rows={1}
                                             value={input}
-                                            onChange={(e) => setInput(e.target.value)}
+                                            onChange={(e) =>
+                                                setInput(e.target.value)
+                                            }
                                             onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                if (
+                                                    e.key === 'Enter' &&
+                                                    !e.shiftKey
+                                                ) {
                                                     e.preventDefault();
                                                     sendMessage();
                                                 }
                                             }}
-                                            disabled={!activeSessionId || isTyping}
-                                            className="w-full h-10 resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-primary/40 disabled:opacity-50"
+                                            disabled={
+                                                !activeSessionId || isTyping
+                                            }
+                                            className="h-10 w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-primary/40 disabled:opacity-50"
                                         />
                                         <Button
                                             onClick={sendMessage}
                                             size="icon"
-                                            disabled={!input.trim() || isTyping || !activeSessionId}
+                                            disabled={
+                                                !input.trim() ||
+                                                isTyping ||
+                                                !activeSessionId
+                                            }
                                             className="h-10 w-10 shrink-0 rounded-xl bg-primary"
                                         >
                                             <Send className="h-4 w-4" />
@@ -748,25 +859,45 @@ export default function Library({ resources }: { resources: Resource[] }) {
 
             {/* ── Resource Management Dialog ─────────────────────────── */}
             <Dialog open={!!manageResource} onOpenChange={closeManage}>
-                <DialogContent className={cn(
-                    "bg-card border-white/10 p-0 overflow-hidden flex flex-col sm:max-w-none",
-                    activeTab === 'preview' ? "w-[95vw] h-[95vh]" : "max-w-4xl w-full h-[80vh]"
-                )}>
+                <DialogContent
+                    className={cn(
+                        'flex flex-col overflow-hidden border-white/10 bg-card p-0 sm:max-w-none',
+                        activeTab === 'preview'
+                            ? 'h-[95vh] w-[95vw]'
+                            : 'h-[80vh] w-full max-w-4xl',
+                    )}
+                >
                     {activeTab === 'preview' ? (
-                        <div className="flex-1 flex flex-col overflow-hidden">
+                        <div className="flex flex-1 flex-col overflow-hidden">
                             {/* Visually Hidden for Accessibility */}
                             <div className="sr-only">
-                                <DialogTitle>{manageResource?.original_name}</DialogTitle>
-                                <DialogDescription>Previewing document: {manageResource?.original_name}</DialogDescription>
+                                <DialogTitle>
+                                    {manageResource?.original_name}
+                                </DialogTitle>
+                                <DialogDescription>
+                                    Previewing document:{' '}
+                                    {manageResource?.original_name}
+                                </DialogDescription>
                             </div>
 
                             {/* Standard Top Bar for Preview */}
-                            <div className="flex items-center justify-between border-b border-white/5 bg-black/40 p-3 px-6 stretch-0">
+                            <div className="stretch-0 flex items-center justify-between border-b border-white/5 bg-black/40 p-3 px-6">
                                 <div className="flex items-center gap-3">
-                                    <div className={cn('p-1.5 rounded-lg', manageResource && getFileColor(manageResource.mime_type))}>
-                                        {manageResource && getFileIcon(manageResource.mime_type)}
+                                    <div
+                                        className={cn(
+                                            'rounded-lg p-1.5',
+                                            manageResource &&
+                                                getFileColor(
+                                                    manageResource.mime_type,
+                                                ),
+                                        )}
+                                    >
+                                        {manageResource &&
+                                            getFileIcon(
+                                                manageResource.mime_type,
+                                            )}
                                     </div>
-                                    <h3 className="text-sm font-bold text-white max-w-[500px] truncate">
+                                    <h3 className="max-w-[500px] truncate text-sm font-bold text-white">
                                         {manageResource?.original_name}
                                     </h3>
                                 </div>
@@ -780,7 +911,7 @@ export default function Library({ resources }: { resources: Resource[] }) {
                                 </Button>
                             </div>
 
-                            <div className="flex-1 min-h-0 w-full overflow-hidden">
+                            <div className="min-h-0 w-full flex-1 overflow-hidden">
                                 {previewUrl && manageResource ? (
                                     <FileViewer
                                         isOpen={true}
@@ -794,7 +925,9 @@ export default function Library({ resources }: { resources: Resource[] }) {
                                     <div className="flex h-full items-center justify-center bg-black/20">
                                         <div className="flex flex-col items-center gap-4">
                                             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                                            <p className="text-xs text-muted-foreground animate-pulse">Loading Secure Preview...</p>
+                                            <p className="animate-pulse text-xs text-muted-foreground">
+                                                Loading Secure Preview...
+                                            </p>
                                         </div>
                                     </div>
                                 )}
@@ -802,47 +935,91 @@ export default function Library({ resources }: { resources: Resource[] }) {
                         </div>
                     ) : (
                         <>
-                            <DialogHeader className="p-6 border-b border-white/5 bg-black/20 shrink-0">
+                            <DialogHeader className="shrink-0 border-b border-white/5 bg-black/20 p-6">
                                 <div className="flex items-center gap-4">
-                                    <div className={cn('p-3 rounded-xl', manageResource && getFileColor(manageResource.mime_type))}>
-                                        {manageResource && getFileIcon(manageResource.mime_type)}
+                                    <div
+                                        className={cn(
+                                            'rounded-xl p-3',
+                                            manageResource &&
+                                                getFileColor(
+                                                    manageResource.mime_type,
+                                                ),
+                                        )}
+                                    >
+                                        {manageResource &&
+                                            getFileIcon(
+                                                manageResource.mime_type,
+                                            )}
                                     </div>
                                     <div className="text-left">
-                                        <DialogTitle className="text-xl font-bold">{manageResource?.original_name}</DialogTitle>
-                                        <DialogDescription className="text-xs uppercase tracking-widest font-bold opacity-60">
+                                        <DialogTitle className="text-xl font-bold">
+                                            {manageResource?.original_name}
+                                        </DialogTitle>
+                                        <DialogDescription className="text-xs font-bold tracking-widest uppercase opacity-60">
                                             Resource Management & Sharing
                                         </DialogDescription>
                                     </div>
                                 </div>
                             </DialogHeader>
 
-                            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col overflow-hidden">
-                                <TabsList className="w-full justify-start border-b border-white/5 rounded-none bg-transparent px-6 h-12 shrink-0">
-                                    <TabsTrigger value="access" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                            <Tabs
+                                value={activeTab}
+                                onValueChange={setActiveTab}
+                                className="flex w-full flex-1 flex-col overflow-hidden"
+                            >
+                                <TabsList className="h-12 w-full shrink-0 justify-start rounded-none border-b border-white/5 bg-transparent px-6">
+                                    <TabsTrigger
+                                        value="access"
+                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                    >
                                         Access Management
                                     </TabsTrigger>
-                                    <TabsTrigger value="settings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                                    <TabsTrigger
+                                        value="settings"
+                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                    >
                                         Settings
                                     </TabsTrigger>
                                 </TabsList>
 
                                 <div className="flex-1 overflow-hidden p-6">
-                                    <TabsContent value="access" className="mt-0 h-full overflow-y-auto ring-offset-0 focus-visible:ring-0">
-                                        {manageResource && <AccessManagement resource={manageResource} />}
+                                    <TabsContent
+                                        value="access"
+                                        className="mt-0 h-full overflow-y-auto ring-offset-0 focus-visible:ring-0"
+                                    >
+                                        {manageResource && (
+                                            <AccessManagement
+                                                resource={manageResource}
+                                            />
+                                        )}
                                     </TabsContent>
 
-                                    <TabsContent value="settings" className="mt-0 h-full overflow-y-auto ring-offset-0 focus-visible:ring-0">
+                                    <TabsContent
+                                        value="settings"
+                                        className="mt-0 h-full overflow-y-auto ring-offset-0 focus-visible:ring-0"
+                                    >
                                         <div className="space-y-4">
-                                            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 flex items-center justify-between">
+                                            <div className="flex items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 p-4">
                                                 <div>
-                                                    <h4 className="text-sm font-bold text-destructive">Danger Zone</h4>
-                                                    <p className="text-[10px] text-muted-foreground">Permanently delete this resource and all its data.</p>
+                                                    <h4 className="text-sm font-bold text-destructive">
+                                                        Danger Zone
+                                                    </h4>
+                                                    <p className="text-[10px] text-muted-foreground">
+                                                        Permanently delete this
+                                                        resource and all its
+                                                        data.
+                                                    </p>
                                                 </div>
                                                 <Button
                                                     variant="destructive"
                                                     size="sm"
                                                     className="gap-2"
-                                                    onClick={() => manageResource && handleResourceDelete(manageResource.id)}
+                                                    onClick={() =>
+                                                        manageResource &&
+                                                        handleResourceDelete(
+                                                            manageResource.id,
+                                                        )
+                                                    }
                                                 >
                                                     <Trash className="h-3.5 w-3.5" />
                                                     Delete Resource

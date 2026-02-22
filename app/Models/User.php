@@ -15,6 +15,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @method static create(array $array)
  *
  * @property mixed $id
+ * @property mixed $resources
  */
 class User extends Authenticatable
 {

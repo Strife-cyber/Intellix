@@ -1,5 +1,13 @@
 import { Link } from '@inertiajs/react';
-import { UploadCloud, FolderOpen, LayoutGrid, Layers2Icon } from 'lucide-react';
+import {
+    UploadCloud,
+    FolderOpen,
+    LayoutGrid,
+    Layers2Icon,
+    ListChecks,
+    Calendar,
+    BookOpen,
+} from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -12,39 +20,66 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard, flashcards, library, upload } from '@/routes';
+import {
+    dashboard,
+    exams,
+    flashcards,
+    library,
+    upload,
+    courses,
+    prosits,
+} from '@/routes';
 import type { NavItem } from '@/types';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: dashboard(),
+        href: dashboard().url,
         icon: LayoutGrid,
     },
     {
+        title: 'Courses',
+        href: courses.index().url,
+        icon: BookOpen,
+        items: [
+            {
+                title: 'All Courses',
+                href: courses.index().url,
+            },
+            {
+                title: 'Prosits',
+                href: prosits.index().url,
+            },
+            {
+                title: 'Exams',
+                href: exams.index().url,
+            },
+        ],
+    },
+    {
         title: 'Library',
-        href: library(),
+        href: library().url,
         icon: FolderOpen,
     },
     {
         title: 'Flashcards',
-        href: flashcards(),
-        icon: Layers2Icon
-    }
+        href: flashcards().url,
+        icon: Layers2Icon,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
     {
         title: 'Upload',
-        href: upload(),
+        href: upload().url,
         icon: UploadCloud,
     },
-    /*{
-        title: 'Documentation',
+    {
+        title: 'Study Planner',
         href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },*/
+        icon: Calendar,
+    },
 ];
 
 export function AppSidebar() {
@@ -54,7 +89,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href={dashboard().url} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>

@@ -105,18 +105,28 @@ pub async fn process_ingest(
     let extraction = extract_file(&temp_path)
         .map_err(|e| anyhow!("Extraction failed: {}", e.error))?;
 
-    let text = extraction.pages
-        .into_iter()
-        .map(|p| p.text)
-        .collect::<Vec<_>>()
-        .join("\n\n");
+    let format = extraction.format.clone();
+    let pages = extraction.pages;
 
-    if text.trim().is_empty() {
-        return Ok(empty_result(resource_id));
+    let mut chunks: Vec<String> = Vec::new();
+    let mut chunk_pages: Vec<u32> = Vec::new();
+
+    for p in pages {
+        if p.text.trim().is_empty() {
+            continue;
+        }
+
+        let page_chunks = chunk_text(&p.text, chunk_size, token_overlap)
+            .map_err(|e| anyhow!("Text chunking failed: {}", e))?;
+
+        for chunk in page_chunks {
+            if chunk.trim().is_empty() {
+                continue;
+            }
+            chunks.push(chunk);
+            chunk_pages.push(p.page);
+        }
     }
-
-    let chunks = chunk_text(&text, chunk_size, token_overlap)
-        .map_err(|e| anyhow!("Text chunking failed: {}", e))?;
 
     if chunks.is_empty() {
         return Ok(empty_result(resource_id));
@@ -125,7 +135,7 @@ pub async fn process_ingest(
     let embeddings = embed_chunks(chunks.clone()).await
         .map_err(|e| anyhow!("Embedding generation failed: {}", e))?;
     
-    let upserted = upsert_chunks(&resource_id, &chunks, &embeddings).await
+    let upserted = upsert_chunks(&resource_id, &chunks, &chunk_pages, &embeddings, &url, &format).await
         .map_err(|e| anyhow!("Upsert to Qdrant failed: {}", e))?;
 
     Ok(IngestResult {
@@ -301,12 +311,20 @@ async fn ensure_collection_exists() -> Result<()> {
 async fn upsert_chunks(
     resource_id: &str,
     chunks: &[String],
+    chunk_pages: &[u32],
     embeddings: &[Vec<f32>],
+    source_url: &str,
+    format: &str,
 ) -> Result<usize> {
 
     let mut points = Vec::with_capacity(chunks.len());
 
-    for (i, (chunk, embedding)) in chunks.iter().zip(embeddings).enumerate() {
+    for (i, ((chunk, page), embedding)) in chunks
+        .iter()
+        .zip(chunk_pages.iter())
+        .zip(embeddings)
+        .enumerate()
+    {
         // We use UUID v5 to generate a deterministic UUID from resource_id and chunk index
         // This ensures IDs are valid for Qdrant and consistent across re-ingests
         let name = format!("{}-{}", resource_id, i);
@@ -315,6 +333,9 @@ async fn upsert_chunks(
         let payload = serde_json::json!({
             "resource_id": resource_id,
             "chunk_index": i,
+            "page": page,
+            "source_url": source_url,
+            "format": format,
             "full_content": chunk
         });
 

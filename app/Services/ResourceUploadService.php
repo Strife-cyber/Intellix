@@ -29,13 +29,13 @@ class ResourceUploadService
         $userId = Auth::id();
 
         $resource = Resource::create([
-            'id'            => $resourceId,
-            'user_id'       => $userId,
+            'id' => $resourceId,
+            'user_id' => $userId,
             'original_name' => $file->getClientOriginalName(),
-            'mime_type'     => $file->getMimeType(),
-            'size_bytes'    => $file->getSize(),
-            's3_key'        => $s3Key,
-            'status'        => ResourceStatus::PROCESSING->value,
+            'mime_type' => $file->getMimeType(),
+            'size_bytes' => $file->getSize(),
+            's3_key' => $s3Key,
+            'status' => ResourceStatus::PROCESSING->value,
         ]);
 
         // Grant the uploader OWNER access in the access table

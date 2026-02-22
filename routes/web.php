@@ -5,8 +5,8 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\FlashCardController;
 use App\Http\Controllers\GithubController;
 use App\Http\Controllers\GoogleController;
-use App\Http\Controllers\ResourceController;
 use App\Http\Controllers\ResourceAccessController;
+use App\Http\Controllers\ResourceController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -34,8 +34,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('library');
 
     Route::get('flashcards-page', function () {
+
+        /** @var User|null $user */
         $user = auth()->user();
         $resources = $user ? $user->resources : collect();
+
         return Inertia::render('flashcards', [
             'resources' => $resources,
         ]);
@@ -51,7 +54,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('{resource}', [ResourceController::class, 'show']);
         Route::delete('{resource}', [ResourceController::class, 'destroy']);
         Route::get('{resource}/status', [ResourceController::class, 'status']);
-        
+
         // Resource Access
         Route::get('{resource}/access', [ResourceAccessController::class, 'index']);
         Route::post('{resource}/access', [ResourceAccessController::class, 'store']);
@@ -66,12 +69,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('{flashCard}', [FlashCardController::class, 'show']);
         Route::put('{flashCard}', [FlashCardController::class, 'update']);
         Route::delete('{flashCard}', [FlashCardController::class, 'destroy']);
-        
+
         Route::post('{flashCard}/review', [FlashCardController::class, 'review']);
         Route::post('generate', [FlashCardController::class, 'generate']); // Legacy?
     });
 
     Route::post('resources/{resource}/flashcards/generate', [FlashCardController::class, 'generate']);
+
+    // ── PBA Learning Platform ────────────────────────────────────────────────
+    Route::get('courses', [\App\Http\Controllers\PbaWebController::class, 'indexCourses'])->name('courses.index');
+    Route::post('courses', [\App\Http\Controllers\PbaWebController::class, 'storeCourse'])->name('courses.store');
+    Route::put('courses/{course}', [\App\Http\Controllers\PbaWebController::class, 'updateCourse'])->name('courses.update');
+    Route::delete('courses/{course}', [\App\Http\Controllers\PbaWebController::class, 'destroyCourse'])->name('courses.destroy');
+    Route::get('courses/{course}', [\App\Http\Controllers\PbaWebController::class, 'showCourse'])->name('courses.show');
+
+    Route::post('courses/{course}/chapters', [\App\Http\Controllers\PbaWebController::class, 'storeChapter'])->name('chapters.store');
+    Route::delete('chapters/{chapter}', [\App\Http\Controllers\PbaWebController::class, 'destroyChapter'])->name('chapters.destroy');
+
+    Route::get('prosits', [\App\Http\Controllers\PbaWebController::class, 'indexProsits'])->name('prosits.index');
+    Route::post('prosits', [\App\Http\Controllers\PbaWebController::class, 'storeProsit'])->name('prosits.store');
+    Route::put('prosits/{prosit}', [\App\Http\Controllers\PbaWebController::class, 'updateProsit'])->name('prosits.update');
+    Route::delete('prosits/{prosit}', [\App\Http\Controllers\PbaWebController::class, 'destroyProsit'])->name('prosits.destroy');
+    Route::get('courses/{course}/prosits/{prosit}', [\App\Http\Controllers\PbaWebController::class, 'showProsit'])->name('prosits.show');
+    Route::post('prosits/{prosit}/generate-exam', [\App\Http\Controllers\PbaWebController::class, 'generateExam'])->name('prosits.generate-exam');
+
+    Route::get('exams', [\App\Http\Controllers\PbaWebController::class, 'indexExams'])->name('exams.index');
+    Route::get('exams/{exam}', [\App\Http\Controllers\PbaWebController::class, 'showExam'])->name('exams.show');
 
     Route::post('/ai/chat', [AiController::class, 'chat'])->name('ai.chat');
 

@@ -15,7 +15,7 @@ class UpdateFlashCardRequest extends FormRequest
     {
         return [
             'front' => ['sometimes', 'required', 'string', 'max:2000'],
-            'back'  => ['sometimes', 'required', 'string', 'max:2000'],
+            'back' => ['sometimes', 'required', 'string', 'max:2000'],
         ];
     }
 }

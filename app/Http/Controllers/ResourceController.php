@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreResourceRequest;
-use App\Http\Requests\UpdateResourceRequest;
 use App\Models\Resource;
 use App\Services\ResourceUploadService;
 use Illuminate\Http\JsonResponse;

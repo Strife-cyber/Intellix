@@ -3,7 +3,6 @@
 namespace App\Actions;
 
 use App\Models\FlashCard;
-use App\Models\Resource;
 use App\Services\Rust\RustService;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -17,9 +16,8 @@ class ReviewFlashCardAction
     /**
      * Process an FSRS review for a flash card.
      *
-     * @param  FlashCard  $card
-     * @param  int        $rating      1=Again 2=Hard 3=Good 4=Easy
-     * @param  int        $durationMs  Time spent on card (milliseconds)
+     * @param  int  $rating  1=Again 2=Hard 3=Good 4=Easy
+     * @param  int  $durationMs  Time spent on card (milliseconds)
      * @return array{next_review: string, interval_days: int, stability: float}
      *
      * @throws RuntimeException
@@ -34,9 +32,9 @@ class ReviewFlashCardAction
 
         $inputData = [
             'last_interval' => (float) $card->interval_days,
-            'difficulty'    => $card->difficulty ?? 5.0,
-            'stability'     => $card->stability,
-            'rating'        => $ratingMap[$rating],
+            'difficulty' => $card->difficulty ?? 5.0,
+            'stability' => $card->stability,
+            'rating' => $ratingMap[$rating],
         ];
 
         $result = $this->rustService->fsrs($inputData, null, [
@@ -46,10 +44,10 @@ class ReviewFlashCardAction
         if (! $result['success']) {
             $errorMsg = $result['error'] ?? 'FSRS process failed';
             Log::error('FSRS review failed', [
-                'card_id'   => $card->id,
+                'card_id' => $card->id,
                 'exit_code' => $result['exit_code'] ?? null,
-                'stderr'    => $result['stderr'] ?? null,
-                'error'     => $errorMsg,
+                'stderr' => $result['stderr'] ?? null,
+                'error' => $errorMsg,
             ]);
             throw new RuntimeException("FSRS calculation failed: {$errorMsg}");
         }
@@ -64,22 +62,22 @@ class ReviewFlashCardAction
         }
 
         $intervalDays = (int) round($output['new_interval']);
-        $stability    = (float) $output['stability'];
-        $difficulty   = (float) $output['difficulty'];
-        $nextReview   = $output['next_review'];  // ISO8601
+        $stability = (float) $output['stability'];
+        $difficulty = (float) $output['difficulty'];
+        $nextReview = $output['next_review'];  // ISO8601
 
         $card->update([
-            'interval_days'    => $intervalDays,
-            'stability'        => $stability,
-            'difficulty'       => $difficulty,
+            'interval_days' => $intervalDays,
+            'stability' => $stability,
+            'difficulty' => $difficulty,
             'last_reviewed_at' => now(),
-            'next_review'      => $nextReview,
+            'next_review' => $nextReview,
         ]);
 
         return [
-            'next_review'   => $nextReview,
+            'next_review' => $nextReview,
             'interval_days' => $intervalDays,
-            'stability'     => $stability,
+            'stability' => $stability,
         ];
     }
 }

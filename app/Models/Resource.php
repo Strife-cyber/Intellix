@@ -14,8 +14,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static create(array $array)
  *
  * @property string $id
- * @property int    $user_id   Owner
- * @property mixed  $status
+ * @property int $user_id Owner
+ * @property mixed $status
  */
 class Resource extends Model
 {
@@ -32,7 +32,7 @@ class Resource extends Model
     ];
 
     protected $casts = [
-        'status'   => ResourceStatus::class,
+        'status' => ResourceStatus::class,
         'metadata' => 'array',
     ];
 
@@ -58,6 +58,11 @@ class Resource extends Model
     public function chunks(): HasMany
     {
         return $this->hasMany(ResourceChunk::class);
+    }
+
+    public function prosit(): BelongsTo
+    {
+        return $this->belongsTo(Prosit::class);
     }
 
     // ── Access helpers ──────────────────────────────────────────────────────

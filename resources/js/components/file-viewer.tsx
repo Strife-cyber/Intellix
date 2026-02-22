@@ -28,16 +28,21 @@ export default function FileViewer({
     const isOffice =
         mime === 'application/msword' ||
         mime ===
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
         mime === 'application/vnd.ms-excel' ||
         mime ===
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
         mime === 'application/vnd.ms-powerpoint' ||
         mime ===
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation';
 
     const Content = (
-        <div className={cn("relative h-full w-full overflow-hidden bg-muted/10", inline ? "rounded-xl border border-white/5" : "")}>
+        <div
+            className={cn(
+                'relative h-full w-full overflow-hidden bg-muted/10',
+                inline ? 'rounded-xl border border-white/5' : '',
+            )}
+        >
             {!url ? (
                 <div className="absolute inset-0 flex items-center justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -75,8 +80,7 @@ export default function FileViewer({
                     {!isImage && !isPdf && !isText && !isOffice && (
                         <div className="flex h-full flex-col items-center justify-center gap-4">
                             <p className="text-muted-foreground">
-                                Preview not available for this file
-                                type.
+                                Preview not available for this file type.
                             </p>
                             <a
                                 href={url}
@@ -86,7 +90,7 @@ export default function FileViewer({
                                 className="text-primary hover:underline"
                             >
                                 Download File
-                            </a >
+                            </a>
                         </div>
                     )}
                 </>

@@ -23,7 +23,7 @@ class FlashCardController extends Controller
         ]);
 
         /** @var \App\Models\User $user */
-        $user     = $request->user();
+        $user = $request->user();
         $resource = Resource::findOrFail($request->input('resource_id'));
 
         // Policy: viewAny is always true (scoped below), but ensure user can see resource
@@ -37,7 +37,7 @@ class FlashCardController extends Controller
         $canEdit = $resource->isEditableBy($user);
 
         return response()->json([
-            'data'     => $cards,
+            'data' => $cards,
             'can_edit' => $canEdit,
         ]);
     }
@@ -47,18 +47,18 @@ class FlashCardController extends Controller
     public function store(StoreFlashCardRequest $request): JsonResponse
     {
         /** @var \App\Models\User $user */
-        $user     = $request->user();
+        $user = $request->user();
         $resource = Resource::findOrFail($request->validated('resource_id'));
 
         Gate::authorize('create', [FlashCard::class, $resource]);
 
         $card = FlashCard::create([
-            'user_id'     => $user->id,
+            'user_id' => $user->id,
             'resource_id' => $resource->id,
-            'front'       => $request->validated('front'),
-            'back'        => $request->validated('back'),
+            'front' => $request->validated('front'),
+            'back' => $request->validated('back'),
             'interval_days' => 0,
-            'next_review'   => now(),
+            'next_review' => now(),
         ]);
 
         return response()->json(['data' => $this->formatCard($card, $user)], 201);
@@ -109,7 +109,7 @@ class FlashCardController extends Controller
         ReviewFlashCardAction $action,
     ): JsonResponse {
         $request->validate([
-            'rating'      => ['required', 'integer', 'min:1', 'max:4'],
+            'rating' => ['required', 'integer', 'min:1', 'max:4'],
             'duration_ms' => ['required', 'integer', 'min:0'],
         ]);
 
@@ -155,7 +155,7 @@ class FlashCardController extends Controller
         $canEdit = $resource->isEditableBy($user);
 
         return response()->json([
-            'data'     => array_map(fn ($card) => $this->formatCard($card, $user), $cards),
+            'data' => array_map(fn ($card) => $this->formatCard($card, $user), $cards),
             'can_edit' => $canEdit,
         ], 201);
     }
@@ -165,16 +165,16 @@ class FlashCardController extends Controller
     private function formatCard(FlashCard $card, \App\Models\User $user): array
     {
         return [
-            'id'               => $card->id,
-            'resource_id'      => $card->resource_id,
-            'front'            => $card->front,
-            'back'             => $card->back,
-            'interval_days'    => $card->interval_days,
-            'stability'        => $card->stability,
-            'difficulty'       => $card->difficulty,
-            'next_review'      => $card->next_review?->toIso8601String(),
+            'id' => $card->id,
+            'resource_id' => $card->resource_id,
+            'front' => $card->front,
+            'back' => $card->back,
+            'interval_days' => $card->interval_days,
+            'stability' => $card->stability,
+            'difficulty' => $card->difficulty,
+            'next_review' => $card->next_review?->toIso8601String(),
             'last_reviewed_at' => $card->last_reviewed_at?->toIso8601String(),
-            'created_at'       => $card->created_at?->toIso8601String(),
+            'created_at' => $card->created_at?->toIso8601String(),
         ];
     }
 }

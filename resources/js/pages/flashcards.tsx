@@ -21,12 +21,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -68,19 +63,45 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 /* ─── Rating config ──────────────────────────────────────────────────────── */
-const RATINGS: { label: string; value: ReviewRating; color: string; icon: React.ReactNode }[] = [
-    { label: 'Again', value: 1, color: 'bg-red-500/20   border-red-500/40   text-red-400   hover:bg-red-500/30', icon: <RefreshCw className="h-4 w-4" /> },
-    { label: 'Hard', value: 2, color: 'bg-orange-500/20 border-orange-500/40 text-orange-400 hover:bg-orange-500/30', icon: <Brain className="h-4 w-4" /> },
-    { label: 'Good', value: 3, color: 'bg-green-500/20  border-green-500/40  text-green-400  hover:bg-green-500/30', icon: <Check className="h-4 w-4" /> },
-    { label: 'Easy', value: 4, color: 'bg-blue-500/20   border-blue-500/40   text-blue-400   hover:bg-blue-500/30', icon: <Star className="h-4 w-4" /> },
+const RATINGS: {
+    label: string;
+    value: ReviewRating;
+    color: string;
+    icon: React.ReactNode;
+}[] = [
+    {
+        label: 'Again',
+        value: 1,
+        color: 'bg-red-500/20   border-red-500/40   text-red-400   hover:bg-red-500/30',
+        icon: <RefreshCw className="h-4 w-4" />,
+    },
+    {
+        label: 'Hard',
+        value: 2,
+        color: 'bg-orange-500/20 border-orange-500/40 text-orange-400 hover:bg-orange-500/30',
+        icon: <Brain className="h-4 w-4" />,
+    },
+    {
+        label: 'Good',
+        value: 3,
+        color: 'bg-green-500/20  border-green-500/40  text-green-400  hover:bg-green-500/30',
+        icon: <Check className="h-4 w-4" />,
+    },
+    {
+        label: 'Easy',
+        value: 4,
+        color: 'bg-blue-500/20   border-blue-500/40   text-blue-400   hover:bg-blue-500/30',
+        icon: <Star className="h-4 w-4" />,
+    },
 ];
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Main Page
 ═══════════════════════════════════════════════════════════════════════════ */
 export default function Flashcards({ resources }: { resources?: Resource[] }) {
-
-    const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+    const [selectedResource, setSelectedResource] = useState<Resource | null>(
+        null,
+    );
     const [cards, setCards] = useState<FlashCard[]>([]);
     const [canEdit, setCanEdit] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -101,7 +122,9 @@ export default function Flashcards({ resources }: { resources?: Resource[] }) {
             setCanEdit(res.data.can_edit);
         } catch (err: unknown) {
             const e = err as { response?: { data?: { message?: string } } };
-            setError(e?.response?.data?.message ?? 'Failed to load flashcards.');
+            setError(
+                e?.response?.data?.message ?? 'Failed to load flashcards.',
+            );
         } finally {
             setLoading(false);
         }
@@ -135,7 +158,7 @@ export default function Flashcards({ resources }: { resources?: Resource[] }) {
                 <div className="flex w-72 flex-shrink-0 flex-col gap-4">
                     <div className="flex items-center gap-2">
                         <BookOpen className="h-4 w-4 text-primary" />
-                        <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                        <h2 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
                             Resources
                         </h2>
                     </div>
@@ -162,7 +185,8 @@ export default function Flashcards({ resources }: { resources?: Resource[] }) {
                                             {r.original_name}
                                         </div>
                                         <div className="mt-0.5 text-[10px] text-muted-foreground opacity-60">
-                                            {(r.size_bytes / 1024).toFixed(0)} KB
+                                            {(r.size_bytes / 1024).toFixed(0)}{' '}
+                                            KB
                                         </div>
                                     </button>
                                 ))
@@ -184,7 +208,8 @@ export default function Flashcards({ resources }: { resources?: Resource[] }) {
                                         {selectedResource.original_name}
                                     </h1>
                                     <p className="text-xs text-muted-foreground">
-                                        {cards.length} card{cards.length !== 1 ? 's' : ''}
+                                        {cards.length} card
+                                        {cards.length !== 1 ? 's' : ''}
                                         {dueCards.length > 0 && (
                                             <span className="ml-2 font-semibold text-amber-400">
                                                 · {dueCards.length} due
@@ -210,7 +235,8 @@ export default function Flashcards({ resources }: { resources?: Resource[] }) {
                                             variant="ghost"
                                             onClick={() => setMode('list')}
                                         >
-                                            <X className="mr-1 h-3.5 w-3.5" /> Exit Review
+                                            <X className="mr-1 h-3.5 w-3.5" />{' '}
+                                            Exit Review
                                         </Button>
                                     )}
                                     {canEdit && mode === 'list' && (
@@ -218,12 +244,20 @@ export default function Flashcards({ resources }: { resources?: Resource[] }) {
                                             <GenerateButton
                                                 resource={selectedResource}
                                                 onGenerated={(newCards) => {
-                                                    setCards((prev) => [...prev, ...newCards]);
+                                                    setCards((prev) => [
+                                                        ...prev,
+                                                        ...newCards,
+                                                    ]);
                                                 }}
                                             />
                                             <CreateCardButton
                                                 resource={selectedResource}
-                                                onCreated={(card) => setCards((prev) => [...prev, card])}
+                                                onCreated={(card) =>
+                                                    setCards((prev) => [
+                                                        ...prev,
+                                                        card,
+                                                    ])
+                                                }
                                             />
                                         </>
                                     )}
@@ -237,7 +271,9 @@ export default function Flashcards({ resources }: { resources?: Resource[] }) {
                                 </div>
                             ) : error ? (
                                 <div className="flex flex-1 items-center justify-center">
-                                    <p className="text-sm text-destructive">{error}</p>
+                                    <p className="text-sm text-destructive">
+                                        {error}
+                                    </p>
                                 </div>
                             ) : mode === 'review' ? (
                                 <ReviewMode
@@ -253,11 +289,17 @@ export default function Flashcards({ resources }: { resources?: Resource[] }) {
                                     canEdit={canEdit}
                                     onUpdate={(updated) =>
                                         setCards((prev) =>
-                                            prev.map((c) => (c.id === updated.id ? updated : c)),
+                                            prev.map((c) =>
+                                                c.id === updated.id
+                                                    ? updated
+                                                    : c,
+                                            ),
                                         )
                                     }
                                     onDelete={(id) =>
-                                        setCards((prev) => prev.filter((c) => c.id !== id))
+                                        setCards((prev) =>
+                                            prev.filter((c) => c.id !== id),
+                                        )
                                     }
                                 />
                             )}
@@ -281,8 +323,8 @@ function EmptyState() {
             </div>
             <h2 className="text-xl font-bold">Active Learning</h2>
             <p className="max-w-xs text-sm text-muted-foreground">
-                Select a resource from the left to manage its flashcards, generate new cards with
-                AI, or start a review session.
+                Select a resource from the left to manage its flashcards,
+                generate new cards with AI, or start a review session.
             </p>
         </div>
     );
@@ -308,7 +350,9 @@ function CardListPanel({
         return (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 text-center">
                 <BookOpen className="h-10 w-10 text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground">No flashcards yet.</p>
+                <p className="text-sm text-muted-foreground">
+                    No flashcards yet.
+                </p>
                 {canEdit && (
                     <p className="text-xs text-muted-foreground/60">
                         Use "Generate with AI" or add cards manually.
@@ -365,8 +409,9 @@ function CardTile({
     const [deleting, setDeleting] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
 
-    const isDue =
-        card.next_review ? new Date(card.next_review) <= new Date() : false;
+    const isDue = card.next_review
+        ? new Date(card.next_review) <= new Date()
+        : false;
 
     const handleDelete = async () => {
         setDeleting(true);
@@ -383,7 +428,7 @@ function CardTile({
         <div
             className={cn(
                 'group relative flex min-h-[160px] cursor-pointer flex-col overflow-hidden rounded-2xl border p-4 transition-all duration-300',
-                'bg-card/40 backdrop-blur-sm hover:shadow-lg hover:-translate-y-0.5',
+                'bg-card/40 backdrop-blur-sm hover:-translate-y-0.5 hover:shadow-lg',
                 flipped
                     ? 'border-primary/30 bg-primary/5'
                     : 'border-white/8 hover:border-white/15',
@@ -406,7 +451,7 @@ function CardTile({
                 {card.interval_days > 0 && (
                     <Badge
                         variant="outline"
-                        className="h-4 border-white/10 px-1.5 text-[9px] font-bold uppercase text-muted-foreground"
+                        className="h-4 border-white/10 px-1.5 text-[9px] font-bold text-muted-foreground uppercase"
                     >
                         {card.interval_days}d
                     </Badge>
@@ -522,15 +567,17 @@ function EditCardDialog({
         <Dialog open onOpenChange={onClose}>
             <DialogContent className="max-w-lg rounded-2xl border border-white/10 bg-background/95 p-6 backdrop-blur-xl">
                 <DialogHeader>
-                    <DialogTitle className="mb-4 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                    <DialogTitle className="mb-4 text-sm font-bold tracking-widest text-muted-foreground uppercase">
                         Edit Flashcard
                     </DialogTitle>
-                    <DialogDescription className="sr-only">Update the question and answer for this flashcard.</DialogDescription>
+                    <DialogDescription className="sr-only">
+                        Update the question and answer for this flashcard.
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="flex flex-col gap-3">
                     <div>
-                        <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
+                        <label className="mb-1 block text-xs font-semibold text-muted-foreground uppercase">
                             Front (Question / Term)
                         </label>
                         <textarea
@@ -541,7 +588,7 @@ function EditCardDialog({
                         />
                     </div>
                     <div>
-                        <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
+                        <label className="mb-1 block text-xs font-semibold text-muted-foreground uppercase">
                             Back (Answer / Definition)
                         </label>
                         <textarea
@@ -595,11 +642,14 @@ function CreateCardButton({
         setSaving(true);
         setError(null);
         try {
-            const res = await window.axios.post<{ data: FlashCard }>('/flashcards', {
-                resource_id: resource.id,
-                front: front.trim(),
-                back: back.trim(),
-            });
+            const res = await window.axios.post<{ data: FlashCard }>(
+                '/flashcards',
+                {
+                    resource_id: resource.id,
+                    front: front.trim(),
+                    back: back.trim(),
+                },
+            );
             onCreated(res.data.data);
             setFront('');
             setBack('');
@@ -621,14 +671,16 @@ function CreateCardButton({
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="max-w-lg rounded-2xl border border-white/10 bg-background/95 p-6 backdrop-blur-xl">
                     <DialogHeader>
-                        <DialogTitle className="mb-4 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                        <DialogTitle className="mb-4 text-sm font-bold tracking-widest text-muted-foreground uppercase">
                             New Flashcard
                         </DialogTitle>
-                        <DialogDescription className="sr-only">Add a new manual flashcard to this resource.</DialogDescription>
+                        <DialogDescription className="sr-only">
+                            Add a new manual flashcard to this resource.
+                        </DialogDescription>
                     </DialogHeader>
                     <div className="flex flex-col gap-3">
                         <div>
-                            <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
+                            <label className="mb-1 block text-xs font-semibold text-muted-foreground uppercase">
                                 Front
                             </label>
                             <textarea
@@ -640,7 +692,7 @@ function CreateCardButton({
                             />
                         </div>
                         <div>
-                            <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
+                            <label className="mb-1 block text-xs font-semibold text-muted-foreground uppercase">
                                 Back
                             </label>
                             <textarea
@@ -651,14 +703,21 @@ function CreateCardButton({
                                 maxLength={2000}
                             />
                         </div>
-                        {error && <p className="text-xs text-destructive">{error}</p>}
+                        {error && (
+                            <p className="text-xs text-destructive">{error}</p>
+                        )}
                         <div className="flex justify-end gap-2">
-                            <Button variant="ghost" onClick={() => setOpen(false)}>
+                            <Button
+                                variant="ghost"
+                                onClick={() => setOpen(false)}
+                            >
                                 Cancel
                             </Button>
                             <Button
                                 onClick={handleCreate}
-                                disabled={saving || !front.trim() || !back.trim()}
+                                disabled={
+                                    saving || !front.trim() || !back.trim()
+                                }
                             >
                                 {saving ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -701,11 +760,13 @@ function GenerateButton({
             onGenerated(res.data.data);
             setOpen(false);
         } catch (err: unknown) {
-            const e = err as { response?: { data?: { error?: string; message?: string } } };
+            const e = err as {
+                response?: { data?: { error?: string; message?: string } };
+            };
             setError(
                 e?.response?.data?.error ??
-                e?.response?.data?.message ??
-                'Generation failed. Ensure the resource has been processed.',
+                    e?.response?.data?.message ??
+                    'Generation failed. Ensure the resource has been processed.',
             );
         } finally {
             setGenerating(false);
@@ -724,14 +785,21 @@ function GenerateButton({
                 Generate with AI
             </Button>
 
-            <Dialog open={open} onOpenChange={(v) => { if (!generating) setOpen(v); }}>
+            <Dialog
+                open={open}
+                onOpenChange={(v) => {
+                    if (!generating) setOpen(v);
+                }}
+            >
                 <DialogContent className="max-w-sm rounded-2xl border border-white/10 bg-background/95 p-6 backdrop-blur-xl">
                     <div className="mb-4 flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/20">
                             <Sparkles className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                            <DialogTitle className="text-sm font-bold">Generate Flashcards</DialogTitle>
+                            <DialogTitle className="text-sm font-bold">
+                                Generate Flashcards
+                            </DialogTitle>
                             <DialogDescription className="text-xs text-muted-foreground">
                                 AI will extract key concepts
                             </DialogDescription>
@@ -740,7 +808,7 @@ function GenerateButton({
 
                     <div className="flex flex-col gap-4">
                         <div>
-                            <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
+                            <label className="mb-1 block text-xs font-semibold text-muted-foreground uppercase">
                                 Number of cards
                             </label>
                             <Input
@@ -765,7 +833,10 @@ function GenerateButton({
                             >
                                 Cancel
                             </Button>
-                            <Button onClick={handleGenerate} disabled={generating}>
+                            <Button
+                                onClick={handleGenerate}
+                                disabled={generating}
+                            >
                                 {generating ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
@@ -842,7 +913,8 @@ function ReviewMode({
                 <div>
                     <h2 className="text-2xl font-bold">Session Complete!</h2>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Reviewed {queue.length} card{queue.length !== 1 ? 's' : ''}.
+                        Reviewed {queue.length} card
+                        {queue.length !== 1 ? 's' : ''}.
                     </p>
                 </div>
                 <Button onClick={onExit} className="mt-2">
@@ -853,7 +925,7 @@ function ReviewMode({
     }
 
     const card = queue[current];
-    const progress = ((current) / queue.length) * 100;
+    const progress = (current / queue.length) * 100;
 
     return (
         <div className="flex flex-1 flex-col gap-4">
@@ -865,7 +937,9 @@ function ReviewMode({
                 />
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground/60">
-                <span>{current} / {queue.length} reviewed</span>
+                <span>
+                    {current} / {queue.length} reviewed
+                </span>
                 <span>{queue.length - current} remaining</span>
             </div>
 
@@ -891,13 +965,13 @@ function ReviewMode({
                     {card.interval_days > 0 && (
                         <Badge
                             variant="outline"
-                            className="absolute top-4 right-4 border-white/10 text-[10px] uppercase text-muted-foreground"
+                            className="absolute top-4 right-4 border-white/10 text-[10px] text-muted-foreground uppercase"
                         >
                             {card.interval_days}d interval
                         </Badge>
                     )}
 
-                    <div className="max-w-2xl text-lg font-medium leading-relaxed">
+                    <div className="max-w-2xl text-lg leading-relaxed font-medium">
                         {revealed ? card.back : card.front}
                     </div>
 
@@ -912,7 +986,7 @@ function ReviewMode({
                 {/* Rating buttons */}
                 {revealed && (
                     <div className="mt-4 flex animate-in flex-col gap-3 fade-in slide-in-from-bottom-2">
-                        <p className="text-center text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
+                        <p className="text-center text-xs font-bold tracking-widest text-muted-foreground/60 uppercase">
                             How well did you know this?
                         </p>
                         <div className="grid grid-cols-4 gap-2">
@@ -939,7 +1013,9 @@ function ReviewMode({
                 )}
 
                 {error && (
-                    <p className="mt-2 text-center text-xs text-destructive">{error}</p>
+                    <p className="mt-2 text-center text-xs text-destructive">
+                        {error}
+                    </p>
                 )}
             </div>
         </div>

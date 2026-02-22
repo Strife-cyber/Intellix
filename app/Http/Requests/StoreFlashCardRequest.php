@@ -16,8 +16,8 @@ class StoreFlashCardRequest extends FormRequest
     {
         return [
             'resource_id' => ['required', 'string', 'exists:resources,id'],
-            'front'       => ['required', 'string', 'max:2000'],
-            'back'        => ['required', 'string', 'max:2000'],
+            'front' => ['required', 'string', 'max:2000'],
+            'back' => ['required', 'string', 'max:2000'],
         ];
     }
 }

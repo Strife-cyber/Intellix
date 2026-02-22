@@ -6,18 +6,18 @@ use App\Models\FlashCard;
 use App\Models\Resource;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use RuntimeException;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class GenerateFlashCardsAction
 {
     /**
      * Generate flashcards for a resource using AI.
      *
-     * @param  Resource  $resource  The resource to generate cards for
-     * @param  int       $userId    The authenticated user creating the cards
-     * @param  int       $count     Number of cards to generate (default 10)
-     * @return FlashCard[]          The created flash cards
+     * @param  resource  $resource  The resource to generate cards for
+     * @param  int  $userId  The authenticated user creating the cards
+     * @param  int  $count  Number of cards to generate (default 10)
+     * @return FlashCard[] The created flash cards
      *
      * @throws RuntimeException
      */
@@ -34,8 +34,8 @@ class GenerateFlashCardsAction
             'filter' => [
                 'must' => [[
                     'key' => 'resource_id',
-                    'match' => ['value' => $resource->id]
-                ]]
+                    'match' => ['value' => $resource->id],
+                ]],
             ],
             'limit' => 20,
             'with_payload' => true,
@@ -51,13 +51,13 @@ class GenerateFlashCardsAction
         if ($qdrantResponse->failed()) {
             Log::error('Qdrant scroll failed in GenerateFlashCardsAction', [
                 'resource_id' => $resource->id,
-                'response' => $qdrantResponse->body()
+                'response' => $qdrantResponse->body(),
             ]);
             throw new RuntimeException('Could not retrieve context from vector store.');
         }
 
         $points = $qdrantResponse->json()['result']['points'] ?? [];
-        $chunks = array_map(fn($p) => $p['payload']['full_content'] ?? '', $points);
+        $chunks = array_map(fn ($p) => $p['payload']['full_content'] ?? '', $points);
         $chunks = array_filter($chunks);
 
         $sourceText = implode("\n\n", $chunks);
@@ -90,14 +90,14 @@ PROMPT;
         set_time_limit(300);
 
         $response = Http::timeout(120)->post("{$aiEndpoint}/v1/chat/completions", [
-            'model'       => 'local-model',
-            'messages'    => [
+            'model' => 'local-model',
+            'messages' => [
                 [
-                    'role'    => 'system',
+                    'role' => 'system',
                     'content' => 'You are a JSON-only API. Return only valid JSON. Never add explanations or markdown.',
                 ],
                 [
-                    'role'    => 'user',
+                    'role' => 'user',
                     'content' => $prompt,
                 ],
             ],
@@ -108,8 +108,8 @@ PROMPT;
             throw new RuntimeException('AI provider request failed: '.$response->body());
         }
 
-        $data          = $response->json();
-        $rawContent    = $data['choices'][0]['message']['content'] ?? '';
+        $data = $response->json();
+        $rawContent = $data['choices'][0]['message']['content'] ?? '';
 
         // 4. Parse and validate JSON output
         // Strip any potential markdown code fences
@@ -121,7 +121,7 @@ PROMPT;
         if (! is_array($cards)) {
             Log::warning('GenerateFlashCardsAction: AI did not return valid JSON', [
                 'resource_id' => $resource->id,
-                'raw'         => $rawContent,
+                'raw' => $rawContent,
             ]);
             throw new RuntimeException('AI did not return a valid JSON array. Raw response: '.Str::limit($rawContent, 300));
         }
@@ -134,7 +134,7 @@ PROMPT;
             }
             $validCards[] = [
                 'front' => substr(strip_tags($card['front']), 0, 2000),
-                'back'  => substr(strip_tags($card['back']), 0, 2000),
+                'back' => substr(strip_tags($card['back']), 0, 2000),
             ];
         }
 
@@ -145,24 +145,24 @@ PROMPT;
         // 5. Bulk insert
         $now = now();
         $rows = array_map(fn (array $c) => [
-            'user_id'          => $userId,
-            'resource_id'      => $resource->id,
-            'front'            => $c['front'],
-            'back'             => $c['back'],
-            'interval_days'    => 0,
-            'stability'        => null,
-            'difficulty'       => null,
-            'next_review'      => $now,
+            'user_id' => $userId,
+            'resource_id' => $resource->id,
+            'front' => $c['front'],
+            'back' => $c['back'],
+            'interval_days' => 0,
+            'stability' => null,
+            'difficulty' => null,
+            'next_review' => $now,
             'last_reviewed_at' => null,
-            'created_at'       => $now,
-            'updated_at'       => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
         ], $validCards);
 
         FlashCard::insert($rows);
 
         Log::info('GenerateFlashCardsAction: cards created', [
             'resource_id' => $resource->id,
-            'count'       => count($rows),
+            'count' => count($rows),
         ]);
 
         // Return the freshly created cards

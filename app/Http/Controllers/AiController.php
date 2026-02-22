@@ -64,12 +64,12 @@ class AiController extends Controller
             ],
         ];
 
-        $request = Http::asJson();
+        $httpRequest = Http::asJson();
         if ($qdrantKey) {
-            $request->withHeaders(['api-key' => $qdrantKey]);
+            $httpRequest->withHeaders(['api-key' => $qdrantKey]);
         }
 
-        $qdrantResponse = $request->post("{$qdrantHost}/collections/{$collection}/points/search", $searchPayload);
+        $qdrantResponse = $httpRequest->post("{$qdrantHost}/collections/{$collection}/points/search", $searchPayload);
 
         if ($qdrantResponse->failed()) {
             return response()->json(['error' => 'Failed to search knowledge base', 'details' => $qdrantResponse->body()], 500);
@@ -78,8 +78,33 @@ class AiController extends Controller
         $points = $qdrantResponse->json()['result'] ?? [];
         $context = '';
         foreach ($points as $point) {
-            $text = $point['payload']['full_content'] ?? '';
-            $context .= $text."\n\n";
+            $payload = $point['payload'] ?? [];
+            $text = $payload['full_content'] ?? '';
+            if (! is_string($text) || trim($text) === '') {
+                continue;
+            }
+
+            $chunkIndex = $payload['chunk_index'] ?? null;
+            $page = $payload['page'] ?? null;
+            $sourceUrl = $payload['source_url'] ?? null;
+            $format = $payload['format'] ?? null;
+
+            $metaParts = [];
+            if ($chunkIndex !== null) {
+                $metaParts[] = 'chunk='.$chunkIndex;
+            }
+            if ($page !== null) {
+                $metaParts[] = 'page='.$page;
+            }
+            if ($format) {
+                $metaParts[] = 'format='.$format;
+            }
+            if ($sourceUrl) {
+                $metaParts[] = 'source_url='.$sourceUrl;
+            }
+
+            $meta = empty($metaParts) ? '' : ('['.implode(', ', $metaParts).']');
+            $context .= $meta."\n".$text."\n\n";
         }
 
         // Increase execution time for deep reasoning or large local models
@@ -88,7 +113,16 @@ class AiController extends Controller
         // 3. Call LM Studio (OpenAI compatible API)
         $aiEndpoint = env('AI_ENDPOINT', 'http://100.93.40.102:9090');
 
-        $systemInstruction = "You are a helpful AI assistant. Use the provided context to answer the user's question. If the answer is not in the context, say so. Keep the context confidential if asked about the prompt itself.";
+        $systemInstruction = <<<'SYS'
+You are a helpful AI assistant.
+
+Rules:
+- Use ONLY the provided context to answer.
+- If the answer is not explicitly supported by the context, respond with: "I cannot find this information in the provided documents."
+- Do not guess, do not use outside knowledge, do not invent citations.
+- When you make a factual claim, include a citation using the nearest available context metadata (e.g. [chunk=..., page=...]).
+- Answer in the same language as the user's question.
+SYS;
 
         $response = Http::timeout(300)->post("{$aiEndpoint}/v1/chat/completions", [
             'model' => 'local-model',
@@ -99,7 +133,7 @@ class AiController extends Controller
                 ],
                 [
                     'role' => 'user',
-                    'content' => "Context:\n".$context."\n\nQuestion: ".$message,
+                    'content' => "Context:\n".$context."\n\nQuestion:\n".$message,
                 ],
             ],
             'temperature' => 0.7,

@@ -9,14 +9,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property int    $id
- * @property int    $user_id
+ * @property int $id
+ * @property int $user_id
  * @property string $resource_id
  * @property string $front
  * @property string $back
- * @property int    $interval_days
- * @property float|null  $stability
- * @property float|null  $difficulty
+ * @property int $interval_days
+ * @property float|null $stability
+ * @property float|null $difficulty
  * @property \Carbon\CarbonImmutable|null $next_review
  * @property \Carbon\CarbonImmutable|null $last_reviewed_at
  */
@@ -38,11 +38,11 @@ class FlashCard extends Model
     ];
 
     protected $casts = [
-        'next_review'      => 'datetime',
+        'next_review' => 'datetime',
         'last_reviewed_at' => 'datetime',
-        'interval_days'    => 'integer',
-        'stability'        => 'float',
-        'difficulty'       => 'float',
+        'interval_days' => 'integer',
+        'stability' => 'float',
+        'difficulty' => 'float',
     ];
 
     // ── Relations ──────────────────────────────────────────────────────────

@@ -26,7 +26,7 @@ class FlashCardPolicy
      */
     public function view(User $user, FlashCard $flashCard): bool
     {
-        /** @var Resource $resource */
+        /** @var resource $resource */
         $resource = $flashCard->resource;
 
         return $resource->isAccessibleBy($user);
@@ -47,7 +47,7 @@ class FlashCardPolicy
      */
     public function update(User $user, FlashCard $flashCard): bool
     {
-        /** @var Resource $resource */
+        /** @var resource $resource */
         $resource = $flashCard->resource;
 
         return $resource->isEditableBy($user);
@@ -58,7 +58,7 @@ class FlashCardPolicy
      */
     public function delete(User $user, FlashCard $flashCard): bool
     {
-        /** @var Resource $resource */
+        /** @var resource $resource */
         $resource = $flashCard->resource;
 
         return $resource->isEditableBy($user);
@@ -69,7 +69,7 @@ class FlashCardPolicy
      */
     public function review(User $user, FlashCard $flashCard): bool
     {
-        /** @var Resource $resource */
+        /** @var resource $resource */
         $resource = $flashCard->resource;
 
         return $resource->isAccessibleBy($user);

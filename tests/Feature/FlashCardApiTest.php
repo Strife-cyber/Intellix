@@ -63,7 +63,7 @@ test('stranger cannot list flashcards for resource', function () {
 
 test('owner can create flashcard', function () {
     $response = $this->actingAs($this->owner)
-        ->postJson("/api/v1/flashcards", [
+        ->postJson('/api/v1/flashcards', [
             'resource_id' => $this->resource->id,
             'front' => 'What is Laravel?',
             'back' => 'A PHP Framework.',
@@ -80,7 +80,7 @@ test('owner can create flashcard', function () {
 
 test('viewer cannot create flashcard', function () {
     $response = $this->actingAs($this->viewer)
-        ->postJson("/api/v1/flashcards", [
+        ->postJson('/api/v1/flashcards', [
             'resource_id' => $this->resource->id,
             'front' => 'Sneaky?',
             'back' => 'No.',

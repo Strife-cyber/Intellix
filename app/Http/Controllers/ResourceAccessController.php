@@ -43,7 +43,7 @@ class ResourceAccessController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'message' => 'User not found. In a full implementation, this could send an email invitation.',
             ], 404);
@@ -51,20 +51,20 @@ class ResourceAccessController extends Controller
 
         // Check if already has access
         if ($resource->users()->where('user_id', $user->id)->exists()) {
-             // Update existing role
-             $resource->users()->updateExistingPivot($user->id, ['role' => $request->role]);
+            // Update existing role
+            $resource->users()->updateExistingPivot($user->id, ['role' => $request->role]);
         } else {
-             $resource->grantAccess($user, $request->role);
+            $resource->grantAccess($user, $request->role);
         }
 
         return response()->json([
-            'message' => "Access granted to {$user->name} as " . strtoupper($request->role),
+            'message' => "Access granted to {$user->name} as ".strtoupper($request->role),
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $request->role,
-            ]
+            ],
         ]);
     }
 
