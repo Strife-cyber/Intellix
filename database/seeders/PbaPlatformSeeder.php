@@ -28,11 +28,14 @@ class PbaPlatformSeeder extends Seeder
 
         $prosit = Prosit::create([
             'chapter_id' => $chapter->id,
-            'title' => 'Designing a RESTful AI Integration',
-            'problem_statement' => 'Your development team has been tasked with integrating a local AI model (LM Studio) into an existing Laravel application. You need to design the architecture, establish resilient API communication, and ensure the system respects strict JSON schemas for data ingestion.',
-            'context' => 'The system currently uses standard MVC patterns but lacks any intelligent capabilities. You must act as the Lead Architect to bridge the Laravel backend and the Rust-based AI ingestion pipeline.',
-            'difficulty_level' => 'Advanced',
-            'estimated_duration' => 240, // 4 hours
+            'mots_cles' => 'API, REST architecture, AI Integration, Security',
+            'besoin' => 'Design an API that allows interaction with LM Studio, enforcing strict JSON output.',
+            'problematique' => 'Your development team has been tasked with integrating a local AI model (LM Studio) into an existing Laravel application. You need to design the architecture, establish resilient API communication, and ensure the system respects strict JSON schemas for data ingestion.',
+            'contexte' => 'The system currently uses standard MVC patterns but lacks any intelligent capabilities. You must act as the Lead Architect to bridge the Laravel backend and the Rust-based AI ingestion pipeline.',
+            'generalisation' => 'AI System Architecture',
+            'piste_de_solution' => '- What if we use gRPC instead of REST?\n- Could we offload generation to a queue?',
+            'plan_d_action' => '- Step 1: Design REST structure\n- Step 2: Ensure schema validation\n- Step 3: Integrate with LM Studio',
+            'texte' => 'This is the full descriptive text of the module... [Detailed specifications of Laravel backend integration with local LM Studio APIs].',
         ]);
 
         Competence::create([

@@ -61,11 +61,14 @@ class PbaAdminController extends Controller
     {
         $validated = $request->validate([
             'chapter_id' => 'required|exists:chapters,id',
-            'title' => 'required|string|max:255',
-            'problem_statement' => 'required|string',
-            'context' => 'nullable|string',
-            'difficulty_level' => 'nullable|string',
-            'estimated_duration' => 'nullable|integer',
+            'mots_cles' => 'nullable|string',
+            'contexte' => 'nullable|string',
+            'besoin' => 'nullable|string',
+            'problematique' => 'required|string',
+            'generalisation' => 'nullable|string|max:255',
+            'piste_de_solution' => 'nullable|string',
+            'plan_d_action' => 'nullable|string',
+            'texte' => 'nullable|string',
         ]);
 
         $prosit = Prosit::create($validated);

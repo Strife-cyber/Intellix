@@ -41,14 +41,20 @@ import {
     LayoutGrid,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { BreadcrumbItem } from '@/types';
 
 interface Prosit {
     id: string;
     chapter_id: string;
-    title: string;
-    problem_statement: string;
-    difficulty_level: string | null;
+    mots_cles: string | null;
+    contexte: string | null;
+    besoin: string | null;
+    problematique: string;
+    generalisation: string | null;
+    piste_de_solution: string | null;
+    plan_d_action: string | null;
+    texte: string | null;
     chapter: {
         id: string;
         title: string;
@@ -86,9 +92,15 @@ export default function PrositsIndex({
         errors: createErrors,
     } = useForm({
         chapter_id: '',
-        title: '',
-        problem_statement: '',
-        difficulty_level: 'Beginner',
+        mots_cles: '',
+        contexte: '',
+        besoin: '',
+        problematique: '',
+        generalisation: '',
+        piste_de_solution: '',
+        plan_d_action: '',
+        texte: '',
+        generate_with_ai: false,
     });
 
     const {
@@ -100,9 +112,14 @@ export default function PrositsIndex({
         errors: editErrors,
     } = useForm({
         chapter_id: '',
-        title: '',
-        problem_statement: '',
-        difficulty_level: 'Beginner',
+        mots_cles: '',
+        contexte: '',
+        besoin: '',
+        problematique: '',
+        generalisation: '',
+        piste_de_solution: '',
+        plan_d_action: '',
+        texte: '',
     });
 
     const handleCreate = (e: React.FormEvent) => {
@@ -119,9 +136,14 @@ export default function PrositsIndex({
         setEditingProsit(prosit);
         setEditData({
             chapter_id: prosit.chapter_id,
-            title: prosit.title,
-            problem_statement: prosit.problem_statement,
-            difficulty_level: prosit.difficulty_level || 'Beginner',
+            mots_cles: prosit.mots_cles || '',
+            contexte: prosit.contexte || '',
+            besoin: prosit.besoin || '',
+            problematique: prosit.problematique,
+            generalisation: prosit.generalisation || '',
+            piste_de_solution: prosit.piste_de_solution || '',
+            plan_d_action: prosit.plan_d_action || '',
+            texte: prosit.texte || '',
         });
         setIsEditOpen(true);
     };
@@ -159,7 +181,7 @@ export default function PrositsIndex({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Prosits Manager - PBA Learning" />
-            <div className="mx-auto max-w-7xl space-y-6 p-6">
+            <div className="space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">
@@ -229,71 +251,73 @@ export default function PrositsIndex({
                                         </p>
                                     )}
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">
-                                        Title
-                                    </label>
-                                    <Input
-                                        value={createData.title}
-                                        onChange={(e) =>
-                                            setCreateData(
-                                                'title',
-                                                e.target.value,
-                                            )
-                                        }
-                                        required
+
+                                <div className="flex items-center space-x-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
+                                    <Checkbox
+                                        id="generate_with_ai"
+                                        checked={createData.generate_with_ai}
+                                        onCheckedChange={(checked) => setCreateData('generate_with_ai', !!checked)}
                                     />
-                                    {createErrors.title && (
-                                        <p className="text-xs text-red-500">
-                                            {createErrors.title}
+                                    <div className="grid gap-1.5 leading-none">
+                                        <label
+                                            htmlFor="generate_with_ai"
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        >
+                                            Generate with AI
+                                        </label>
+                                        <p className="text-muted-foreground text-xs">
+                                            The AI will automatically structure the Prosit from your original text.
                                         </p>
-                                    )}
+                                    </div>
                                 </div>
+
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium">
-                                        Difficulty Level
-                                    </label>
-                                    <Select
-                                        value={createData.difficulty_level}
-                                        onValueChange={(v) =>
-                                            setCreateData('difficulty_level', v)
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Beginner">
-                                                Beginner
-                                            </SelectItem>
-                                            <SelectItem value="Intermediate">
-                                                Intermediate
-                                            </SelectItem>
-                                            <SelectItem value="Advanced">
-                                                Advanced
-                                            </SelectItem>
-                                            <SelectItem value="Expert">
-                                                Expert
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <label className="text-sm font-medium">Original Prosit Text</label>
+                                    <p className="text-muted-foreground text-xs italic">
+                                        Paste the raw text of the problem or situation here.
+                                    </p>
+                                    <Textarea value={createData.texte} onChange={e => setCreateData('texte', e.target.value)} rows={6} required />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">
-                                        Problem Statement (supports Markdown)
-                                    </label>
-                                    <Textarea
-                                        value={createData.problem_statement}
-                                        onChange={(e) =>
-                                            setCreateData(
-                                                'problem_statement',
-                                                e.target.value,
-                                            )
-                                        }
-                                        rows={5}
-                                        required
-                                    />
-                                </div>
+
+                                {!createData.generate_with_ai && (
+                                    <>
+                                        <div className="space-y-2 border-t pt-4">
+                                            <label className="text-sm font-medium text-primary">Mots Clés (Keywords)</label>
+                                            <p className="text-muted-foreground text-xs">Comma-separated key technical terms.</p>
+                                            <Input value={createData.mots_cles} onChange={e => setCreateData('mots_cles', e.target.value)} placeholder="e.g. React, APIs, Authentication" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-primary">Contexte</label>
+                                            <p className="text-muted-foreground text-xs">Short narrative setting the scene for the student.</p>
+                                            <Textarea value={createData.contexte} onChange={e => setCreateData('contexte', e.target.value)} rows={2} placeholder="Dans le cadre de votre stage chez..." />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-primary">Besoin</label>
+                                            <p className="text-muted-foreground text-xs">Precisely what the main character needs to achieve.</p>
+                                            <Textarea value={createData.besoin} onChange={e => setCreateData('besoin', e.target.value)} rows={2} placeholder="Le client a besoin d'une interface robuste pour..." />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-primary">Problématique (Burning Question)</label>
+                                            <p className="text-muted-foreground text-xs">The core question that drives the learning.</p>
+                                            <Textarea value={createData.problematique} onChange={e => setCreateData('problematique', e.target.value)} rows={2} required placeholder="Comment pouvons-nous optimiser le chargement des..." />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-primary">Généralisation (Short Title)</label>
+                                            <p className="text-muted-foreground text-xs">A punchy name for the module.</p>
+                                            <Input value={createData.generalisation} onChange={e => setCreateData('generalisation', e.target.value)} placeholder="e.g. Performance Optimization" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-primary">Piste de solution</label>
+                                            <p className="text-muted-foreground text-xs">Guiding questions or hints for research.</p>
+                                            <Textarea value={createData.piste_de_solution} onChange={e => setCreateData('piste_de_solution', e.target.value)} rows={2} placeholder="- Qu'est-ce qu'un Service Worker?\n- Comment fonctionne le cache?" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-primary">Plan d'action</label>
+                                            <p className="text-muted-foreground text-xs">High-level steps to solve the problem.</p>
+                                            <Textarea value={createData.plan_d_action} onChange={e => setCreateData('plan_d_action', e.target.value)} rows={3} placeholder="1. Analyser les besoins\n2. Rechercher des solutions technologiques..." />
+                                        </div>
+                                    </>
+                                )}
                                 <DialogFooter>
                                     <Button
                                         type="button"
@@ -368,7 +392,7 @@ export default function PrositsIndex({
                                         )
                                     }
                                 >
-                                    {prosit.title}
+                                    {prosit.generalisation || 'Prosit sans titre'}
                                 </CardTitle>
                                 <CardDescription className="mt-1 flex items-center gap-1 text-xs">
                                     <LayoutGrid className="h-3 w-3" />{' '}
@@ -378,11 +402,8 @@ export default function PrositsIndex({
                             </CardHeader>
                             <CardContent>
                                 <div className="mb-4 flex items-center gap-2">
-                                    <Badge
-                                        variant="secondary"
-                                        className="text-xs"
-                                    >
-                                        {prosit.difficulty_level || 'Unrated'}
+                                    <Badge variant="secondary" className="text-xs">
+                                        Prosit
                                     </Badge>
                                 </div>
                                 <Link
@@ -461,64 +482,36 @@ export default function PrositsIndex({
                             )}
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Title</label>
-                            <Input
-                                value={editData.title}
-                                onChange={(e) =>
-                                    setEditData('title', e.target.value)
-                                }
-                                required
-                            />
-                            {editErrors.title && (
-                                <p className="text-xs text-red-500">
-                                    {editErrors.title}
-                                </p>
-                            )}
+                            <label className="text-sm font-medium">Texte (Original Text)</label>
+                            <Textarea value={editData.texte} onChange={e => setEditData('texte', e.target.value)} rows={4} />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">
-                                Difficulty Level
-                            </label>
-                            <Select
-                                value={editData.difficulty_level}
-                                onValueChange={(v) =>
-                                    setEditData('difficulty_level', v)
-                                }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Beginner">
-                                        Beginner
-                                    </SelectItem>
-                                    <SelectItem value="Intermediate">
-                                        Intermediate
-                                    </SelectItem>
-                                    <SelectItem value="Advanced">
-                                        Advanced
-                                    </SelectItem>
-                                    <SelectItem value="Expert">
-                                        Expert
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <label className="text-sm font-medium">Mots Clés (Keywords)</label>
+                            <Input value={editData.mots_cles} onChange={e => setEditData('mots_cles', e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">
-                                Problem Statement
-                            </label>
-                            <Textarea
-                                value={editData.problem_statement}
-                                onChange={(e) =>
-                                    setEditData(
-                                        'problem_statement',
-                                        e.target.value,
-                                    )
-                                }
-                                rows={5}
-                                required
-                            />
+                            <label className="text-sm font-medium">Contexte</label>
+                            <Textarea value={editData.contexte} onChange={e => setEditData('contexte', e.target.value)} rows={2} />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Besoin</label>
+                            <Textarea value={editData.besoin} onChange={e => setEditData('besoin', e.target.value)} rows={2} />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Problématique (Question(s))</label>
+                            <Textarea value={editData.problematique} onChange={e => setEditData('problematique', e.target.value)} rows={2} required />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Généralisation</label>
+                            <Input value={editData.generalisation} onChange={e => setEditData('generalisation', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Piste de solution</label>
+                            <Textarea value={editData.piste_de_solution} onChange={e => setEditData('piste_de_solution', e.target.value)} rows={2} />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Plan d'action</label>
+                            <Textarea value={editData.plan_d_action} onChange={e => setEditData('plan_d_action', e.target.value)} rows={3} />
                         </div>
                         <DialogFooter>
                             <Button

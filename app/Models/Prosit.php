@@ -14,11 +14,14 @@ class Prosit extends Model
 
     protected $fillable = [
         'chapter_id',
-        'title',
-        'problem_statement',
-        'context',
-        'difficulty_level',
-        'estimated_duration',
+        'mots_cles',
+        'contexte',
+        'besoin',
+        'problematique',
+        'generalisation',
+        'piste_de_solution',
+        'plan_d_action',
+        'texte',
     ];
 
     public function chapter(): BelongsTo

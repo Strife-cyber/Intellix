@@ -1,0 +1,85 @@
+START
+Package not found at 'c:/Users/dunam/Desktop/Projects/Personal/Laravel/intellix/storage/app/public/PROSIT ALLER N 2 Exigence.docx'
+=== Prosit_Aller_1.docx ===
+PROSIT ALLER N°3
+PRENDRE CONNAISSANCE DE LA SITUATION ET LA CLARIFIER
+Mots Clés 
+Exigence
+Ingénierie des exigences
+Exigences fonctionnelles
+Exigences non fonctionnelles
+Exigences métier
+Système solution
+Liste des exigences
+Matrice de traçabilité
+Elicitation
+Analyse, Validation, Gestion, Vérification, documentation
+Contexte
+Une équipe de dev travaille sur un site web de location de voiture. Après quelques semaines de développement, ils rencontrent plusieurs problèmes liés aux fonctionnalités attendues. Suite à cela, une reunion est tenue où ils décident d’en apprendre plus sur l’ingénierie des exigences afin de corriger ce problème. 
+ANALYSE DES BESOINS 
+Besoins
+Clarification des besoins du client 
+Documentation des exigences
+Matrice de traçabilité
+Validation des exigences par le client 
+Contraintes
+Validation et vérification des exigences par le client 
+Temps (02 semaines)
+Problématique 
+Comment l’équipe peut-elle clarifier et gérer les exigences pour éviter les incohérences et assurer un développement efficace du site de location des véhicules ? 
+GENERALISATION
+          Ingénierie des exigences
+PISTES DE SOLUTIONS
+Catégoriser les exigences va-t-il nous aider à avoir un meilleur document de spécification des exigences ? 
+L’ingénierie des exigences et ses artefacts sont-ils suffisants pour rattraper notre retard ? 
+Est-ce qu’une matrice de traçabilité peut aider à avoir un suivi des exigences et des tests qui les valident 
+La validation est-elle une étape nécessaire pour la résolution du problème
+PLAN D’ACTION
+Définition des mots clés 
+Etude sur l’ingénierie des exigences et ses artefacts 
+Utiliser les artefacts de l’ingénierie des exigences afin de mieux spécifier les besoins
+Rédiger des documents des exigences 
+Etablir une matrice de traçabilité 
+Valider les exigences avec le client
+Mettre en place un suivi des exigences pour gérer les évolutions du projet 
+
+=== Prosit_Aller_4.docx ===
+PROSIT ALLER N°4
+PRENDRE CONNAISSANCE DE LA SITUATION ET LA CLARIFIER
+Mots Clés 
+Digitalisation
+Représentation semi formelle 
+Méthodologie d’analyse
+Accessibilité
+Transformation numérique
+Doublons
+Gestion des titres fonciers
+Sécuriser les données
+Contexte
+A Pouma, la gestion des titres fonciers repose encore sur des dossiers papier, engendrant lenteur et erreur. Face à l’urgence administrative et aux plaintes citoyennes, la Mairie exige de M. Arthur et de son équipe une plateforme numérique simple, rapide et visible. Mais ces derniers sont confrontés entre attentes floues, résistances internes et enjeux techniques à clarifier. 
+ANALYSE DES BESOINS 
+Besoins
+Connaissance sur la représentation semi formelle 
+Connaissance sur la règlementation Camerounaise des titres fonciers
+Contraintes
+Temps (04 jours)
+Sécurisation des données sensible 
+Accessible à tous les citoyens
+Respect de la conformité règlementaire 
+Problématique 
+Comment concevoir une plateforme numérique simple, rapide et sécurisée pour digitaliser la gestion des titres fonciers à Pouma, tout en prenant en compte le manque de règle formalisée, des craintes du personnel et des besoins d’accessibilité des citoyens ? 
+GENERALISATION
+          Spécifications textuelles et semi formelles 
+PISTES DE SOLUTIONS
+Réaliser un tableau avec des exigences fonctionnelles et non fonctionnelles va-t-il nous aider à comprendre les besoins du maire ? 
+L’utilisation des diagrammes UML et BPMN est elle plus adaptée pour visualiser le flux et les interactions des exigences ? 
+PLAN D’ACTION
+Définition des mots clés
+Etude sur la règlementation Camerounaise sur des titres fonciers 
+Elicitation des exigences fonctionnelles et non fonctionnelles 
+Modéliser 
+Construire un cadre avec des représentations semi formelles
+Modéliser les différentes exigences
+Mettre en place une méthodologie claire de gestion des titres fonciers
+Mettre en place un document de spécification et valider avec le client   
+

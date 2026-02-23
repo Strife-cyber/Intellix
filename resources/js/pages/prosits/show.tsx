@@ -31,10 +31,14 @@ interface Competence {
 
 interface Prosit {
     id: string;
-    title: string;
-    problem_statement: string;
-    context: string | null;
-    difficulty_level: string | null;
+    mots_cles: string | null;
+    contexte: string | null;
+    besoin: string | null;
+    problematique: string;
+    generalisation: string | null;
+    piste_de_solution: string | null;
+    plan_d_action: string | null;
+    texte: string | null;
     resources: Resource[];
     competences: Competence[];
 }
@@ -52,7 +56,7 @@ export default function PrositShow({
         { title: 'Courses', href: '/courses' },
         { title: course.title, href: `/courses/${course.id}` },
         {
-            title: prosit.title,
+            title: prosit.generalisation || 'Prosit sans titre',
             href: `/courses/${course.id}/prosits/${prosit.id}`,
         },
     ];
@@ -74,7 +78,7 @@ export default function PrositShow({
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Prosit: ${prosit.title}`} />
+            <Head title={`Prosit: ${prosit.generalisation || 'Sans titre'}`} />
             <div className="mx-auto max-w-6xl space-y-6 p-6">
                 <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-white/5 bg-card p-6 shadow-lg md:flex-row md:items-center">
                     <div>
@@ -85,15 +89,10 @@ export default function PrositShow({
                             >
                                 Problem-Based Approach
                             </Badge>
-                            {prosit.difficulty_level && (
-                                <Badge variant="secondary" className="text-xs">
-                                    Difficulty: {prosit.difficulty_level}
-                                </Badge>
-                            )}
                         </div>
                         <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight">
                             <FileText className="h-8 w-8 text-primary" />
-                            {prosit.title}
+                            {prosit.generalisation || 'Prosit sans titre'}
                         </h1>
                     </div>
                     <Button
@@ -132,25 +131,79 @@ export default function PrositShow({
                         <Card className="border-white/10 bg-black/20 shadow-lg backdrop-blur-sm">
                             <CardHeader className="border-b border-white/5 bg-white/5">
                                 <CardTitle className="text-lg">
-                                    Problem Statement
+                                    Problématique
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="prose prose-invert max-w-none p-6 text-sm leading-relaxed text-muted-foreground">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {prosit.problem_statement}
+                                    {prosit.problematique}
                                 </ReactMarkdown>
 
-                                {prosit.context && (
+                                {prosit.texte && (
                                     <>
                                         <hr className="my-6 border-white/10" />
-                                        <h4 className="mb-2 font-semibold text-white">
-                                            Context & Background
-                                        </h4>
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkGfm]}
-                                        >
-                                            {prosit.context}
+                                        <h4 className="mb-2 font-semibold text-white">Texte</h4>
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {prosit.texte}
                                         </ReactMarkdown>
+                                    </>
+                                )}
+
+                                {prosit.contexte && (
+                                    <>
+                                        <hr className="my-6 border-white/10" />
+                                        <h4 className="mb-2 font-semibold text-white">Contexte</h4>
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {prosit.contexte}
+                                        </ReactMarkdown>
+                                    </>
+                                )}
+
+                                {prosit.besoin && (
+                                    <>
+                                        <hr className="my-6 border-white/10" />
+                                        <h4 className="mb-2 font-semibold text-white">Besoin</h4>
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {prosit.besoin}
+                                        </ReactMarkdown>
+                                    </>
+                                )}
+
+                                {prosit.generalisation && (
+                                    <>
+                                        <hr className="my-6 border-white/10" />
+                                        <h4 className="mb-2 font-semibold text-white">Généralisation</h4>
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {prosit.generalisation}
+                                        </ReactMarkdown>
+                                    </>
+                                )}
+
+                                {prosit.piste_de_solution && (
+                                    <>
+                                        <hr className="my-6 border-white/10" />
+                                        <h4 className="mb-2 font-semibold text-white">Piste de solution</h4>
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {prosit.piste_de_solution}
+                                        </ReactMarkdown>
+                                    </>
+                                )}
+
+                                {prosit.plan_d_action && (
+                                    <>
+                                        <hr className="my-6 border-white/10" />
+                                        <h4 className="mb-2 font-semibold text-white">Plan d'action</h4>
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {prosit.plan_d_action}
+                                        </ReactMarkdown>
+                                    </>
+                                )}
+
+                                {prosit.mots_cles && (
+                                    <>
+                                        <hr className="my-6 border-white/10" />
+                                        <h4 className="mb-2 font-semibold text-white">Mots Clés</h4>
+                                        <p>{prosit.mots_cles}</p>
                                     </>
                                 )}
                             </CardContent>
@@ -168,7 +221,7 @@ export default function PrositShow({
                             </CardHeader>
                             <CardContent className="space-y-3 pt-0">
                                 {prosit.competences &&
-                                prosit.competences.length > 0 ? (
+                                    prosit.competences.length > 0 ? (
                                     prosit.competences.map((comp) => (
                                         <div
                                             key={comp.id}
@@ -210,7 +263,7 @@ export default function PrositShow({
                             </CardHeader>
                             <CardContent className="space-y-2 pt-0">
                                 {prosit.resources &&
-                                prosit.resources.length > 0 ? (
+                                    prosit.resources.length > 0 ? (
                                     prosit.resources.map((res) => (
                                         <div
                                             key={res.id}

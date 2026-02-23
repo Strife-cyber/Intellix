@@ -88,6 +88,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('prosits', [\App\Http\Controllers\PbaWebController::class, 'indexProsits'])->name('prosits.index');
     Route::post('prosits', [\App\Http\Controllers\PbaWebController::class, 'storeProsit'])->name('prosits.store');
+    Route::post('prosits/generate-fields', [\App\Http\Controllers\PbaWebController::class, 'generatePrositFields'])->name('prosits.generate-fields');
     Route::put('prosits/{prosit}', [\App\Http\Controllers\PbaWebController::class, 'updateProsit'])->name('prosits.update');
     Route::delete('prosits/{prosit}', [\App\Http\Controllers\PbaWebController::class, 'destroyProsit'])->name('prosits.destroy');
     Route::get('courses/{course}/prosits/{prosit}', [\App\Http\Controllers\PbaWebController::class, 'showProsit'])->name('prosits.show');

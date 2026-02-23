@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Chapter;
 use App\Models\Course;
 use App\Models\Exam;
 use App\Models\Prosit;
 use App\Services\ExamGenerationService;
+use App\Services\PrositGenerationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -106,7 +108,7 @@ class PbaWebController extends Controller
     public function indexProsits()
     {
         $prosits = Prosit::with(['chapter.course'])->latest()->get();
-        $chapters = \App\Models\Chapter::with('course')->get();
+        $chapters = Chapter::with('course')->get();
 
         return Inertia::render('prosits/index', [
             'prosits' => $prosits,
@@ -114,30 +116,68 @@ class PbaWebController extends Controller
         ]);
     }
 
-    public function storeProsit(Request $request)
+    public function storeProsit(Request $request, PrositGenerationService $prositService)
     {
-        $validated = $request->validate([
+        $rules = [
             'chapter_id' => 'required|exists:chapters,id',
-            'title' => 'required|string|max:255',
-            'problem_statement' => 'required|string',
-            'context' => 'nullable|string',
-            'difficulty_level' => 'nullable|string',
-            'estimated_duration' => 'nullable|integer',
-        ]);
+            'texte' => 'required|string',
+            'generate_with_ai' => 'boolean',
+        ];
+
+        if (!$request->boolean('generate_with_ai')) {
+            $rules = array_merge($rules, [
+                'mots_cles' => 'nullable|string',
+                'contexte' => 'nullable|string',
+                'besoin' => 'nullable|string',
+                'problematique' => 'required|string',
+                'generalisation' => 'nullable|string|max:255',
+                'piste_de_solution' => 'nullable|string',
+                'plan_d_action' => 'nullable|string',
+            ]);
+        }
+
+        $validated = $request->validate($rules);
+
+        if ($request->boolean('generate_with_ai')) {
+            try {
+                $aiFields = $prositService->generatePrositFields($validated['texte']);
+                $validated = array_merge($validated, $aiFields);
+            } catch (\Exception $e) {
+                return back()->withErrors(['error' => 'AI Generation failed: ' . $e->getMessage()]);
+            }
+        }
+
         Prosit::create($validated);
 
         return back()->with('success', 'Prosit created successfully');
+    }
+
+    public function generatePrositFields(Request $request, PrositGenerationService $prositService)
+    {
+        $request->validate([
+            'texte' => 'required|string',
+        ]);
+
+        try {
+            $fields = $prositService->generatePrositFields($request->input('texte'));
+            return response()->json($fields);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function updateProsit(Request $request, Prosit $prosit)
     {
         $validated = $request->validate([
             'chapter_id' => 'required|exists:chapters,id',
-            'title' => 'required|string|max:255',
-            'problem_statement' => 'required|string',
-            'context' => 'nullable|string',
-            'difficulty_level' => 'nullable|string',
-            'estimated_duration' => 'nullable|integer',
+            'mots_cles' => 'nullable|string',
+            'contexte' => 'nullable|string',
+            'besoin' => 'nullable|string',
+            'problematique' => 'required|string',
+            'generalisation' => 'nullable|string|max:255',
+            'piste_de_solution' => 'nullable|string',
+            'plan_d_action' => 'nullable|string',
+            'texte' => 'nullable|string',
         ]);
         $prosit->update($validated);
 

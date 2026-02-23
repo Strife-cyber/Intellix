@@ -25,10 +25,28 @@ class ExamGenerationService
         }
 
         // Prepare context text
-        $context = "PROSIT TITLE: {$prosit->title}\n\n";
-        $context .= "PROBLEM STATEMENT: {$prosit->problem_statement}\n\n";
-        if ($prosit->context) {
-            $context .= "CONTEXT: {$prosit->context}\n\n";
+        $context = "";
+        $context .= "PROBLEMATIQUE: {$prosit->problematique}\n\n";
+        if ($prosit->contexte) {
+            $context .= "CONTEXT: {$prosit->contexte}\n\n";
+        }
+        if ($prosit->texte) {
+            $context .= "TEXTE: {$prosit->texte}\n\n";
+        }
+        if ($prosit->mots_cles) {
+            $context .= "MOTS CLES: {$prosit->mots_cles}\n\n";
+        }
+        if ($prosit->besoin) {
+            $context .= "BESOIN: {$prosit->besoin}\n\n";
+        }
+        if ($prosit->generalisation) {
+            $context .= "GENERALISATION: {$prosit->generalisation}\n\n";
+        }
+        if ($prosit->piste_de_solution) {
+            $context .= "PISTE DE SOLUTION: {$prosit->piste_de_solution}\n\n";
+        }
+        if ($prosit->plan_d_action) {
+            $context .= "PLAN D'ACTION: {$prosit->plan_d_action}\n\n";
         }
 
         $context .= "RESOURCES CONTENT:\n";

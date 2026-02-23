@@ -119,7 +119,7 @@ export default function CoursesIndex({ courses }: { courses: Course[] }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Courses - PBA Learning" />
-            <div className="mx-auto max-w-7xl space-y-6 p-6">
+            <div className=" space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">

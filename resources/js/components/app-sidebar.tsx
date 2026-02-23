@@ -4,7 +4,6 @@ import {
     FolderOpen,
     LayoutGrid,
     Layers2Icon,
-    ListChecks,
     Calendar,
     BookOpen,
 } from 'lucide-react';
@@ -22,13 +21,13 @@ import {
 } from '@/components/ui/sidebar';
 import {
     dashboard,
-    exams,
     flashcards,
     library,
-    upload,
-    courses,
-    prosits,
+    upload
 } from '@/routes';
+import courses from '@/routes/courses';
+import exams from '@/routes/exams';
+import prosits from '@/routes/prosits';
 import type { NavItem } from '@/types';
 import AppLogo from './app-logo';
 
