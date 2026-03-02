@@ -1,6 +1,15 @@
-import { useState, useMemo } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import {
+    FileText,
+    Plus,
+    Edit2,
+    Trash2,
+    MoreVertical,
+    LayoutGrid,
+} from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -8,16 +17,7 @@ import {
     CardTitle,
     CardDescription,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -32,41 +32,17 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import {
-    FileText,
-    Plus,
-    Edit2,
-    Trash2,
-    MoreVertical,
-    LayoutGrid,
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import type { BreadcrumbItem } from '@/types';
-
-interface Prosit {
-    id: string;
-    chapter_id: string;
-    mots_cles: string | null;
-    contexte: string | null;
-    besoin: string | null;
-    problematique: string;
-    generalisation: string | null;
-    piste_de_solution: string | null;
-    plan_d_action: string | null;
-    texte: string | null;
-    chapter: {
-        id: string;
-        title: string;
-        course: { id: string; title: string };
-    };
-}
-
-interface Chapter {
-    id: string;
-    title: string;
-    course: { id: string; title: string };
-}
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import AppLayout from '@/layouts/app-layout';
+import type { BreadcrumbItem, Chapter, Prosit } from '@/types';
 
 export default function PrositsIndex({
     prosits,

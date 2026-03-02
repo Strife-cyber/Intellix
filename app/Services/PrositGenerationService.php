@@ -23,9 +23,14 @@ Your task is to analyze the provided "Original Text" and extract/generate a stru
 - generalisation: A very short phrase or title (max 5 words) that summarizes the core academic concept of the Prosit (e.g., "Ingénierie des exigences", "Spécifications textuelles et semi formelles").
 - piste_de_solution: An array of strings containing 2-4 guiding questions (hints) that prompt the student's research without giving the direct answer (e.g., ["L'utilisation de diagrammes UML est-elle adaptée pour visualiser le flux ?", "Une matrice de traçabilité peut-elle aider ?"]).
 - plan_d_action: An array of strings listing 5-7 actionable steps the student should follow. Always start the first step with "Définition des mots clés". Start subsequent steps with action verbs (e.g., ["Définition des mots clés", "Etude sur l'ingénierie des exigences", "Etablir une matrice de traçabilité", "Modéliser les différentes exigences"]).
+- competences: An array of objects representing what the student should master. Each object MUST have:
+    - title: A concise name of the competence.
+    - taxonomy_level: Must be one of ["Connaissance", "Application"].
+    - weight: An integer from 1 to 5 indicating importance.
+    - description: A short sentence explaining the goal.
 
 Output your response as a valid JSON object with EXACTLY the following keys:
-"mots_cles", "contexte", "besoin", "problematique", "generalisation", "piste_de_solution", "plan_d_action"
+"mots_cles", "contexte", "besoin", "problematique", "generalisation", "piste_de_solution", "plan_d_action", "competences"
 
 Example 1:
 Input: "Une équipe de dev travaille sur un site web de location de voiture. Après quelques semaines de développement, ils rencontrent plusieurs problèmes liés aux fonctionnalités attendues. Suite à cela, une reunion est tenue où ils décident d’en apprendre plus sur l’ingénierie des exigences afin de corriger ce problème."
@@ -36,19 +41,11 @@ Output: {
     "problematique": "Comment l’équipe peut-elle clarifier et gérer les exigences pour éviter les incohérences et assurer un développement efficace du site ?",
     "generalisation": "Ingénierie des exigences",
     "piste_de_solution": ["Catégoriser les exigences va-t-il nous aider ?", "Est-ce qu'une matrice de traçabilité peut aider au suivi ?"],
-    "plan_d_action": ["Définition des mots clés", "Etude sur l'ingénierie des exigences", "Rédiger des documents d'exigences", "Etablir une matrice de traçabilité", "Valider les exigences avec le client"]
-}
-
-Example 2:
-Input: "A Pouma, la gestion des titres fonciers repose encore sur des dossiers papier, engendrant lenteur et erreur. Face à l’urgence administrative et aux plaintes citoyennes, la Mairie exige de M. Arthur et de son équipe une plateforme numérique simple, rapide et visible. Mais ces derniers sont confrontés entre attentes floues, résistances internes et enjeux techniques à clarifier."
-Output: {
-    "mots_cles": ["Digitalisation", "Représentation semi formelle", "Gestion des titres fonciers", "Accessibilité"],
-    "contexte": "La mairie de Pouma gère encore ses titres fonciers sur papier, causant des erreurs et une lenteur administrative. M. Arthur doit diriger la création d'une plateforme numérique pour moderniser ce service tout en gérant les attentes floues et les résistances au changement.",
-    "besoin": ["Connaissance sur la représentation semi formelle", "Connaissance sur la réglementation foncière", "Méthodes de sécurisation des données"],
-    "problematique": "Comment concevoir une plateforme numérique rapide et sécurisée pour la gestion des titres fonciers tout en gérant les besoins d'accessibilité ?",
-    "generalisation": "Spécifications textuelles et semi formelles",
-    "piste_de_solution": ["L’utilisation des diagrammes UML et BPMN est-elle plus adaptée ?", "Réaliser un tableau d'exigences fonctionnelles peut-il nous aider ?"],
-    "plan_d_action": ["Définition des mots clés", "Etude sur la réglementation foncière", "Elicitation des exigences", "Modéliser les exigences", "Construire un cadre de représentation semi-formelle"]
+    "plan_d_action": ["Définition des mots clés", "Etude sur l'ingénierie des exigences", "Rédiger des documents d'exigences", "Etablir une matrice de traçabilité", "Valider les exigences avec le client"],
+    "competences": [
+        {"title": "Maîtriser l'ingénierie des exigences", "taxonomy_level": "Application", "weight": 5, "description": "Être capable de recueillir et documenter les besoins métiers."},
+        {"title": "Identifier les types d'exigences", "taxonomy_level": "Connaissance", "weight": 3, "description": "Distinguer les exigences fonctionnelles et non fonctionnelles."}
+    ]
 }
 
 Important:
@@ -92,8 +89,12 @@ EOT;
             throw new Exception('Failed to parse AI output into JSON object. Output: ' . substr($answer, 0, 500));
         }
 
-        // Ensure all fields are strings (AI might occasionally return arrays for lists)
+        // Ensure all fields are formatted correctly
         foreach ($fields as $key => $value) {
+            if ($key === 'competences') {
+                continue; // Keep as array
+            }
+
             if (is_array($value)) {
                 if ($key === 'mots_cles') {
                     $fields[$key] = implode(', ', $value);

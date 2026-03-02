@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Chapter;
+use App\Models\Competence;
 use App\Models\Course;
 use App\Models\Exam;
 use App\Models\Prosit;
+use App\Models\Resource;
 use App\Services\ExamGenerationService;
 use App\Services\PrositGenerationService;
 use Illuminate\Http\Request;
@@ -34,17 +36,20 @@ class PbaWebController extends Controller
     public function showProsit(Course $course, Prosit $prosit)
     {
         $prosit->load(['resources', 'competences', 'chapter']);
+        $allResources = Resource::whereNull('prosit_id')->latest()->get();
 
         return Inertia::render('prosits/show', [
             'course' => $course,
             'prosit' => $prosit,
+            'allResources' => $allResources,
         ]);
     }
 
     public function generateExam(Request $request, Prosit $prosit, ExamGenerationService $examService)
     {
         try {
-            $exam = $examService->generateExam($prosit);
+            $totalQuestions = $request->integer('total_questions', 10);
+            $exam = $examService->generateExam($prosit, totalQuestions: $totalQuestions);
 
             return redirect()->route('exams.show', ['exam' => $exam->id])
                 ->with('success', 'Exam generated successfully!');
@@ -147,7 +152,18 @@ class PbaWebController extends Controller
             }
         }
 
-        Prosit::create($validated);
+        $prosit = Prosit::create($validated);
+
+        if (isset($validated['competences']) && is_array($validated['competences'])) {
+            foreach ($validated['competences'] as $comp) {
+                $prosit->competences()->create([
+                    'title' => $comp['title'] ?? 'Sans titre',
+                    'taxonomy_level' => $comp['taxonomy_level'] ?? 'Connaissance',
+                    'weight' => $comp['weight'] ?? 1,
+                    'description' => $comp['description'] ?? '',
+                ]);
+            }
+        }
 
         return back()->with('success', 'Prosit created successfully');
     }
@@ -189,6 +205,70 @@ class PbaWebController extends Controller
         $prosit->delete();
 
         return back()->with('success', 'Prosit deleted');
+    }
+
+    public function storeCompetence(Request $request, Prosit $prosit)
+    {
+        // Support both single competence and mass add (array)
+        if ($request->has('competences') && is_array($request->input('competences'))) {
+            $validated = $request->validate([
+                'competences' => 'required|array',
+                'competences.*.title' => 'required|string|max:255',
+                'competences.*.description' => 'nullable|string',
+                'competences.*.taxonomy_level' => 'required|string',
+                'competences.*.weight' => 'required|integer|min:1',
+            ]);
+
+            foreach ($validated['competences'] as $comp) {
+                $prosit->competences()->create($comp);
+            }
+        } else {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'taxonomy_level' => 'required|string',
+                'weight' => 'required|integer|min:1',
+            ]);
+
+            $prosit->competences()->create($validated);
+        }
+
+        return back()->with('success', 'Competences added successfully');
+    }
+
+    public function destroyCompetence(Competence $competence)
+    {
+        $competence->delete();
+
+        return back()->with('success', 'Competence removed');
+    }
+
+    public function attachResource(Request $request, Prosit $prosit)
+    {
+        if ($request->has('resource_ids') && is_array($request->input('resource_ids'))) {
+            $validated = $request->validate([
+                'resource_ids' => 'required|array',
+                'resource_ids.*' => 'exists:resources,id',
+            ]);
+
+            Resource::whereIn('id', $validated['resource_ids'])->update(['prosit_id' => $prosit->id]);
+        } else {
+            $request->validate([
+                'resource_id' => 'required|exists:resources,id',
+            ]);
+
+            $resource = Resource::findOrFail($request->resource_id);
+            $resource->update(['prosit_id' => $prosit->id]);
+        }
+
+        return back()->with('success', 'Resources attached');
+    }
+
+    public function detachResource(Resource $resource)
+    {
+        $resource->update(['prosit_id' => null]);
+
+        return back()->with('success', 'Resource detached');
     }
 
     public function indexExams()

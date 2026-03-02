@@ -91,6 +91,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('prosits/generate-fields', [\App\Http\Controllers\PbaWebController::class, 'generatePrositFields'])->name('prosits.generate-fields');
     Route::put('prosits/{prosit}', [\App\Http\Controllers\PbaWebController::class, 'updateProsit'])->name('prosits.update');
     Route::delete('prosits/{prosit}', [\App\Http\Controllers\PbaWebController::class, 'destroyProsit'])->name('prosits.destroy');
+
+    // Prosit Competences & Resources
+    Route::post('prosits/{prosit}/competences', [\App\Http\Controllers\PbaWebController::class, 'storeCompetence'])->name('prosits.competences.store');
+    Route::delete('competences/{competence}', [\App\Http\Controllers\PbaWebController::class, 'destroyCompetence'])->name('competences.destroy');
+    Route::post('prosits/{prosit}/resources/attach', [\App\Http\Controllers\PbaWebController::class, 'attachResource'])->name('prosits.resources.attach');
+    Route::delete('resources/{resource}/detach', [\App\Http\Controllers\PbaWebController::class, 'detachResource'])->name('resources.detach');
     Route::get('courses/{course}/prosits/{prosit}', [\App\Http\Controllers\PbaWebController::class, 'showProsit'])->name('prosits.show');
     Route::post('prosits/{prosit}/generate-exam', [\App\Http\Controllers\PbaWebController::class, 'generateExam'])->name('prosits.generate-exam');
 

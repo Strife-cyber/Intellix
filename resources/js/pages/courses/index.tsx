@@ -1,6 +1,14 @@
-import { useState } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import {
+    BookOpen,
+    FolderOpen,
+    Plus,
+    Edit2,
+    Trash2,
+    MoreVertical,
+} from 'lucide-react';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -8,9 +16,6 @@ import {
     CardTitle,
     CardDescription,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
     Dialog,
     DialogContent,
@@ -20,28 +25,15 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-    BookOpen,
-    FolderOpen,
-    Plus,
-    Edit2,
-    Trash2,
-    MoreVertical,
-} from 'lucide-react';
-import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { BreadcrumbItem } from '@/types';
-
-interface Course {
-    id: string;
-    title: string;
-    description: string;
-    cover_image: string | null;
-    chapters: any[];
-}
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import AppLayout from '@/layouts/app-layout';
+import type { BreadcrumbItem, Course } from '@/types';
 
 export default function CoursesIndex({ courses }: { courses: Course[] }) {
     const breadcrumbs: BreadcrumbItem[] = [

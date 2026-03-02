@@ -1,11 +1,13 @@
-import { useState } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import {
+    ChevronRight,
+    Plus,
+    MoreVertical,
+} from 'lucide-react';
+import { useState } from 'react';
 import {
     Button,
 } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
     Dialog,
     DialogContent,
@@ -20,16 +22,15 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-    ChevronRight,
-    Plus,
-    MoreVertical,
-} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 interface Prosit {
     id: string;
     title: string;
+    generalisation: string;
     difficulty_level: string | null;
 }
 
@@ -92,6 +93,8 @@ export default function CourseShow({ course }: { course: Course }) {
             (acc, chapter) => acc + (chapter.prosits?.length || 0),
             0,
         ) || 0;
+
+    console.log(course);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -269,7 +272,7 @@ export default function CourseShow({ course }: { course: Course }) {
                                                 >
                                                     <div>
                                                         <p className="text-sm font-medium">
-                                                            {prosit.title}
+                                                            {prosit.generalisation}
                                                         </p>
                                                         {prosit.difficulty_level && (
                                                             <p className="text-xs text-muted-foreground">

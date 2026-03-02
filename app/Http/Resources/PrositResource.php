@@ -26,6 +26,7 @@ class PrositResource extends JsonResource
             'plan_d_action' => $this->plan_d_action,
             'texte' => $this->texte,
             'competences' => CompetenceResource::collection($this->whenLoaded('competences')),
+            'resources' => ResourceResource::collection($this->whenLoaded('resources')),
             'exams' => ExamResource::collection($this->whenLoaded('exams')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
