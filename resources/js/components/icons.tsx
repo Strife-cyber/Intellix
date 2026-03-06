@@ -1,8 +1,5 @@
 // src/components/icons.tsx
-import Facebook from 'lucide-react/icons/facebook';
-import Github from 'lucide-react/icons/github';
-import Linkedin from 'lucide-react/icons/linkedin';
-import Twitter from 'lucide-react/icons/twitter';
+import { Facebook, Github, Linkedin, Twitter } from 'lucide-react';
 
 export const Icons = {
     twitter: Twitter,

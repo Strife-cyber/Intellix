@@ -1,7 +1,6 @@
-# ------------------------
+
 # Stage 1: Rust build
-# ------------------------
-FROM rust:1.93-slim AS rust-builder
+FROM rust:1.93-slim as rust-builder
 
 RUN apt-get update && apt-get install -y \
     pkg-config libssl-dev ca-certificates g++ \
@@ -12,21 +11,41 @@ COPY Cargo.toml Cargo.lock ./
 COPY src/ ./src/
 RUN cargo build --release
 
-# ------------------------
-# Stage 2: PHP + Node build (single stage for Laravel + Vite)
-# ------------------------
+# Stage 2: Node build (for Vite)
+# syntax=docker/dockerfile:1.4
+FROM node:20 AS node-builder
+
+WORKDIR /app
+
+# Only copy package files first (for layer caching)
+COPY package.json package-lock.json ./
+
+# Install dependencies using a cache mount
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
+
+# Copy the source code and Vite config
+COPY resources/ ./resources/
+COPY vite.config.ts ./
+
+# Build the Vite project
+RUN npm run build   # This will produce /app/dist (or the output directory configured in vite.config.ts)
+
+# Verify the build exists (optional, for debugging)
+RUN ls -la /app/dist
+
+# Stage 3: PHP/Laravel runtime
 FROM php:8.4.8-fpm
 
-# System deps for PHP, Laravel, Node, Vite
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git curl zip unzip libzip-dev libpng-dev libonig-dev libxml2-dev \
+    git curl libpng-dev libonig-dev libxml2-dev zip unzip libzip-dev \
     libpq-dev postgresql-client ca-certificates libssl3 libgomp1 \
-    nodejs npm pkg-config libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # PHP extensions
-RUN docker-php-ext-install mbstring xml bcmath curl gd pdo_pgsql pgsql zip exif pcntl
 RUN pecl install redis && docker-php-ext-enable redis
+RUN docker-php-ext-install pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
 
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -35,10 +54,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY --from=rust-builder /build/target/release/intellix /usr/local/bin/intellix
 RUN chmod +x /usr/local/bin/intellix
 
-# Laravel workdir
+# Laravel app
 WORKDIR /var/www/html
-
-# Copy full Laravel app
 COPY composer.json composer.lock ./
 COPY app/ ./app/
 COPY bootstrap/ ./bootstrap/
@@ -50,15 +67,11 @@ COPY routes/ ./routes/
 COPY storage/ ./storage/
 COPY artisan ./
 
+# Copy Vite-built assets
+COPY --from=node-builder /app/dist ./public/build
+
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# Copy Node files
-COPY package.json package-lock.json ./
-COPY vite.config.ts ./
-
-# Build Vite assets (Laravel fully available)
-RUN npm ci && npm run build
 
 # Permissions
 RUN chown -R www-data:www-data /var/www/html \
@@ -79,4 +92,4 @@ RUN tr -d '\r' < /tmp/docker-entrypoint.sh > /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 9000
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["php-fpm"]
+CMD ["php-

@@ -9,6 +9,7 @@ use App\Observers\ResourceObserver;
 use App\Policies\FlashCardPolicy;
 use App\Policies\ResourcePolicy;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -59,5 +60,9 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null
         );
+
+	if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }

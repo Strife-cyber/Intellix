@@ -1,9 +1,9 @@
 import AppLayout from '@/layouts/app-layout';
-import { exams as examsRoute } from '@/routes';
+import examsRoutes from '@/routes/exams';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Practice Exams', href: examsRoute().url },
+    { title: 'Practice Exams', href: examsRoutes.index.url() },
 ];
 
 export default function exams() {
