@@ -20,7 +20,41 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard', []);
+        $auth_user = auth()->user();
+        $user = User::where('id', $auth_user->id)->first();
+        
+        // Get user's resources
+        $resources = $user->resources;
+        
+        // Get flashcards count for this user
+        $flashcardsCount = \App\Models\FlashCard::where('user_id', $user->id)->count();
+        $flashcardsDueToday = \App\Models\FlashCard::where('user_id', $user->id)
+            ->where('next_review', '<=', now())
+            ->count();
+        
+        // Get courses count
+        $coursesCount = \App\Models\Course::count();
+        
+        // Get recent activity (last 5 resources)
+        $recentResources = $resources->take(5)->map(function ($resource) {
+            return [
+                'id' => $resource->id,
+                'name' => $resource->original_name,
+                'status' => $resource->status->value,
+                'created_at' => $resource->created_at->diffForHumans(),
+            ];
+        });
+
+        return Inertia::render('dashboard', [
+            'resources' => $resources,
+            'stats' => [
+                'resources_count' => $resources->count(),
+                'flashcards_count' => $flashcardsCount,
+                'flashcards_due_today' => $flashcardsDueToday,
+                'courses_count' => $coursesCount,
+            ],
+            'recent_resources' => $recentResources,
+        ]);
     })->name('dashboard');
 
     Route::get('library', function () {
