@@ -28,6 +28,7 @@ import {
 import courses from '@/routes/courses';
 import exams from '@/routes/exams';
 import prosits from '@/routes/prosits';
+import studyPlanner from '@/routes/study-planner';
 import type { NavItem } from '@/types';
 import AppLogo from './app-logo';
 
@@ -76,7 +77,7 @@ const footerNavItems: NavItem[] = [
     },
     {
         title: 'Study Planner',
-        href: 'https://laravel.com/docs/starter-kits#react',
+        href: studyPlanner.index().url,
         icon: Calendar,
     },
 ];

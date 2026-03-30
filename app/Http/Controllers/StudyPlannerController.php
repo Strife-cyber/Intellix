@@ -83,10 +83,10 @@ class StudyPlannerController extends Controller
         $user = Auth::user();
         $daysAhead = $request->input('days', 7);
         
-        // Get upcoming due cards
+        // Get upcoming due cards (including today)
         $upcomingCards = FlashCard::forUser($user->id)
             ->where('next_review', '<=', now()->addDays($daysAhead))
-            ->where('next_review', '>', now())
+            ->where('next_review', '>=', now()->startOfDay())
             ->orderBy('next_review')
             ->with(['resource'])
             ->get();
@@ -222,11 +222,17 @@ class StudyPlannerController extends Controller
             ];
         }
         
+        // Calculate summary
+        $totalSessions = 0;
+        foreach ($plan as $day) {
+            $totalSessions += array_sum(array_column($day['sessions'], 'cards_count'));
+        }
+        
         return response()->json([
             'plan' => $plan,
             'summary' => [
                 'total_days' => $days,
-                'total_sessions' => array_sum(array_column(array_column($plan, 'sessions'), 'cards_count')),
+                'total_sessions' => $totalSessions,
                 'estimated_total_time' => array_sum(array_column($plan, 'total_time')),
                 'avg_daily_time' => array_sum(array_column($plan, 'total_time')) / $days,
             ],

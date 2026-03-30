@@ -22,6 +22,7 @@ import {
     AlertCircle,
     FileText,
     Upload,
+    CalendarDays,
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
@@ -134,129 +135,129 @@ export default function Dashboard({ resources, stats, recent_resources }: Dashbo
     const getStatusIcon = (status: string) => {
         switch (status) {
             case 'completed':
-                return <CheckCircle className="h-4 w-4" />;
+                return <CheckCircle className="w-4 h-4" />;
             case 'processing':
-                return <Clock className="h-4 w-4" />;
+                return <Clock className="w-4 h-4" />;
             case 'failed':
-                return <AlertCircle className="h-4 w-4" />;
+                return <AlertCircle className="w-4 h-4" />;
             default:
-                return <FileText className="h-4 w-4" />;
+                return <FileText className="w-4 h-4" />;
         }
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Study Dashboard" />
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-6">
+            <div className="flex flex-col flex-1 gap-6 p-6 h-full overflow-x-auto">
                 {/* Header Stats */}
-                <div className="grid auto-rows-min gap-4 md:grid-cols-4">
+                <div className="gap-4 grid md:grid-cols-4 auto-rows-min">
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Resources</CardTitle>
-                            <FileText className="h-4 w-4 text-blue-500" />
+                        <CardHeader className="flex flex-row justify-between items-center space-y-0 pb-2">
+                            <CardTitle className="font-medium text-sm">Resources</CardTitle>
+                            <FileText className="w-4 h-4 text-blue-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.resources_count}</div>
-                            <p className="text-xs text-muted-foreground">
+                            <div className="font-bold text-2xl">{stats.resources_count}</div>
+                            <p className="text-muted-foreground text-xs">
                                 Total study materials
                             </p>
                         </CardContent>
                     </Card>
 
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Flashcards</CardTitle>
-                            <Brain className="h-4 w-4 text-purple-500" />
+                        <CardHeader className="flex flex-row justify-between items-center space-y-0 pb-2">
+                            <CardTitle className="font-medium text-sm">Flashcards</CardTitle>
+                            <Brain className="w-4 h-4 text-purple-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.flashcards_count}</div>
-                            <p className="text-xs text-muted-foreground">
+                            <div className="font-bold text-2xl">{stats.flashcards_count}</div>
+                            <p className="text-muted-foreground text-xs">
                                 {stats.flashcards_due_today} due today
                             </p>
                         </CardContent>
                     </Card>
 
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Courses</CardTitle>
-                            <BookOpen className="h-4 w-4 text-green-500" />
+                        <CardHeader className="flex flex-row justify-between items-center space-y-0 pb-2">
+                            <CardTitle className="font-medium text-sm">Courses</CardTitle>
+                            <BookOpen className="w-4 h-4 text-green-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.courses_count}</div>
-                            <p className="text-xs text-muted-foreground">
+                            <div className="font-bold text-2xl">{stats.courses_count}</div>
+                            <p className="text-muted-foreground text-xs">
                                 Available courses
                             </p>
                         </CardContent>
                     </Card>
 
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Due Today</CardTitle>
-                            <Target className="h-4 w-4 text-orange-500" />
+                        <CardHeader className="flex flex-row justify-between items-center space-y-0 pb-2">
+                            <CardTitle className="font-medium text-sm">Due Today</CardTitle>
+                            <Target className="w-4 h-4 text-orange-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.flashcards_due_today}</div>
-                            <p className="text-xs text-muted-foreground">
+                            <div className="font-bold text-2xl">{stats.flashcards_due_today}</div>
+                            <p className="text-muted-foreground text-xs">
                                 Flashcards to review
                             </p>
                         </CardContent>
                     </Card>
                 </div>
 
-                <div className="grid auto-rows-min gap-6 md:grid-cols-3">
+                <div className="gap-6 grid md:grid-cols-3 auto-rows-min">
                     {/* Active Study Session */}
                     <Card className="md:col-span-2">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <Brain className="h-5 w-5" />
+                                <Brain className="w-5 h-5" />
                                 Active Study Session
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             {activeSession ? (
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex justify-between items-center">
                                         <div>
                                             <h3 className="font-semibold">{activeSession.subject}</h3>
-                                            <p className="text-sm text-muted-foreground">
+                                            <p className="text-muted-foreground text-sm">
                                                 Session started recently
                                             </p>
                                         </div>
-                                        <div className="text-3xl font-mono">
+                                        <div className="font-mono text-3xl">
                                             {formatTime(sessionTime)}
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
                                         {isStudying ? (
                                             <Button onClick={pauseStudySession} variant="outline" size="sm">
-                                                <Pause className="h-4 w-4 mr-2" />
+                                                <Pause className="mr-2 w-4 h-4" />
                                                 Pause
                                             </Button>
                                         ) : (
                                             <Button onClick={resumeStudySession} variant="outline" size="sm">
-                                                <Play className="h-4 w-4 mr-2" />
+                                                <Play className="mr-2 w-4 h-4" />
                                                 Resume
                                             </Button>
                                         )}
                                         <Button onClick={completeStudySession} size="sm">
-                                            <CheckCircle className="h-4 w-4 mr-2" />
+                                            <CheckCircle className="mr-2 w-4 h-4" />
                                             Complete
                                         </Button>
                                         <Button onClick={() => setActiveSession(null)} variant="destructive" size="sm">
-                                            <RotateCcw className="h-4 w-4 mr-2" />
+                                            <RotateCcw className="mr-2 w-4 h-4" />
                                             Cancel
                                         </Button>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-center py-8">
-                                    <Brain className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                                    <h3 className="font-semibold mb-2">No active session</h3>
-                                    <p className="text-sm text-muted-foreground mb-4">
+                                <div className="py-8 text-center">
+                                    <Brain className="mx-auto mb-4 w-12 h-12 text-muted-foreground" />
+                                    <h3 className="mb-2 font-semibold">No active session</h3>
+                                    <p className="mb-4 text-muted-foreground text-sm">
                                         Start a study session to track your progress
                                     </p>
                                     <Button onClick={startStudySession}>
-                                        <Play className="h-4 w-4 mr-2" />
+                                        <Play className="mr-2 w-4 h-4" />
                                         Start Studying
                                     </Button>
                                 </div>
@@ -268,43 +269,49 @@ export default function Dashboard({ resources, stats, recent_resources }: Dashbo
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <Lightbulb className="h-5 w-5" />
+                                <Lightbulb className="w-5 h-5" />
                                 Quick Actions
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
+                            <Link href="/study-planner">
+                                <Button className="justify-start w-full" variant="outline">
+                                    <CalendarDays className="mr-2 w-4 h-4" />
+                                    Study Planner
+                                </Button>
+                            </Link>
                             <Link href={upload().url}>
-                                <Button className="w-full justify-start" variant="outline">
-                                    <Upload className="h-4 w-4 mr-2" />
+                                <Button className="justify-start w-full" variant="outline">
+                                    <Upload className="mr-2 w-4 h-4" />
                                     Upload Material
                                 </Button>
                             </Link>
                             <Link href={library().url}>
-                                <Button className="w-full justify-start" variant="outline">
-                                    <Library className="h-4 w-4 mr-2" />
+                                <Button className="justify-start w-full" variant="outline">
+                                    <Library className="mr-2 w-4 h-4" />
                                     Study Library
                                 </Button>
                             </Link>
                             <Link href={flashcards().url}>
-                                <Button className="w-full justify-start" variant="outline">
-                                    <Brain className="h-4 w-4 mr-2" />
+                                <Button className="justify-start w-full" variant="outline">
+                                    <Brain className="mr-2 w-4 h-4" />
                                     Practice Flashcards
                                 </Button>
                             </Link>
-                            <Button className="w-full justify-start" variant="outline" disabled>
-                                <BookOpen className="h-4 w-4 mr-2" />
+                            <Button className="justify-start w-full" variant="outline" disabled>
+                                <BookOpen className="mr-2 w-4 h-4" />
                                 Browse Courses
                             </Button>
                         </CardContent>
                     </Card>
                 </div>
 
-                <div className="grid auto-rows-min gap-6 md:grid-cols-2">
+                <div className="gap-6 grid md:grid-cols-2 auto-rows-min">
                     {/* Recent Resources */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <FileText className="h-5 w-5" />
+                                <FileText className="w-5 h-5" />
                                 Recent Resources
                             </CardTitle>
                             <CardDescription>
@@ -318,15 +325,15 @@ export default function Dashboard({ resources, stats, recent_resources }: Dashbo
                                         recent_resources.map((resource) => (
                                             <div
                                                 key={resource.id}
-                                                className="flex items-center justify-between p-3 rounded-lg border"
+                                                className="flex justify-between items-center p-3 border rounded-lg"
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <FileText className="h-5 w-5 text-muted-foreground" />
+                                                    <FileText className="w-5 h-5 text-muted-foreground" />
                                                     <div>
-                                                        <h4 className="font-medium truncate max-w-50">
+                                                        <h4 className="max-w-50 font-medium truncate">
                                                             {resource.name}
                                                         </h4>
-                                                        <p className="text-sm text-muted-foreground">
+                                                        <p className="text-muted-foreground text-sm">
                                                             {resource.created_at}
                                                         </p>
                                                     </div>
@@ -341,15 +348,15 @@ export default function Dashboard({ resources, stats, recent_resources }: Dashbo
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="text-center py-8">
-                                            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                                            <h4 className="font-medium mb-2">No resources yet</h4>
-                                            <p className="text-sm text-muted-foreground mb-4">
+                                        <div className="py-8 text-center">
+                                            <FileText className="mx-auto mb-4 w-12 h-12 text-muted-foreground" />
+                                            <h4 className="mb-2 font-medium">No resources yet</h4>
+                                            <p className="mb-4 text-muted-foreground text-sm">
                                                 Upload your first study material to get started
                                             </p>
                                             <Link href={upload().url}>
                                                 <Button size="sm">
-                                                    <Upload className="h-4 w-4 mr-2" />
+                                                    <Upload className="mr-2 w-4 h-4" />
                                                     Upload Material
                                                 </Button>
                                             </Link>
@@ -364,7 +371,7 @@ export default function Dashboard({ resources, stats, recent_resources }: Dashbo
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <BarChart3 className="h-5 w-5" />
+                                <BarChart3 className="w-5 h-5" />
                                 Study Overview
                             </CardTitle>
                             <CardDescription>
@@ -374,9 +381,9 @@ export default function Dashboard({ resources, stats, recent_resources }: Dashbo
                         <CardContent>
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium">Resources Progress</span>
-                                        <span className="text-sm text-muted-foreground">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium text-sm">Resources Progress</span>
+                                        <span className="text-muted-foreground text-sm">
                                             {stats.resources_count} files
                                         </span>
                                     </div>
@@ -384,27 +391,27 @@ export default function Dashboard({ resources, stats, recent_resources }: Dashbo
                                 </div>
                                 
                                 <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium">Flashcard Mastery</span>
-                                        <span className="text-sm text-muted-foreground">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium text-sm">Flashcard Mastery</span>
+                                        <span className="text-muted-foreground text-sm">
                                             {stats.flashcards_count} cards
                                         </span>
                                     </div>
                                     <Progress value={Math.min((stats.flashcards_count / 100) * 100, 100)} />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4 pt-4">
-                                    <div className="text-center p-4 border rounded-lg">
-                                        <div className="text-2xl font-bold text-blue-600">
+                                <div className="gap-4 grid grid-cols-2 pt-4">
+                                    <div className="p-4 border rounded-lg text-center">
+                                        <div className="font-bold text-blue-600 text-2xl">
                                             {stats.flashcards_due_today}
                                         </div>
-                                        <p className="text-sm text-muted-foreground">Due Today</p>
+                                        <p className="text-muted-foreground text-sm">Due Today</p>
                                     </div>
-                                    <div className="text-center p-4 border rounded-lg">
-                                        <div className="text-2xl font-bold text-green-600">
+                                    <div className="p-4 border rounded-lg text-center">
+                                        <div className="font-bold text-green-600 text-2xl">
                                             {stats.courses_count}
                                         </div>
-                                        <p className="text-sm text-muted-foreground">Courses</p>
+                                        <p className="text-muted-foreground text-sm">Courses</p>
                                     </div>
                                 </div>
                             </div>
