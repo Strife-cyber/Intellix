@@ -4,6 +4,7 @@ namespace App\Actions;
 
 use App\Models\FlashCard;
 use App\Models\Resource;
+use App\Services\AiModelManager;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -84,13 +85,21 @@ Text to analyze:
 {$sourceText}
 PROMPT;
 
-        // 3. Call AI provider
-        $aiEndpoint = config('services.ai.endpoint', env('AI_ENDPOINT', 'http://100.93.40.102:9090'));
+        // 3. Auto-detect best AI endpoint and model
+        $aiEndpoint = AiModelManager::getBestEndpoint();
+        
+        if (!$aiEndpoint) {
+            throw new RuntimeException(
+                'No AI service available. Please ensure LM Studio is running with a loaded model, or check your AI_ENDPOINT configuration.'
+            );
+        }
+
+        $model = AiModelManager::getBestModel($aiEndpoint) ?? 'local-model';
 
         set_time_limit(300);
 
         $response = Http::timeout(120)->post("{$aiEndpoint}/v1/chat/completions", [
-            'model' => 'local-model',
+            'model' => $model,
             'messages' => [
                 [
                     'role' => 'system',

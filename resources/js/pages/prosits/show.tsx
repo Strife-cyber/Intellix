@@ -185,19 +185,19 @@ export default function PrositShow({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Prosit: ${prosit.generalisation || 'Sans titre'}`} />
-            <div className="mx-auto max-w-6xl space-y-6 p-6">
-                <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-white/5 bg-card p-6 shadow-lg md:flex-row md:items-center">
+            <div className="space-y-6 mx-auto p-6 max-w-6xl">
+                <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-6 bg-card shadow-lg p-6 border border-white/5 rounded-2xl">
                     <div>
-                        <div className="mb-2 flex items-center gap-3">
+                        <div className="flex items-center gap-3 mb-2">
                             <Badge
                                 variant="outline"
-                                className="border-primary/50 text-[10px] tracking-widest text-primary uppercase"
+                                className="border-primary/50 text-[10px] text-primary uppercase tracking-widest"
                             >
                                 Problem-Based Approach
                             </Badge>
                         </div>
-                        <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight text-white">
-                            <FileText className="h-8 w-8 text-primary" />
+                        <h1 className="flex items-center gap-3 font-bold text-black text-3xl tracking-tight">
+                            <FileText className="w-8 h-8 text-primary" />
                             {prosit.generalisation || 'Prosit sans titre'}
                         </h1>
                     </div>
@@ -206,15 +206,15 @@ export default function PrositShow({
                             <Button
                                 size="lg"
                                 disabled={isGenerating || prosit.competences.length === 0}
-                                className="shrink-0 gap-2 rounded-full bg-gradient-to-r from-primary to-purple-600 px-8 shadow-xl shadow-primary/20 hover:from-primary/90 hover:to-purple-600/90"
+                                className="gap-2 bg-gradient-to-r from-primary hover:from-primary/90 to-purple-600 hover:to-purple-600/90 shadow-primary/20 shadow-xl px-8 rounded-full shrink-0"
                             >
                                 {isGenerating ? (
                                     <>
-                                        <Sparkles className="h-5 w-5 animate-pulse" /> Generating...
+                                        <Sparkles className="w-5 h-5 animate-pulse" /> Generating...
                                     </>
                                 ) : (
                                     <>
-                                        <BrainCircuit className="h-5 w-5" /> Generate AI Exam
+                                        <BrainCircuit className="w-5 h-5" /> Generate AI Exam
                                     </>
                                 )}
                             </Button>
@@ -228,7 +228,7 @@ export default function PrositShow({
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="py-4">
-                                <label className="text-sm font-medium mb-2 block">Number of Questions</label>
+                                <label className="block mb-2 font-medium text-sm">Number of Questions</label>
                                 <Select
                                     value={questionCount.toString()}
                                     onValueChange={v => setQuestionCount(parseInt(v))}
@@ -249,7 +249,7 @@ export default function PrositShow({
                                 <Button
                                     onClick={() => handleGenerateExam(questionCount)}
                                     disabled={isGenerating}
-                                    className="w-full bg-gradient-to-r from-primary to-purple-600"
+                                    className="bg-gradient-to-r from-primary to-purple-600 w-full"
                                 >
                                     {isGenerating ? 'Generating...' : 'Start Generation'}
                                 </Button>
@@ -259,30 +259,30 @@ export default function PrositShow({
                 </div>
 
                 {prosit.competences.length === 0 && (
-                    <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-500">
+                    <div className="bg-red-500/10 p-4 border border-red-500/20 rounded-xl text-red-500 text-sm">
                         Cannot generate an AI exam: This prosit has no mapped
                         competences. Please add competences using the button below.
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <div className="gap-6 grid grid-cols-1 lg:grid-cols-3">
                     {/* Main Problem statement column */}
                     <div className="space-y-6 lg:col-span-2">
-                        <Card className="border-white/10 bg-black/20 shadow-lg backdrop-blur-sm">
-                            <CardHeader className="border-b border-white/5 bg-white/5">
-                                <CardTitle className="text-lg text-white">
+                        <Card className="bg-card shadow-lg border-border">
+                            <CardHeader className="border-border border-b">
+                                <CardTitle className="text-lg">
                                     Problématique
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="prose prose-invert max-w-none p-6 text-sm leading-relaxed text-muted-foreground">
+                            <CardContent className="p-6 max-w-none text-sm leading-relaxed prose prose-gray">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                     {prosit.problematique}
                                 </ReactMarkdown>
 
                                 {prosit.texte && (
                                     <>
-                                        <hr className="my-6 border-white/10" />
-                                        <h4 className="mb-2 font-semibold text-white">Texte</h4>
+                                        <hr className="my-6 border-border" />
+                                        <h4 className="mb-2 font-semibold">Texte</h4>
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                             {prosit.texte}
                                         </ReactMarkdown>
@@ -291,8 +291,8 @@ export default function PrositShow({
 
                                 {prosit.contexte && (
                                     <>
-                                        <hr className="my-6 border-white/10" />
-                                        <h4 className="mb-2 font-semibold text-white">Contexte</h4>
+                                        <hr className="my-6 border-border" />
+                                        <h4 className="mb-2 font-semibold">Contexte</h4>
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                             {prosit.contexte}
                                         </ReactMarkdown>
@@ -301,8 +301,8 @@ export default function PrositShow({
 
                                 {prosit.besoin && (
                                     <>
-                                        <hr className="my-6 border-white/10" />
-                                        <h4 className="mb-2 font-semibold text-white">Besoin</h4>
+                                        <hr className="my-6 border-border" />
+                                        <h4 className="mb-2 font-semibold">Besoin</h4>
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                             {prosit.besoin}
                                         </ReactMarkdown>
@@ -311,8 +311,8 @@ export default function PrositShow({
 
                                 {prosit.generalisation && (
                                     <>
-                                        <hr className="my-6 border-white/10" />
-                                        <h4 className="mb-2 font-semibold text-white">Généralisation</h4>
+                                        <hr className="my-6 border-border" />
+                                        <h4 className="mb-2 font-semibold">Généralisation</h4>
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                             {prosit.generalisation}
                                         </ReactMarkdown>
@@ -321,8 +321,8 @@ export default function PrositShow({
 
                                 {prosit.piste_de_solution && (
                                     <>
-                                        <hr className="my-6 border-white/10" />
-                                        <h4 className="mb-2 font-semibold text-white">Piste de solution</h4>
+                                        <hr className="my-6 border-border" />
+                                        <h4 className="mb-2 font-semibold">Piste de solution</h4>
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                             {prosit.piste_de_solution}
                                         </ReactMarkdown>
@@ -331,8 +331,8 @@ export default function PrositShow({
 
                                 {prosit.plan_d_action && (
                                     <>
-                                        <hr className="my-6 border-white/10" />
-                                        <h4 className="mb-2 font-semibold text-white">Plan d'action</h4>
+                                        <hr className="my-6 border-border" />
+                                        <h4 className="mb-2 font-semibold">Plan d'action</h4>
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                             {prosit.plan_d_action}
                                         </ReactMarkdown>
@@ -341,8 +341,8 @@ export default function PrositShow({
 
                                 {prosit.mots_cles && (
                                     <>
-                                        <hr className="my-6 border-white/10" />
-                                        <h4 className="mb-2 font-semibold text-white">Mots Clés</h4>
+                                        <hr className="my-6 border-border" />
+                                        <h4 className="mb-2 font-semibold">Mots Clés</h4>
                                         <p>{prosit.mots_cles}</p>
                                     </>
                                 )}
@@ -352,16 +352,16 @@ export default function PrositShow({
 
                     {/* Meta column */}
                     <div className="space-y-6">
-                        <Card className="border-white/10 bg-card/40 shadow-lg">
-                            <CardHeader className="flex flex-row items-center justify-between pb-3">
-                                <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-wider text-muted-foreground uppercase">
-                                    <Target className="h-4 w-4 text-primary" />
+                        <Card className="bg-card shadow-lg border-border">
+                            <CardHeader className="flex flex-row justify-between items-center pb-3">
+                                <CardTitle className="flex items-center gap-2 font-bold text-muted-foreground text-sm uppercase tracking-wider">
+                                    <Target className="w-4 h-4 text-primary" />
                                     Competences
                                 </CardTitle>
                                 <Dialog open={isCompDialogOpen} onOpenChange={setIsCompDialogOpen}>
                                     <DialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full border border-white/10 hover:bg-white/5">
-                                            <Plus className="h-4 w-4" />
+                                        <Button variant="ghost" size="icon" className="hover:bg-white/5 border border-white/10 rounded-full w-8 h-8">
+                                            <Plus className="w-4 h-4" />
                                         </Button>
                                     </DialogTrigger>
                                     <DialogContent className="sm:max-w-[700px]">
@@ -372,38 +372,38 @@ export default function PrositShow({
                                                     Define what students should master through this Prosit.
                                                 </DialogDescription>
                                             </DialogHeader>
-                                            <div className="max-h-[60vh] space-y-6 overflow-y-auto px-1 py-4">
+                                            <div className="space-y-6 px-1 py-4 max-h-[60vh] overflow-y-auto">
                                                 {compData.competences.map((comp, index) => (
-                                                    <div key={index} className="relative space-y-4 rounded-xl border border-white/5 bg-white/5 p-4 transition-all hover:bg-white/[0.07]">
+                                                    <div key={index} className="relative space-y-4 bg-muted hover:bg-muted/80 p-4 border rounded-xl transition-all">
                                                         {compData.competences.length > 1 && (
                                                             <Button
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 onClick={() => removeCompRow(index)}
-                                                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white"
+                                                                className="-top-2 -right-2 absolute bg-red-500/20 hover:bg-red-500 rounded-full w-6 h-6 text-red-500 hover:text-white"
                                                             >
-                                                                <X className="h-3 w-3" />
+                                                                <X className="w-3 h-3" />
                                                             </Button>
                                                         )}
-                                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                        <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
                                                             <div className="space-y-2">
-                                                                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Title</label>
+                                                                <label className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">Title</label>
                                                                 <Input
                                                                     value={comp.title}
                                                                     onChange={e => updateCompRow(index, 'title', e.target.value)}
                                                                     placeholder="e.g., Master UML Modeling"
-                                                                    className="bg-black/20"
+                                                                    className="bg-background"
                                                                     required
                                                                 />
                                                             </div>
                                                             <div className="space-y-2">
-                                                                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Taxonomy Level</label>
+                                                                <label className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">Taxonomy Level</label>
                                                                 <Select
                                                                     value={comp.taxonomy_level}
                                                                     onValueChange={v => updateCompRow(index, 'taxonomy_level', v)}
                                                                 >
-                                                                    <SelectTrigger className="bg-black/20">
+                                                                    <SelectTrigger className="bg-background">
                                                                         <SelectValue placeholder="Select level" />
                                                                     </SelectTrigger>
                                                                     <SelectContent>
@@ -413,25 +413,25 @@ export default function PrositShow({
                                                                 </Select>
                                                             </div>
                                                         </div>
-                                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                                                        <div className="gap-4 grid grid-cols-1 md:grid-cols-4">
                                                             <div className="space-y-2">
-                                                                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Weight</label>
+                                                                <label className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">Weight</label>
                                                                 <Input
                                                                     type="number"
                                                                     value={comp.weight}
                                                                     onChange={e => updateCompRow(index, 'weight', parseInt(e.target.value))}
                                                                     min="1"
-                                                                    className="bg-black/20"
+                                                                    className="bg-background"
                                                                     required
                                                                 />
                                                             </div>
-                                                            <div className="md:col-span-3 space-y-2">
-                                                                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description</label>
+                                                            <div className="space-y-2 md:col-span-3">
+                                                                <label className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">Description</label>
                                                                 <Input
                                                                     value={comp.description}
                                                                     onChange={e => updateCompRow(index, 'description', e.target.value)}
                                                                     placeholder="Detailed goal..."
-                                                                    className="bg-black/20"
+                                                                    className="bg-background"
                                                                 />
                                                             </div>
                                                         </div>
@@ -441,13 +441,13 @@ export default function PrositShow({
                                                     type="button"
                                                     variant="outline"
                                                     onClick={addCompRow}
-                                                    className="w-full border-dashed py-6 hover:border-primary/50 hover:bg-primary/5"
+                                                    className="hover:bg-primary/5 py-6 hover:border-primary/50 border-dashed w-full"
                                                 >
-                                                    <Plus className="mr-2 h-4 w-4" /> Add Another Competence
+                                                    <Plus className="mr-2 w-4 h-4" /> Add Another Competence
                                                 </Button>
                                             </div>
                                             <DialogFooter>
-                                                <Button type="submit" disabled={compProcessing} className="w-full bg-gradient-to-r from-primary to-purple-600">
+                                                <Button type="submit" disabled={compProcessing} className="bg-gradient-to-r from-primary to-purple-600 w-full">
                                                     {compProcessing ? 'Adding...' : `Add ${compData.competences.length} Competence${compData.competences.length > 1 ? 's' : ''}`}
                                                 </Button>
                                             </DialogFooter>
@@ -461,11 +461,9 @@ export default function PrositShow({
                                     prosit.competences.map((comp) => (
                                         <div
                                             key={comp.id}
-                                            className="group relative rounded-lg border border-white/5 bg-white/5 p-3"
+                                            className="group relative bg-white/5 p-3 border border-white/5 rounded-lg"
                                         >
-                                            <p className="mb-1 text-sm leading-tight font-semibold text-white">
-                                                {comp.title}
-                                            </p>
+                                            <p className="mb-1 font-semibold text-sm leading-tight">{comp.title}</p>
                                             <div className="flex gap-2">
                                                 <Badge
                                                     variant="outline"
@@ -484,30 +482,30 @@ export default function PrositShow({
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => handleDeleteCompetence(comp.id)}
-                                                className="absolute top-2 right-2 h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-500"
+                                                className="top-2 right-2 absolute hover:bg-red-500/20 opacity-0 group-hover:opacity-100 w-6 h-6 hover:text-red-500 transition-opacity"
                                             >
-                                                <Trash2 className="h-3 w-3" />
+                                                <Trash2 className="w-3 h-3" />
                                             </Button>
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-xs text-muted-foreground italic">
+                                    <p className="text-muted-foreground text-xs italic">
                                         No competences mapped.
                                     </p>
                                 )}
                             </CardContent>
                         </Card>
 
-                        <Card className="border-white/10 bg-card/40 shadow-lg">
-                            <CardHeader className="flex flex-row items-center justify-between pb-3">
-                                <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-wider text-muted-foreground uppercase">
-                                    <FileStack className="h-4 w-4 text-primary" />
+                        <Card className="bg-card shadow-lg border-border">
+                            <CardHeader className="flex flex-row justify-between items-center pb-3">
+                                <CardTitle className="flex items-center gap-2 font-bold text-muted-foreground text-sm uppercase tracking-wider">
+                                    <FileStack className="w-4 h-4 text-primary" />
                                     Attached Resources
                                 </CardTitle>
                                 <Dialog open={isResDialogOpen} onOpenChange={setIsResDialogOpen}>
                                     <DialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full border border-white/10 hover:bg-white/5">
-                                            <Paperclip className="h-4 w-4" />
+                                        <Button variant="ghost" size="icon" className="hover:bg-white/5 border border-white/10 rounded-full w-8 h-8">
+                                            <Paperclip className="w-4 h-4" />
                                         </Button>
                                     </DialogTrigger>
                                     <DialogContent className="sm:max-w-[500px]">
@@ -518,13 +516,13 @@ export default function PrositShow({
                                                     Select existing resources to link to this Prosit.
                                                 </DialogDescription>
                                             </DialogHeader>
-                                            <div className="max-h-[50vh] space-y-2 overflow-y-auto py-2">
+                                            <div className="space-y-2 py-2 max-h-[50vh] overflow-y-auto">
                                                 {allResources.length > 0 ? (
-                                                    <div className="grid gap-2">
+                                                    <div className="gap-2 grid">
                                                         {allResources.map(res => (
                                                             <div
                                                                 key={res.id}
-                                                                className="flex items-center space-x-3 rounded-lg border border-white/5 bg-white/5 p-3 transition-colors hover:bg-white/10"
+                                                                className="flex items-center space-x-3 bg-muted hover:bg-muted/80 p-3 border rounded-lg transition-colors"
                                                             >
                                                                 <Checkbox
                                                                     id={`res-${res.id}`}
@@ -533,7 +531,7 @@ export default function PrositShow({
                                                                 />
                                                                 <label
                                                                     htmlFor={`res-${res.id}`}
-                                                                    className="flex-1 cursor-pointer text-sm font-medium leading-none"
+                                                                    className="flex-1 font-medium text-sm leading-none cursor-pointer"
                                                                 >
                                                                     {res.original_name}
                                                                 </label>
@@ -544,9 +542,9 @@ export default function PrositShow({
                                                         ))}
                                                     </div>
                                                 ) : (
-                                                    <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 text-center">
-                                                        <p className="text-sm text-yellow-500 font-medium">No unattached resources found.</p>
-                                                        <Link href="/resources/upload" className="text-xs text-muted-foreground underline hover:text-white">
+                                                    <div className="bg-yellow-500/10 p-4 border border-yellow-500/20 rounded-lg text-center">
+                                                        <p className="font-medium text-yellow-500 text-sm">No unattached resources found.</p>
+                                                        <Link href="/resources/upload" className="text-muted-foreground hover:text-white text-xs underline">
                                                             Go to upload page
                                                         </Link>
                                                     </div>
@@ -556,7 +554,7 @@ export default function PrositShow({
                                                 <Button
                                                     type="submit"
                                                     disabled={resProcessing || resData.resource_ids.length === 0}
-                                                    className="w-full bg-gradient-to-r from-primary to-blue-600"
+                                                    className="bg-gradient-to-r from-primary to-blue-600 w-full"
                                                 >
                                                     {resProcessing ? 'Attaching...' : `Attach ${resData.resource_ids.length} Resource${resData.resource_ids.length > 1 ? 's' : ''}`}
                                                 </Button>
@@ -571,15 +569,13 @@ export default function PrositShow({
                                     prosit.resources.map((res) => (
                                         <div
                                             key={res.id}
-                                            className="group relative flex cursor-pointer items-center gap-3 rounded-lg border border-white/5 bg-white/5 p-3 transition-colors hover:bg-white/10"
+                                            className="group relative flex items-center gap-3 bg-muted hover:bg-muted/80 p-3 border rounded-lg transition-colors cursor-pointer"
                                         >
-                                            <div className="flex h-8 w-8 items-center justify-center rounded bg-primary/20 text-primary">
-                                                <FileText className="h-4 w-4" />
+                                            <div className="flex justify-center items-center bg-primary/20 rounded w-8 h-8 text-primary">
+                                                <FileText className="w-4 h-4" />
                                             </div>
-                                            <div className="overflow-hidden pr-8">
-                                                <p className="truncate text-sm font-semibold text-white">
-                                                    {res.original_name}
-                                                </p>
+                                            <div className="pr-8 overflow-hidden">
+                                                <p className="font-semibold text-sm truncate leading-none">{res.original_name}</p>
                                                 <p className="text-[10px] text-muted-foreground uppercase">
                                                     {res.type || 'Document'}
                                                 </p>
@@ -588,14 +584,14 @@ export default function PrositShow({
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => handleDetachResource(res.id)}
-                                                className="absolute top-1/2 right-2 h-8 w-8 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-500"
+                                                className="top-1/2 right-2 absolute hover:bg-red-500/20 opacity-0 group-hover:opacity-100 w-8 h-8 hover:text-red-500 transition-opacity -translate-y-1/2"
                                             >
-                                                <Trash2 className="h-4 w-4" />
+                                                <Trash2 className="w-4 h-4" />
                                             </Button>
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-xs text-muted-foreground italic">
+                                    <p className="text-muted-foreground text-xs italic">
                                         No resources attached.
                                     </p>
                                 )}

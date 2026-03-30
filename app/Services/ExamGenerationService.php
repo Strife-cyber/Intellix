@@ -4,9 +4,8 @@ namespace App\Services;
 
 use App\Models\Exam;
 use App\Models\Prosit;
-use App\Models\Question;
+use App\Services\AiModelManager;
 use Exception;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class ExamGenerationService
@@ -162,10 +161,20 @@ EOT;
         $userMessage = "Context:\n".$context."\n\n".$competencesContext.$avoidList;
 
         set_time_limit(300);
-        $aiEndpoint = env('AI_ENDPOINT', 'http://100.93.40.102:9090');
+        
+        // Auto-detect best AI endpoint and model
+        $aiEndpoint = AiModelManager::getBestEndpoint();
+        
+        if (!$aiEndpoint) {
+            throw new Exception(
+                'No AI service available. Please ensure LM Studio is running with a loaded model, or check your AI_ENDPOINT configuration.'
+            );
+        }
+
+        $model = AiModelManager::getBestModel($aiEndpoint) ?? 'local-model';
 
         $response = Http::timeout(300)->post("{$aiEndpoint}/v1/chat/completions", [
-            'model' => 'local-model',
+            'model' => $model,
             'messages' => [
                 ['role' => 'system', 'content' => $systemInstruction],
                 ['role' => 'user', 'content' => $userMessage],

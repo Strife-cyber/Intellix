@@ -138,6 +138,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('exams', [\App\Http\Controllers\PbaWebController::class, 'indexExams'])->name('exams.index');
     Route::get('exams/{exam}', [\App\Http\Controllers\PbaWebController::class, 'showExam'])->name('exams.show');
 
+    Route::get('/ai/status', [AiController::class, 'status'])->name('ai.status');
     Route::post('/ai/chat', [AiController::class, 'chat'])->name('ai.chat');
 
     // ── Study Planner ───────────────────────────────────────────────────────

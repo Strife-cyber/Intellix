@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Rust\RustService;
+use App\Services\AiModelManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -12,15 +13,27 @@ class AiController extends Controller
         protected RustService $rustService
     ) {}
 
+    /**
+     * Get AI service status and available models.
+     */
+    public function status(): \Illuminate\Http\JsonResponse
+    {
+        return response()->json(AiModelManager::getStatus());
+    }
+
     public function chat(Request $request)
     {
         $request->validate([
             'message' => 'required|string',
             'resource_id' => 'required|string',
+            'session_id' => 'nullable|string', // Add session_id for conversation memory
+            'conversation_history' => 'nullable|array', // Add conversation history
         ]);
 
         $message = $request->input('message');
         $resourceId = $request->input('resource_id');
+        $sessionId = $request->input('session_id');
+        $conversationHistory = $request->input('conversation_history', []);
 
         // 1. Generate Embedding using Rust Service
         // This uses the same service pattern as other controllers
@@ -110,11 +123,29 @@ class AiController extends Controller
         // Increase execution time for deep reasoning or large local models
         set_time_limit(300);
 
-        // 3. Call LM Studio (OpenAI compatible API)
-        $aiEndpoint = env('AI_ENDPOINT', 'http://100.93.40.102:9090');
+        // 3. Auto-detect best AI endpoint and model
+        $aiEndpoint = AiModelManager::getBestEndpoint();
+        
+        if (!$aiEndpoint) {
+            return response()->json([
+                'error' => 'No AI service available',
+                'details' => 'Please ensure LM Studio is running with a loaded model, or check your AI_ENDPOINT configuration',
+                'troubleshooting' => [
+                    '1. Start LM Studio and load a model (DeepSeek, Llama, etc.)',
+                    '2. Ensure LM Studio is listening on http://localhost:1234 or http://localhost:8080',
+                    '3. Or set AI_ENDPOINT in your .env file to your preferred endpoint'
+                ]
+            ], 503);
+        }
 
+        $model = AiModelManager::getBestModel($aiEndpoint) ?? 'local-model';
+
+        // Build conversation messages with memory
+        $messages = [];
+
+        // Add system instruction
         $systemInstruction = <<<'SYS'
-You are a helpful AI assistant.
+You are a helpful AI assistant with memory of our conversation.
 
 Rules:
 - Use ONLY the provided context to answer.
@@ -122,20 +153,35 @@ Rules:
 - Do not guess, do not use outside knowledge, do not invent citations.
 - When you make a factual claim, include a citation using the nearest available context metadata (e.g. [chunk=..., page=...]).
 - Answer in the same language as the user's question.
+- Remember our previous conversation context and build upon it.
+- Reference things we discussed earlier when relevant.
 SYS;
 
+        $messages[] = [
+            'role' => 'system',
+            'content' => $systemInstruction,
+        ];
+
+        // Add conversation history if provided
+        if (!empty($conversationHistory)) {
+            // Add previous messages to give AI memory of conversation
+            foreach ($conversationHistory as $msg) {
+                $messages[] = [
+                    'role' => $msg['role'],
+                    'content' => $msg['content'],
+                ];
+            }
+        }
+
+        // Add current message with context
+        $messages[] = [
+            'role' => 'user',
+            'content' => "Document Context:\n".$context."\n\nCurrent Question:\n".$message,
+        ];
+
         $response = Http::timeout(300)->post("{$aiEndpoint}/v1/chat/completions", [
-            'model' => 'local-model',
-            'messages' => [
-                [
-                    'role' => 'system',
-                    'content' => $systemInstruction,
-                ],
-                [
-                    'role' => 'user',
-                    'content' => "Context:\n".$context."\n\nQuestion:\n".$message,
-                ],
-            ],
+            'model' => $model,
+            'messages' => $messages,
             'temperature' => 0.7,
         ]);
 
