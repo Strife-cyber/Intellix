@@ -5,7 +5,7 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\FlashCardController;
 use App\Http\Controllers\GithubController;
 use App\Http\Controllers\GoogleController;
-use App\Http\Controllers\ResourceAccessController;
+use App\Http\Controllers\StudyPlannerController;
 use App\Http\Controllers\ResourceController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
