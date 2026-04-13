@@ -3,18 +3,16 @@
 namespace App\Actions;
 
 use App\Models\FlashCard;
-use App\Services\Rust\RustService;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class ReviewFlashCardAction
 {
-    public function __construct(
-        protected RustService $rustService,
-    ) {}
+    public function __construct() {}
 
     /**
      * Process an FSRS review for a flash card.
+     * (Temporarily using simplified logic during microservice migration)
      *
      * @param  int  $rating  1=Again 2=Hard 3=Good 4=Easy
      * @param  int  $durationMs  Time spent on card (milliseconds)
@@ -30,41 +28,24 @@ class ReviewFlashCardAction
             throw new \InvalidArgumentException("Invalid rating: {$rating}. Must be 1–4.");
         }
 
-        $inputData = [
-            'last_interval' => (float) $card->interval_days,
-            'difficulty' => $card->difficulty ?? 5.0,
-            'stability' => $card->stability,
-            'rating' => $ratingMap[$rating],
-        ];
+        // Simplified logic replacing Rust-based FSRS during migration
+        Log::info("Flashcard {$card->id} review – skipping FSRS (migration in progress).");
 
-        $result = $this->rustService->fsrs($inputData, null, [
-            'flash_card_id' => $card->id,
-        ]);
+        $currentInterval = $card->interval_days ?: 0;
+        $multiplier = match($rating) {
+            1 => 0,
+            2 => 1.2,
+            3 => 2.5,
+            4 => 4.0,
+            default => 1.0
+        };
 
-        if (! $result['success']) {
-            $errorMsg = $result['error'] ?? 'FSRS process failed';
-            Log::error('FSRS review failed', [
-                'card_id' => $card->id,
-                'exit_code' => $result['exit_code'] ?? null,
-                'stderr' => $result['stderr'] ?? null,
-                'error' => $errorMsg,
-            ]);
-            throw new RuntimeException("FSRS calculation failed: {$errorMsg}");
-        }
-
-        $output = json_decode($result['stdout'], true);
-
-        if (
-            ! is_array($output)
-            || ! isset($output['new_interval'], $output['stability'], $output['difficulty'], $output['next_review'])
-        ) {
-            throw new RuntimeException('FSRS returned unexpected output format: '.$result['stdout']);
-        }
-
-        $intervalDays = (int) round($output['new_interval']);
-        $stability = (float) $output['stability'];
-        $difficulty = (float) $output['difficulty'];
-        $nextReview = $output['next_review'];  // ISO8601
+        $intervalDays = $currentInterval === 0 ? 1 : (int) round($currentInterval * $multiplier);
+        if ($intervalDays < 1 && $rating > 1) $intervalDays = 1;
+        
+        $stability = $card->stability * ($multiplier ?: 0.5);
+        $difficulty = $card->difficulty ?? 5.0;
+        $nextReview = now()->addDays($intervalDays)->toIso8601String();
 
         $card->update([
             'interval_days' => $intervalDays,

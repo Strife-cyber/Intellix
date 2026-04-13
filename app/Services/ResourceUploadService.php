@@ -2,10 +2,9 @@
 
 namespace App\Services;
 
-use App\Enums\AccessRole;
+use App\Models\Resource;
 use App\Enums\ResourceStatus;
 use App\Jobs\ProcessResourceJob;
-use App\Models\Resource;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -13,58 +12,43 @@ use Illuminate\Support\Str;
 
 class ResourceUploadService
 {
+    /**
+     * Upload a file and create a resource.
+     *
+     * @param UploadedFile $file
+     * @return Resource
+     */
     public function upload(UploadedFile $file): Resource
     {
-        $resourceId = (string) Str::uuid();
+        $user = Auth::user();
+        $originalName = $file->getClientOriginalName();
+        $extension = $file->getClientOriginalExtension();
+        $mimeType = $file->getMimeType();
+        $size = $file->getSize();
 
-        $s3Key = "resources/$resourceId/".$file->getClientOriginalName();
+        // Generate a unique path in S3
+        $path = 'resources/' . Str::uuid() . '.' . $extension;
 
-        // STREAM upload (no file_get_contents!)
-        Storage::disk('s3')->putFileAs(
-            dirname($s3Key),
-            $file,
-            basename($s3Key)
-        );
+        // Store the file in S3
+        Storage::disk('s3')->put($path, file_get_contents($file));
 
-        $userId = Auth::id();
-
+        // Create the resource record in the database
+        /** @var Resource $resource */
         $resource = Resource::create([
-            'id' => $resourceId,
-            'user_id' => $userId,
-            'original_name' => $file->getClientOriginalName(),
-            'mime_type' => $file->getMimeType(),
-            'size_bytes' => $file->getSize(),
-            's3_key' => $s3Key,
-            'status' => ResourceStatus::PROCESSING->value,
+            'user_id' => $user->id,
+            'original_name' => $originalName,
+            's3_key' => $path,
+            'mime_type' => $mimeType,
+            'size' => $size,
+            'status' => ResourceStatus::PENDING,
+            'metadata' => [
+                'extension' => $extension,
+            ],
         ]);
 
-        // Grant the uploader OWNER access in the access table
-        if ($userId) {
-            $resource->grantAccess(Auth::user(), AccessRole::OWNER->value);
-        }
-
+        // Dispatch the processing job
         ProcessResourceJob::dispatch($resource->id);
 
         return $resource;
-    }
-
-    public function delete(Resource $resource): void
-    {
-        // Delete from S3
-        if ($resource->s3_key) {
-            Storage::disk('s3')->delete($resource->s3_key);
-            // Try to delete the directory if it's empty (optional, but good for cleanup)
-            // dirname('resources/UUID/filename') -> 'resources/UUID'
-            $dir = dirname($resource->s3_key);
-            if ($dir !== '.' && $dir !== '/') {
-                $files = Storage::disk('s3')->files($dir);
-                if (empty($files)) {
-                    Storage::disk('s3')->deleteDirectory($dir);
-                }
-            }
-        }
-
-        // Delete from DB
-        $resource->delete();
     }
 }

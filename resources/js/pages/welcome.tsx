@@ -285,7 +285,7 @@ export default function Welcome({
 
                                                     {[
                                                         'Research.pdf',
-                                                        'Notes.docx',
+                                                        'notes.docx',
                                                         'Dataset.csv',
                                                     ].map((file, i) => (
                                                         <div

@@ -6,6 +6,7 @@ import {
     Layers2Icon,
     Calendar,
     BookOpen,
+    Notebook,
 } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -27,6 +28,7 @@ import {
 } from '@/routes';
 import courses from '@/routes/courses';
 import exams from '@/routes/exams';
+import notes from '@/routes/notes';
 import prosits from '@/routes/prosits';
 import studyPlanner from '@/routes/study-planner';
 import type { NavItem } from '@/types';
@@ -56,6 +58,21 @@ const mainNavItems: NavItem[] = [
                 href: exams.index().url,
             },
         ],
+    },
+    {
+        title: 'Notes',
+        href: notes.index().url,
+        icon: Notebook,
+        items: [
+            {
+                title: 'My notes',
+                href: notes.index().url
+            },
+            {
+                title: 'Create new',
+                href: notes.create().url
+            }
+        ]
     },
     {
         title: 'Library',

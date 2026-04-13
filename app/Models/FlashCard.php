@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property float|null $difficulty
  * @property \Carbon\CarbonImmutable|null $next_review
  * @property \Carbon\CarbonImmutable|null $last_reviewed_at
+ * @method static where(string $string, $id)
+ * @method static forUser(mixed $id)
  */
 class FlashCard extends Model
 {

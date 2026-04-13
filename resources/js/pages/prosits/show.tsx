@@ -76,6 +76,9 @@ export default function PrositShow({
     allResources: Resource[];
 }) {
     const [isGenerating, setIsGenerating] = useState(false);
+    const [generationProgress, setGenerationProgress] = useState(0);
+    const [generationStatus, setGenerationStatus] = useState('');
+    const [currentJobIds, setCurrentJobIds] = useState<string[]>([]);
     const [isCompDialogOpen, setIsCompDialogOpen] = useState(false);
     const [isResDialogOpen, setIsResDialogOpen] = useState(false);
     const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
@@ -121,22 +124,74 @@ export default function PrositShow({
         resource_ids: [] as string[],
     });
 
-    const handleGenerateExam = (count: number = 10) => {
+    const handleGenerateExam = async (count: number = 10) => {
         setIsGenerating(true);
-        router.post(
-            `/prosits/${prosit.id}/generate-exam`,
-            { total_questions: count },
-            {
-                onFinish: () => {
+        setGenerationProgress(0);
+        setGenerationStatus('Dispatching generation job...');
+        
+        try {
+            // Dispatch the job
+            const response = await window.axios.post(`/prosits/${prosit.id}/generate-exam`, {
+                total_questions: count,
+            });
+
+            const jobId = response.data.job_id;
+            setCurrentJobIds([jobId]);
+            
+            // Start polling for status
+            setGenerationStatus('Generating exam questions...');
+            pollJobStatus(jobId, count);
+            
+        } catch (error: any) {
+            console.error('Failed to start exam generation:', error);
+            setGenerationStatus('Failed to start generation');
+            setIsGenerating(false);
+        }
+    };
+
+    const pollJobStatus = async (jobId: string, totalQuestions: number) => {
+        const pollInterval = setInterval(async () => {
+            try {
+                const response = await window.axios.get(`/jobs/exam/${jobId}/status`);
+                const status = response.data.data;
+                
+                setGenerationProgress(status.progress || 0);
+                setGenerationStatus(status.message || 'Processing...');
+                
+                if (status.status === 'completed') {
+                    clearInterval(pollInterval);
+                    setGenerationProgress(100);
+                    setGenerationStatus('Exam generation completed!');
                     setIsGenerating(false);
                     setIsGenerateDialogOpen(false);
-                },
-                onError: (err) => {
-                    console.error('Failed to generate exam:', err);
+                    
+                    // Redirect to exams page after a short delay
+                    setTimeout(() => {
+                        router.visit('/exams');
+                    }, 2000);
+                    
+                } else if (status.status === 'failed') {
+                    clearInterval(pollInterval);
+                    setGenerationStatus('Exam generation failed');
                     setIsGenerating(false);
-                },
-            },
-        );
+                }
+                
+            } catch (error) {
+                console.error('Failed to poll job status:', error);
+                clearInterval(pollInterval);
+                setGenerationStatus('Failed to check status');
+                setIsGenerating(false);
+            }
+        }, 2000); // Poll every 2 seconds
+        
+        // Stop polling after 15 minutes max
+        setTimeout(() => {
+            clearInterval(pollInterval);
+            if (isGenerating) {
+                setGenerationStatus('Generation timeout');
+                setIsGenerating(false);
+            }
+        }, 15 * 60 * 1000);
     };
 
     const handleAddCompetence = (e: React.FormEvent) => {
@@ -196,7 +251,7 @@ export default function PrositShow({
                                 Problem-Based Approach
                             </Badge>
                         </div>
-                        <h1 className="flex items-center gap-3 font-bold text-black text-3xl tracking-tight">
+                        <h1 className="flex items-center gap-3 font-bold text-black dark:text-white text-3xl tracking-tight">
                             <FileText className="w-8 h-8 text-primary" />
                             {prosit.generalisation || 'Prosit sans titre'}
                         </h1>
@@ -221,38 +276,78 @@ export default function PrositShow({
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Generate AI Exam</DialogTitle>
+                                <DialogTitle>
+                                    {isGenerating ? 'Generating AI Exam...' : 'Generate AI Exam'}
+                                </DialogTitle>
                                 <DialogDescription>
-                                    How many questions should the AI generate for this exam?
-                                    Higher counts will be processed in batches to ensure quality.
+                                    {isGenerating 
+                                        ? 'Your exam is being generated in the background. This may take a few minutes.'
+                                        : 'How many questions should the AI generate for this exam? Higher counts will be processed in batches to ensure quality.'
+                                    }
                                 </DialogDescription>
                             </DialogHeader>
-                            <div className="py-4">
-                                <label className="block mb-2 font-medium text-sm">Number of Questions</label>
-                                <Select
-                                    value={questionCount.toString()}
-                                    onValueChange={v => setQuestionCount(parseInt(v))}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select quantity" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="10">10 Questions</SelectItem>
-                                        <SelectItem value="20">20 Questions (2 batches)</SelectItem>
-                                        <SelectItem value="30">30 Questions (3 batches)</SelectItem>
-                                        <SelectItem value="40">40 Questions (4 batches)</SelectItem>
-                                        <SelectItem value="50">50 Questions (5 batches)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            
+                            {!isGenerating && (
+                                <div className="py-4">
+                                    <label className="block mb-2 font-medium text-sm">Number of Questions</label>
+                                    <Select
+                                        value={questionCount.toString()}
+                                        onValueChange={v => setQuestionCount(parseInt(v))}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select quantity" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="10">10 Questions</SelectItem>
+                                            <SelectItem value="20">20 Questions (2 batches)</SelectItem>
+                                            <SelectItem value="30">30 Questions (3 batches)</SelectItem>
+                                            <SelectItem value="40">40 Questions (4 batches)</SelectItem>
+                                            <SelectItem value="50">50 Questions (5 batches)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+                            
+                            {isGenerating && (
+                                <div className="space-y-4 py-4">
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span>Progress</span>
+                                            <span>{generationProgress}%</span>
+                                        </div>
+                                        <div className="bg-gray-200 rounded-full w-full h-2">
+                                            <div 
+                                                className="bg-primary rounded-full h-2 transition-all duration-500"
+                                                style={{ width: `${generationProgress}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="text-muted-foreground text-sm">
+                                        {generationStatus}
+                                    </div>
+                                </div>
+                            )}
+                            
                             <DialogFooter>
-                                <Button
-                                    onClick={() => handleGenerateExam(questionCount)}
-                                    disabled={isGenerating}
-                                    className="bg-gradient-to-r from-primary to-purple-600 w-full"
-                                >
-                                    {isGenerating ? 'Generating...' : 'Start Generation'}
-                                </Button>
+                                {!isGenerating ? (
+                                    <Button
+                                        onClick={() => handleGenerateExam(questionCount)}
+                                        disabled={isGenerating}
+                                        className="bg-gradient-to-r from-primary to-purple-600 w-full"
+                                    >
+                                        Start Generation
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        disabled
+                                        className="bg-gradient-to-r from-primary to-purple-600 w-full"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <div className="border-2 border-white border-t-transparent rounded-full w-4 h-4 animate-spin" />
+                                            Generating...
+                                        </div>
+                                    </Button>
+                                )}
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>

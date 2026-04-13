@@ -2,16 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\Rust\RustService;
 use App\Services\AiModelManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 class AiController extends Controller
 {
-    public function __construct(
-        protected RustService $rustService
-    ) {}
+    public function __construct() {}
 
     /**
      * Get AI service status and available models.
@@ -35,90 +32,8 @@ class AiController extends Controller
         $sessionId = $request->input('session_id');
         $conversationHistory = $request->input('conversation_history', []);
 
-        // 1. Generate Embedding using Rust Service
-        // This uses the same service pattern as other controllers
-        $result = $this->rustService->embed($message);
-
-        if (! $result['success']) {
-            return response()->json([
-                'error' => 'Failed to generate embedding',
-                'details' => $result['error'] ?? $result['stderr'],
-            ], 500);
-        }
-
-        $vectorStr = trim($result['stdout']);
-        $vector = json_decode($vectorStr, true);
-
-        if (! is_array($vector)) {
-            return response()->json([
-                'error' => 'Invalid embedding format from CLI',
-                'output' => $vectorStr,
-            ], 500);
-        }
-
-        // 2. Search Qdrant
-        $qdrantHost = env('QDRANT_HOST', 'http://localhost:6333');
-        $qdrantKey = env('QDRANT_API_KEY');
-        $collection = 'resources';
-
-        $searchPayload = [
-            'vector' => $vector,
-            'limit' => 5,
-            'with_payload' => true,
-            'filter' => [
-                'must' => [
-                    [
-                        'key' => 'resource_id',
-                        'match' => [
-                            'value' => $resourceId,
-                        ],
-                    ],
-                ],
-            ],
-        ];
-
-        $httpRequest = Http::asJson();
-        if ($qdrantKey) {
-            $httpRequest->withHeaders(['api-key' => $qdrantKey]);
-        }
-
-        $qdrantResponse = $httpRequest->post("{$qdrantHost}/collections/{$collection}/points/search", $searchPayload);
-
-        if ($qdrantResponse->failed()) {
-            return response()->json(['error' => 'Failed to search knowledge base', 'details' => $qdrantResponse->body()], 500);
-        }
-
-        $points = $qdrantResponse->json()['result'] ?? [];
-        $context = '';
-        foreach ($points as $point) {
-            $payload = $point['payload'] ?? [];
-            $text = $payload['full_content'] ?? '';
-            if (! is_string($text) || trim($text) === '') {
-                continue;
-            }
-
-            $chunkIndex = $payload['chunk_index'] ?? null;
-            $page = $payload['page'] ?? null;
-            $sourceUrl = $payload['source_url'] ?? null;
-            $format = $payload['format'] ?? null;
-
-            $metaParts = [];
-            if ($chunkIndex !== null) {
-                $metaParts[] = 'chunk='.$chunkIndex;
-            }
-            if ($page !== null) {
-                $metaParts[] = 'page='.$page;
-            }
-            if ($format) {
-                $metaParts[] = 'format='.$format;
-            }
-            if ($sourceUrl) {
-                $metaParts[] = 'source_url='.$sourceUrl;
-            }
-
-            $meta = empty($metaParts) ? '' : ('['.implode(', ', $metaParts).']');
-            $context .= $meta."\n".$text."\n\n";
-        }
+        // Search logic skipped as microservice migration is in progress
+        $context = 'Search context temporarily disabled during microservice migration.';
 
         // Increase execution time for deep reasoning or large local models
         set_time_limit(300);

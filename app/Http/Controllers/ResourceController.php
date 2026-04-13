@@ -8,8 +8,12 @@ use App\Services\ResourceUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 class ResourceController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Display a listing of the resource.
      */

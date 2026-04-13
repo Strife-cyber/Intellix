@@ -8,10 +8,9 @@ use App\Models\Course;
 use App\Models\Exam;
 use App\Models\Prosit;
 use App\Models\Resource;
-use App\Services\ExamGenerationService;
-use App\Services\PrositGenerationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Exception;
 
 class PbaWebController extends Controller
 {
@@ -45,17 +44,12 @@ class PbaWebController extends Controller
         ]);
     }
 
-    public function generateExam(Request $request, Prosit $prosit, ExamGenerationService $examService)
+    public function generateExam(Request $request, Prosit $prosit)
     {
-        try {
-            $totalQuestions = $request->integer('total_questions', 10);
-            $exam = $examService->generateExam($prosit, totalQuestions: $totalQuestions);
-
-            return redirect()->route('exams.show', ['exam' => $exam->id])
-                ->with('success', 'Exam generated successfully!');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => $e->getMessage()]);
-        }
+        return response()->json([
+            'success' => false,
+            'message' => 'Exam generation temporarily disabled (migration in progress)',
+        ], 503);
     }
 
     public function storeCourse(Request $request)
@@ -121,7 +115,7 @@ class PbaWebController extends Controller
         ]);
     }
 
-    public function storeProsit(Request $request, PrositGenerationService $prositService)
+    public function storeProsit(Request $request)
     {
         $rules = [
             'chapter_id' => 'required|exists:chapters,id',
@@ -129,28 +123,21 @@ class PbaWebController extends Controller
             'generate_with_ai' => 'boolean',
         ];
 
-        if (!$request->boolean('generate_with_ai')) {
-            $rules = array_merge($rules, [
-                'mots_cles' => 'nullable|string',
-                'contexte' => 'nullable|string',
-                'besoin' => 'nullable|string',
-                'problematique' => 'required|string',
-                'generalisation' => 'nullable|string|max:255',
-                'piste_de_solution' => 'nullable|string',
-                'plan_d_action' => 'nullable|string',
-            ]);
+        if ($request->boolean('generate_with_ai')) {
+             return back()->withErrors(['error' => 'AI Generation temporarily disabled (migration in progress)']);
         }
+
+        $rules = array_merge($rules, [
+            'mots_cles' => 'nullable|string',
+            'contexte' => 'nullable|string',
+            'besoin' => 'nullable|string',
+            'problematique' => 'required|string',
+            'generalisation' => 'nullable|string|max:255',
+            'piste_de_solution' => 'nullable|string',
+            'plan_d_action' => 'nullable|string',
+        ]);
 
         $validated = $request->validate($rules);
-
-        if ($request->boolean('generate_with_ai')) {
-            try {
-                $aiFields = $prositService->generatePrositFields($validated['texte']);
-                $validated = array_merge($validated, $aiFields);
-            } catch (\Exception $e) {
-                return back()->withErrors(['error' => 'AI Generation failed: ' . $e->getMessage()]);
-            }
-        }
 
         $prosit = Prosit::create($validated);
 
@@ -168,18 +155,9 @@ class PbaWebController extends Controller
         return back()->with('success', 'Prosit created successfully');
     }
 
-    public function generatePrositFields(Request $request, PrositGenerationService $prositService)
+    public function generatePrositFields(Request $request)
     {
-        $request->validate([
-            'texte' => 'required|string',
-        ]);
-
-        try {
-            $fields = $prositService->generatePrositFields($request->input('texte'));
-            return response()->json($fields);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        return response()->json(['error' => 'AI Generation temporarily disabled (migration in progress)'], 503);
     }
 
     public function updateProsit(Request $request, Prosit $prosit)
