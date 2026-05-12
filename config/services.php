@@ -61,4 +61,11 @@ return [
         'endpoint' => env('AI_ENDPOINT', 'http://100.93.40.102:9090'),
     ],
 
+    'broker' => [
+        'url' => env('BROKER_URL', 'http://localhost:8080'),
+    ],
+
+    'cer' => [
+        'base_url' => env('CER_BASE_URL', 'http://localhost:8080'),
+    ],
 ];

@@ -81,3 +81,8 @@ export type Course = {
     cover_image: string | null;
     chapters: Chapter[];
 }
+
+export type CerSection = {
+    title: string;
+    content: string;
+}

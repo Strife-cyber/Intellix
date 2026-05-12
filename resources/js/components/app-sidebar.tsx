@@ -7,6 +7,7 @@ import {
     Calendar,
     BookOpen,
     Notebook,
+    SearchCode,
 } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -26,6 +27,7 @@ import {
     library,
     upload
 } from '@/routes';
+import cers from '@/routes/cers';
 import courses from '@/routes/courses';
 import exams from '@/routes/exams';
 import notes from '@/routes/notes';
@@ -84,6 +86,17 @@ const mainNavItems: NavItem[] = [
         href: flashcards().url,
         icon: Layers2Icon,
     },
+    {
+        title: 'Cahier d\'etude',
+        href: cers.index.url(),
+        icon: SearchCode,
+        items: [
+            {
+                title: 'Prosit File',
+                href: cers.index.url()
+            }
+        ]
+    }
 ];
 
 const footerNavItems: NavItem[] = [

@@ -1,12 +1,11 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
 import {
     UploadCloud,
     FileUp,
     MousePointerClick,
     ClipboardPaste,
 } from 'lucide-react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 
 interface UploadDropzoneProps {
     onFilesAdded: (files: File[]) => void;
@@ -79,7 +78,7 @@ export function UploadDropzone({
             onDrop={handleDrop}
             onClick={() => !isUploading && inputRef.current?.click()}
             className={cn(
-                'group relative flex min-h-[300px] w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-300 ease-in-out',
+                'group relative flex min-h-75 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-300 ease-in-out',
                 isDragOver
                     ? 'scale-[0.99] border-primary bg-primary/5 ring-4 ring-primary/10'
                     : 'border-muted-foreground/20 hover:border-primary/50 hover:bg-muted/50',

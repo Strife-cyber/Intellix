@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AiController;
+use App\Http\Controllers\CahierController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\FlashCardController;
 use App\Http\Controllers\GithubController;
@@ -283,6 +284,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/files/preview/{path}', [FileController::class, 'preview'])
         ->where('path', '(.*)');
+
+    Route::post('cers/upload', [CahierController::class, 'upload'])->name('cers.upload');
+    Route::resource('cers', CahierController::class);
 });
 
 Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('google.redirect');

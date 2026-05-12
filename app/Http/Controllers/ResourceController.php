@@ -5,10 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreResourceRequest;
 use App\Models\Resource;
 use App\Services\ResourceUploadService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ResourceController extends Controller
 {
@@ -66,6 +65,8 @@ class ResourceController extends Controller
 
     public function upload(Request $request, ResourceUploadService $service): JsonResponse
     {
+        set_time_limit(300); // Increase execution time to 300 seconds
+
         $request->validate([
             'files' => ['required', 'array'],
             'files.*' => ['file', 'max:102400'], // 100MB per file
