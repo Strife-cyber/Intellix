@@ -286,6 +286,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->where('path', '(.*)');
 
     Route::post('cers/upload', [CahierController::class, 'upload'])->name('cers.upload');
+    Route::post('cers/save', [CahierController::class, 'store'])->name('cers.save');
     Route::resource('cers', CahierController::class);
 });
 

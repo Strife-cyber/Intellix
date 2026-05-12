@@ -34,7 +34,28 @@ class CahierController extends Controller
      */
     public function store(StoreCahierRequest $request)
     {
-        //
+        $sections = $request->input('sections', []);
+
+        $cahier = Cahier::create([
+            'version' => (float) $request->input('version'),
+            'title' => $request->string('title'),
+            'description' => $request->input('description'),
+            // Store all extracted sections payload as JSON string in `prosit`.
+            'prosit' => json_encode($sections, JSON_UNESCAPED_UNICODE),
+            // Ensure JSON fields are always present to satisfy NOT NULL constraints.
+            // We don't have those payloads at the CER step yet, so default to empty arrays.
+            'pdfs' => [],
+            'zips' => [],
+            'objectifs' => [],
+            'difficultes' => [],
+            'perspectives' => [],
+        ]);
+
+        return Inertia::render('cers/index', [
+            'sections' => $sections,
+            'saved' => true,
+            'cahierId' => $cahier->id,
+        ]);
     }
 
     /**

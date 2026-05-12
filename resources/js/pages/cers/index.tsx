@@ -9,6 +9,14 @@ import {
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { UploadDropzone } from '@/components/uploader/upload-dropzone';
 
@@ -34,6 +42,18 @@ export default function Cers() {
     const [sections, setSections] = useState<CerSection[]>([]);
 
     const hasSections = sections.length > 0;
+
+    const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+
+    const [saveForm, setSaveForm] = useState<{
+        title: string;
+        description: string;
+        version: number;
+    }>({
+        title: '',
+        description: '',
+        version: 1,
+    });
 
     const handleFilesAdded = (files: FileList) => {
         if (!files.length) return;
@@ -61,19 +81,9 @@ export default function Cers() {
     };
 
     const handleSave = () => {
-        setIsSaving(true);
+        if (!hasSections) return;
 
-        /*
-            SAVE WITH INERTIA
-
-            router.post('/cers/save', {
-                sections,
-            })
-        */
-
-        setTimeout(() => {
-            setIsSaving(false);
-        }, 1500);
+        setIsSaveDialogOpen(true);
     };
 
     return (
@@ -213,6 +223,142 @@ export default function Cers() {
                                 </Button>
                             </div>
 
+                            <Dialog
+                                open={isSaveDialogOpen}
+                                onOpenChange={setIsSaveDialogOpen}
+                            >
+                                <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>
+                                            Save as Cahier
+                                        </DialogTitle>
+                                    </DialogHeader>
+
+                                    <form
+                                        onSubmit={(e) => {
+                                            e.preventDefault();
+
+                                            setIsSaving(true);
+
+                                            router.post(
+                                                '/cers/save',
+                                                {
+                                                    title:
+                                                        saveForm.title,
+                                                    description:
+                                                        saveForm.description ||
+                                                        null,
+                                                    version:
+                                                        Number(
+                                                            saveForm.version,
+                                                        ),
+                                                    sections,
+                                                },
+                                                {
+                                                    onStart: () => {
+                                                        setIsSaving(true);
+                                                    },
+                                                    onSuccess: (page) => {
+                                                        setIsSaving(false);
+                                                        setIsSaveDialogOpen(false);
+
+                                                        const nextSections =
+                                                            (page as any)
+                                                                ?.props
+                                                                ?.sections ??
+                                                            sections;
+
+                                                        setSections(nextSections);
+                                                    },
+                                                    onError: (error) => {
+                                                        console.error(
+                                                            error,
+                                                        );
+                                                        setIsSaving(false);
+                                                    },
+                                                },
+                                            );
+                                        }}
+                                        className="space-y-4"
+                                    >
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">
+                                                Title
+                                            </label>
+                                            <Input
+                                                value={saveForm.title}
+                                                onChange={(e) =>
+                                                    setSaveForm((prev) => ({
+                                                        ...prev,
+                                                        title: e.target.value,
+                                                    }))
+                                                }
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">
+                                                Description
+                                            </label>
+                                            <Textarea
+                                                value={
+                                                    saveForm.description
+                                                }
+                                                onChange={(e) =>
+                                                    setSaveForm((prev) => ({
+                                                        ...prev,
+                                                        description:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                rows={3}
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">
+                                                Version
+                                            </label>
+                                            <Input
+                                                type="number"
+                                                value={saveForm.version}
+                                                onChange={(e) =>
+                                                    setSaveForm((prev) => ({
+                                                        ...prev,
+                                                        version: Number(
+                                                            e.target.value,
+                                                        ),
+                                                    }))
+                                                }
+                                                required
+                                            />
+                                        </div>
+
+                                        <DialogFooter>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    setIsSaveDialogOpen(false)
+                                                }
+                                                disabled={isSaving}
+                                            >
+                                                Cancel
+                                            </Button>
+                                            <Button type="submit" disabled={isSaving}>
+                                                {isSaving ? (
+                                                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <Save className="mr-2 h-4 w-4" />
+                                                )}
+                                                Save
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+
                             <div className="space-y-5">
                                 {sections.map((part, index) => (
                                     <div
@@ -232,7 +378,7 @@ export default function Cers() {
                                                 className="w-full bg-transparent text-lg font-semibold outline-none"
                                             />
 
-                                            <span className="ml-4 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                                            <span className="ml-4 rounded-md bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
                                                 Section {index + 1}
                                             </span>
                                         </div>

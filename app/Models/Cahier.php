@@ -18,6 +18,7 @@ class Cahier extends Model
     ];
 
     protected $casts = [
+        'version' => 'float',
         'pdfs' => 'array',
         'zips' => 'array',
         'objectifs' => 'array',

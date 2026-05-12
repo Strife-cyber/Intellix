@@ -11,7 +11,7 @@ class StoreCahierRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,12 @@ class StoreCahierRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'version' => ['required', 'numeric'],
+            'sections' => ['required', 'array'],
+            'sections.*.title' => ['required', 'string', 'max:255'],
+            'sections.*.content' => ['required', 'string'],
         ];
     }
 }
