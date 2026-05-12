@@ -92,6 +92,10 @@ const mainNavItems: NavItem[] = [
         icon: SearchCode,
         items: [
             {
+                title: 'All Cer\'s',
+                href: cers.all().url,
+            },
+            {
                 title: 'Prosit File',
                 href: cers.index.url()
             }

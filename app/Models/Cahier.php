@@ -6,6 +6,9 @@ use Database\Factories\CahierFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @method static create(array $array)
+ */
 class Cahier extends Model
 {
     /** @use HasFactory<CahierFactory> */
@@ -19,6 +22,7 @@ class Cahier extends Model
 
     protected $casts = [
         'version' => 'float',
+        'prosit' => 'array',
         'pdfs' => 'array',
         'zips' => 'array',
         'objectifs' => 'array',

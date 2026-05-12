@@ -7,7 +7,9 @@ use App\Http\Requests\UpdateCahierRequest;
 use App\Models\Cahier;
 use App\Services\CerService;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Inertia\Inertia;
+use Throwable;
 
 class CahierController extends Controller
 {
@@ -18,6 +20,15 @@ class CahierController extends Controller
     {
         return Inertia::render('cers/index', [
             'sections' => [],
+        ]);
+    }
+
+    public function all()
+    {
+        $cahiers = Cahier::all();
+
+        return Inertia::render('cers/all', [
+            'cahiers' => $cahiers,
         ]);
     }
 
@@ -61,9 +72,11 @@ class CahierController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Cahier $cahier)
+    public function show(Cahier $cer)
     {
-        //
+        return Inertia::render('cers/show', [
+            'cahier' => $cer,
+        ]);
     }
 
     /**
@@ -97,7 +110,7 @@ class CahierController extends Controller
         ]);
 
         // Do not persist to local storage; forward the temp uploaded file to the CER service.
-        /** @var \Illuminate\Http\UploadedFile $uploadedFile */
+        /** @var UploadedFile $uploadedFile */
         $uploadedFile = $request->file('file');
         $fullPath = $uploadedFile->getRealPath();
 
@@ -110,7 +123,7 @@ class CahierController extends Controller
         try {
             $originalFileName = $uploadedFile->getClientOriginalName();
             $result = $cerService->splitProsit($fullPath, $originalFileName);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return Inertia::render('cers/index', [
                 'sections' => [],
             ]);

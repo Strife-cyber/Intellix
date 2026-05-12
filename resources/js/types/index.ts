@@ -1,11 +1,11 @@
 import type { BreadcrumbItem } from '@/types/navigation';
 
+
 export type * from './auth';
 export type * from './navigation';
 export type * from './ui';
 
 import type { Auth } from './auth';
-import { useState } from 'react';
 
 export type SharedData = {
     name: string;
@@ -85,4 +85,18 @@ export type Course = {
 export type CerSection = {
     title: string;
     content: string;
+}
+
+export type Cer = {
+    id: number;
+    version: number;
+    title: string;
+    description: string;
+    prosit: CerSection[];
+    pdfs: string[];
+    zips: string[];
+    objectifs: string[];
+    difficultes: string[];
+    perspectives: string[];
+    [key: string]: unknown;
 }
