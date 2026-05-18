@@ -124,10 +124,13 @@ class CahierController extends Controller
             $originalFileName = $uploadedFile->getClientOriginalName();
             $result = $cerService->splitProsit($fullPath, $originalFileName);
         } catch (Throwable $e) {
+            dd($e->getMessage());
             return Inertia::render('cers/index', [
                 'sections' => [],
             ]);
         }
+
+        dd($result);
 
         $sections = array_map(function (array $section): array {
             return [
