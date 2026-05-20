@@ -1,0 +1,75 @@
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[a4paper, margin=1.8cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{ragged2e}
+\usepackage{parskip}
+
+\input{table.tex}
+
+\begin{document}
+
+\section*{Showcase du composant tableau}
+
+\begin{table}[H]
+\centering
+\CERTableStyle
+\caption{Plan de communication projet}
+\label{tab:sample-communication}
+\begin{tabularx}{\textwidth}{Y C{2.5cm} C{2.8cm} Y}
+\toprule
+\CERHeadCell{Type d'information} & \CERHeadCell{Fr\'equence} & \CERHeadCell{Canal} & \CERHeadCell{Responsable} \\
+Avancement global du projet & Hebdomadaire & Rapport + r\'eunion & Chef de projet \\
+Coordination de l'\'equipe technique & Quotidienne & Daily standup & Scrum Master \\
+Validation fonctionnelle & Fin de sprint & D\'emo client & Product Owner \\
+Gestion des incidents critiques & Imm\'ediate & T\'el\'ephone + Teams & Lead technique \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\CERTableNote{Exemple 1 : tableau orient\'e pilotage avec rythme, canal et propri\'etaire clairement visibles.}
+
+\begin{table}[H]
+\centering
+\CERTableStyle
+\caption{Matrice simplifi\'ee des parties prenantes}
+\label{tab:sample-stakeholders}
+\begin{tabularx}{\textwidth}{Y C{2.4cm} C{2.8cm} Y}
+\toprule
+\CERHeadCell{Partie prenante} & \CERHeadCell{Influence} & \CERHeadCell{Niveau d'engagement} & \CERHeadCell{Action prioritaire} \\
+Direction g\'en\'erale & \'Elev\'ee & D\'ecisionnelle & Valider les jalons majeurs et arbitrer les risques \\
+Client principal & \'Elev\'ee & Tr\`es impliqu\'e & Organiser un point hebdomadaire de validation \\
+Utilisateurs finaux & Moyenne & Consultatif & Recueillir les retours et tester les parcours cl\'es \\
+\'Equipe de d\'eveloppement & \'Elev\'ee & Op\'erationnel & Coordonner les t\^aches et suivre les blocages \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\CERTableNote{Exemple 2 : tableau plus analytique, utile pour le cadrage et la gouvernance.}
+
+\clearpage
+
+\begin{table}[H]
+\centering
+\CERTableStyle
+\caption{Suivi des actions prioritaires}
+\label{tab:sample-actions}
+\begin{tabularx}{\textwidth}{Y C{2.2cm} C{2.2cm} C{2.4cm} Y}
+\toprule
+\CERHeadCell{Action} & \CERHeadCell{Priorit\'e} & \CERHeadCell{Statut} & \CERHeadCell{\'Ech\'eance} & \CERHeadCell{Commentaire} \\
+Formaliser le plan de communication & Haute & En cours & 12 avril 2026 & Derni\`ere validation attendue du pilote \\
+Clarifier les r\^oles via une matrice RACI & Haute & Planifi\'e & 15 avril 2026 & Atelier court avec l'\'equipe projet \\
+Mettre en place un canal de crise & Moyenne & En cours & 18 avril 2026 & Teams retenu comme canal principal \\
+R\'ediger les fiches de poste projet & Moyenne & \`A lancer & 22 avril 2026 & D\'epend des arbitrages RH \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\CERTableNote{Exemple 3 : tableau de suivi avec un rendu plus ex\'ecutif pour les revues d'avancement.}
+
+\end{document}

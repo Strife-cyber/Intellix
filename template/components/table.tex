@@ -1,0 +1,35 @@
+% Reusable CER table component.
+% Expected packages in the parent document:
+% xcolor, booktabs, tabularx, caption, array, ragged2e
+
+\definecolor{cerTableHead}{HTML}{4E342E}
+\definecolor{cerTableStripe}{HTML}{F7F1EE}
+\definecolor{cerTableRule}{HTML}{B89A8A}
+\definecolor{cerTableText}{HTML}{3C2C28}
+\definecolor{cerTableMuted}{HTML}{8A6F64}
+
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+\newcolumntype{C}[1]{>{\Centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\RaggedLeft\arraybackslash}p{#1}}
+
+\newcommand{\CERHeadCell}[1]{%
+    \cellcolor{cerTableHead}{\color{white}\bfseries #1}%
+}
+
+\newcommand{\CERTableNote}[1]{%
+    \par\vspace{0.45em}%
+    {\footnotesize\color{cerTableMuted}\textit{#1}}%
+}
+
+\newcommand{\CERTableStyle}{%
+    \captionsetup{
+        font=small,
+        labelfont={bf,color=cerTableHead},
+        textfont={color=cerTableText},
+        skip=10pt
+    }
+    \renewcommand{\arraystretch}{1.35}
+    \setlength{\tabcolsep}{9pt}
+    \arrayrulecolor{cerTableRule}
+    \rowcolors{2}{cerTableStripe}{white}
+}

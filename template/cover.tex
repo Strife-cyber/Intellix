@@ -1,0 +1,117 @@
+% Cover page component included from main.tex.
+\begin{titlepage}
+\newgeometry{margin=0cm}
+\thispagestyle{empty}
+
+\begin{tikzpicture}[remember picture, overlay]
+    % Sidebar background.
+    \fill[themeDark]
+        (current page.north west)
+        rectangle
+        ($(current page.south west) + (0.33\paperwidth, 0)$);
+
+    % Geometric accents.
+    \fill[themePrimary]
+        ($(current page.north west) + (0.33\paperwidth, 0)$) --
+        ($(current page.north west) + (0.40\paperwidth, 0)$) --
+        ($(current page.south west) + (0.26\paperwidth, 0)$) --
+        ($(current page.south west) + (0.33\paperwidth, 0)$) -- cycle;
+
+    \fill[themeAccent!45!white]
+        ($(current page.north west) + (0.33\paperwidth, -3.8cm)$) --
+        ($(current page.north west) + (0.33\paperwidth, -6.1cm)$) --
+        ($(current page.north west) + (0.37\paperwidth, -4.95cm)$) -- cycle;
+
+    % Logo.
+    \coordinate (logoCenter) at ($(current page.north west) + (1.9cm, -2.1cm)$);
+
+    \begin{scope}
+        \fill[white] (logoCenter) circle (0.55cm);
+        \clip (logoCenter) circle (0.55cm);
+        \node at (logoCenter) {\includegraphics[width=0.95cm]{\docLogoPath}};
+    \end{scope}
+
+    \node[anchor=west, white, font=\bfseries\Large]
+        at ($(logoCenter) + (0.75cm, 0)$) {\docBrandLabel};
+
+    % Sidebar information.
+    \node[anchor=north west, text width=5.0cm, white, font=\bfseries\Large]
+        at ($(current page.north west) + (1.25cm, -7.5cm)$) {INFORMATIONS};
+
+    \node[anchor=north west, text width=4.9cm, white!75, font=\footnotesize\bfseries]
+        at ($(current page.north west) + (1.25cm, -9.8cm)$) {AUTEUR};
+    \node[anchor=north west, text width=4.9cm, white, font=\normalsize]
+        at ($(current page.north west) + (1.25cm, -10.45cm)$) {\docAuthor};
+
+    \node[anchor=north west, text width=4.9cm, white!75, font=\footnotesize\bfseries]
+        at ($(current page.north west) + (1.25cm, -12.65cm)$) {PILOTE};
+    \node[anchor=north west, text width=4.9cm, white, font=\normalsize]
+        at ($(current page.north west) + (1.25cm, -13.3cm)$) {\docPilot};
+
+    \node[anchor=north west, text width=4.9cm, white!75, font=\footnotesize\bfseries]
+        at ($(current page.north west) + (1.25cm, -15.95cm)$) {PROMOTION};
+    \node[anchor=north west, text width=4.9cm, white, font=\normalsize]
+        at ($(current page.north west) + (1.25cm, -16.6cm)$) {\docPromotion};
+
+    \node[anchor=north west, text width=4.9cm, white!75, font=\footnotesize\bfseries]
+        at ($(current page.north west) + (1.25cm, -19.4cm)$) {DATE};
+    \node[anchor=north west, text width=4.9cm, white, font=\normalsize]
+        at ($(current page.north west) + (1.25cm, -20.05cm)$) {\docDate};
+
+    % Main title block.
+    \node[
+        anchor=north west,
+        align=left,
+        text width=9.2cm,
+        inner sep=0pt,
+        outer sep=0pt,
+        font=\fontsize{38}{44}\bfseries\color{themeDark}
+    ] (titleBlock)
+        at ($(current page.north west) + (0.40\paperwidth, -7.0cm)$)
+        {\docTitle};
+
+    \node[
+        anchor=north west,
+        align=left,
+        inner sep=0pt,
+        outer sep=0pt,
+        font=\fontsize{28}{32}\bfseries\color{themeDark}
+    ] (numberBlock)
+        at ([yshift=-0.45cm]titleBlock.south west)
+        {\docNumber};
+
+    \node[
+        anchor=north west,
+        align=left,
+        text width=9.5cm,
+        inner sep=0pt,
+        outer sep=0pt,
+        font=\fontsize{21}{28}\bfseries\color{themePrimary}
+    ] (subtitleBlock)
+        at ([yshift=-1.15cm]numberBlock.south west)
+        {\raggedright\docSubtitle};
+
+    \draw[themeDark, thick]
+        ([yshift=-0.6cm]subtitleBlock.south west) --
+        ([xshift=6.8cm,yshift=-0.6cm]subtitleBlock.south west);
+
+    \node[
+        anchor=north west,
+        align=left,
+        text width=9.0cm,
+        inner sep=0pt,
+        outer sep=0pt,
+        font=\color{textGray!65}\small
+    ]
+        at ([yshift=-1.2cm]subtitleBlock.south west)
+        {\raggedright\docAbstract};
+
+    % Footer.
+    \node[anchor=south west, white, font=\footnotesize]
+        at ($(current page.south west) + (1.1cm, 1.1cm)$) {
+        \textcopyright{} \the\year{} \docCopyrightOwner
+    };
+\end{tikzpicture}
+
+\end{titlepage}
+\restoregeometry

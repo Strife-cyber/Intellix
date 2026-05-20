@@ -1,0 +1,24 @@
+\section{Analyse}
+
+[[ if .analyse.context ]]
+\subsection{Contexte}
+[[ .analyse.context ]]
+[[ end ]]
+
+[[ if .analyse.problems ]]
+\subsection{Problématiques}
+\begin{itemize}
+[[ range .analyse.problems ]]
+    \item [[ . ]]
+[[ end ]]
+\end{itemize}
+[[ end ]]
+
+[[ if .analyse.constraints ]]
+\subsection{Contraintes}
+\begin{itemize}
+[[ range .analyse.constraints ]]
+    \item [[ . ]]
+[[ end ]]
+\end{itemize}
+[[ end ]]
