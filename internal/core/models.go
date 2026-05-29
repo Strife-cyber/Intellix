@@ -1,14 +1,14 @@
 package core
 
 type Prosit struct {
-	Keywords       []string
-	Context        string
-	Needs          []string
-	Constraints    []string
-	Problems       []string
-	Generalisation string
-	Pistes         []string
-	Plan           []string
+	Keywords       []string `json:"keywords,omitempty"`
+	Context        string   `json:"context,omitempty"`
+	Needs          []string `json:"needs,omitempty"`
+	Constraints    []string `json:"constraints,omitempty"`
+	Problems       []string `json:"problems,omitempty"`
+	Generalisation string   `json:"generalisation,omitempty"`
+	Pistes         []string `json:"pistes,omitempty"`
+	Plan           []string `json:"plan,omitempty"`
 }
 
 type Analyse struct {

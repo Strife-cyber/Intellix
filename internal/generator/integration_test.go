@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"micro-cer/ai"
-	"micro-cer/core"
-	"micro-cer/generator"
+	"micro-cer/internal/ai"
+	"micro-cer/internal/core"
+	"micro-cer/internal/generator"
 )
 
 // mockProvider returns realistic JSON for each prompt type without calling a real LLM.

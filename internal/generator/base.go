@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"micro-cer/ai"
+	"micro-cer/internal/ai"
 	"strings"
 	"time"
 )
@@ -151,7 +151,7 @@ func GenerateJSON[T any](
 			lastErr = err
 		} else {
 			var result T
-				jsonStr = sanitizeAIJSON(jsonStr)
+			jsonStr = sanitizeAIJSON(jsonStr)
 			if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
 				log.Printf("[%s] json.Unmarshal failed (attempt %d/%d): %v", category, attempt+1, totalAttempts, err)
 				lastErr = err

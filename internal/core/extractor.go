@@ -1,7 +1,7 @@
 package core
 
 import (
-	"micro-cer/core/reader"
+	"micro-cer/internal/core/reader"
 	"strings"
 )
 

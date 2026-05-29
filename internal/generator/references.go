@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"micro-cer/ai"
-	"micro-cer/core"
+	"micro-cer/internal/ai"
+	"micro-cer/internal/core"
 	"strings"
 )
 
