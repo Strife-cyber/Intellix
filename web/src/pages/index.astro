@@ -1,0 +1,130 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout>
+  <header class="app-header">
+    <h1>micro-cer</h1>
+    <span style="color: var(--muted); font-size: 0.85rem">PROSIT → CER → PDF</span>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" class="tab active" data-tab="library">Bibliothèque PROSIT</button>
+    <button type="button" class="tab" data-tab="generate">Générer un CER</button>
+    <button type="button" class="tab" data-tab="jobs">Travaux en cours</button>
+  </nav>
+
+  <main>
+    <!-- Library -->
+    <section id="panel-library" class="panel active">
+      <div class="grid-2">
+        <div class="card">
+          <h2>Importer un PROSIT</h2>
+          <div id="dropzone" class="dropzone">
+            Glissez un fichier ici ou cliquez pour choisir<br />
+            <small>.docx, .pdf, .odt, .txt</small>
+          </div>
+          <input type="file" id="file-input" class="hidden" accept=".docx,.pdf,.odt,.txt" />
+          <p id="upload-status" style="margin-top: 1rem; color: var(--muted)"></p>
+        </div>
+        <div class="card">
+          <h2>Fichiers enregistrés</h2>
+          <ul id="prosit-list" class="prosit-list"></ul>
+        </div>
+      </div>
+      <div class="card hidden" id="sections-card">
+        <h2>Sections extraites — <span id="sections-filename"></span></h2>
+        <div id="sections-grid" class="sections-grid"></div>
+      </div>
+    </section>
+
+    <!-- Generate CER -->
+    <section id="panel-generate" class="panel">
+      <div class="card">
+        <h2>Paramètres du CER</h2>
+        <p style="color: var(--muted); margin-top: 0">
+          Sélectionnez un PROSIT enregistré ou utilisez celui ouvert dans la bibliothèque.
+        </p>
+        <div class="grid-2" style="margin-top: 1rem">
+          <div>
+            <label for="cer-prosit">PROSIT actif</label>
+            <select id="cer-prosit"><option value="">— Choisir —</option></select>
+          </div>
+          <div>
+            <label for="cer-theme">Thème LaTeX</label>
+            <select id="cer-theme"></select>
+          </div>
+          <div>
+            <label for="cer-title">Titre</label>
+            <input type="text" id="cer-title" placeholder="CER - Mon sujet" />
+          </div>
+          <div>
+            <label for="cer-version">Version</label>
+            <input type="number" id="cer-version" value="1" min="0.1" step="0.1" />
+          </div>
+        </div>
+        <div style="margin-top: 1rem">
+          <label for="cer-description">Description / résumé</label>
+          <textarea id="cer-description" rows="3" placeholder="Courte description du cahier"></textarea>
+        </div>
+
+        <div class="grid-2" style="margin-top: 1.25rem">
+          <div>
+            <label>Objectifs</label>
+            <div class="list-input">
+              <input type="text" id="input-objectif" placeholder="Ajouter un objectif" />
+              <button type="button" class="btn btn-secondary" data-add="objectifs">+</button>
+            </div>
+            <div id="list-objectifs" class="tag-list"></div>
+          </div>
+          <div>
+            <label>Difficultés</label>
+            <div class="list-input">
+              <input type="text" id="input-difficulty" placeholder="Ajouter une difficulté" />
+              <button type="button" class="btn btn-secondary" data-add="difficulties">+</button>
+            </div>
+            <div id="list-difficulties" class="tag-list"></div>
+          </div>
+        </div>
+        <div style="margin-top: 1rem">
+          <label>Perspectives</label>
+          <div class="list-input">
+            <input type="text" id="input-perspective" placeholder="Ajouter une perspective" />
+            <button type="button" class="btn btn-secondary" data-add="perspectives">+</button>
+          </div>
+          <div id="list-perspectives" class="tag-list"></div>
+        </div>
+
+        <button type="button" id="btn-generate" class="btn" style="margin-top: 1.5rem">
+          Lancer la génération CER
+        </button>
+        <p id="generate-status" style="color: var(--muted); margin-top: 0.75rem"></p>
+      </div>
+    </section>
+
+    <!-- Jobs -->
+    <section id="panel-jobs" class="panel">
+      <div class="card">
+        <h2>Travaux en cours</h2>
+        <div id="job-detail" class="hidden">
+          <p>
+            Job <code id="job-id"></code>
+            <span id="job-status" class="status-pill"></span>
+          </p>
+          <p id="job-progress" style="color: var(--muted)"></p>
+          <div id="job-actions" class="hidden" style="margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap">
+            <a id="dl-pdf" class="btn" href="#" download>Télécharger PDF</a>
+            <a id="dl-latex" class="btn btn-secondary" href="#" download>Télécharger LaTeX combiné</a>
+            <a id="dl-zip" class="btn btn-secondary" href="#" download>Télécharger ZIP</a>
+          </div>
+          <p id="pdf-hint" style="color: var(--warn); font-size: 0.9rem"></p>
+          <div id="compile-log" class="log-box hidden"></div>
+        </div>
+        <p id="no-job" style="color: var(--muted)">Aucun travail actif. Lancez une génération depuis l'onglet « Générer un CER ».</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    import '../scripts/app.ts';
+  </script>
+</Layout>
