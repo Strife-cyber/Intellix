@@ -1,7 +1,8 @@
 <?php
 
 use App\Models\User;
-use App\Models\UserAiSetting;
+use App\Models\UserChatAiSetting;
+use App\Support\AiProviders;
 use Illuminate\Support\Facades\Http;
 
 test('cer proxy routes require authentication', function () {
@@ -38,12 +39,11 @@ test('cer job proxy injects provider from user ai settings', function () {
     ]);
 
     $user = User::factory()->create();
-    UserAiSetting::factory()->for($user)->create([
-        'provider_type' => UserAiSetting::PROVIDER_LMSTUDIO,
+    UserChatAiSetting::factory()->for($user)->create([
+        'provider_type' => AiProviders::LMSTUDIO,
         'endpoint' => 'http://localhost:1234',
         'model' => 'local-model',
         'api_key' => 'abc',
-        'is_default' => true,
     ]);
 
     $this->actingAs($user)
@@ -61,7 +61,7 @@ test('cer job proxy injects provider from user ai settings', function () {
         $body = $request->data();
 
         return $request->url() === 'http://micro-cer.test/api/jobs/cer'
-            && ($body['provider']['type'] ?? null) === UserAiSetting::PROVIDER_LMSTUDIO
+            && ($body['provider']['type'] ?? null) === AiProviders::LMSTUDIO
             && ($body['provider']['model'] ?? null) === 'local-model';
     });
 });

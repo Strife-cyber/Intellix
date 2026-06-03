@@ -3,7 +3,8 @@
 namespace App\Services;
 
 use App\Models\User;
-use App\Models\UserAiSetting;
+use App\Models\UserChatAiSetting;
+use App\Support\AiProviders;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -22,7 +23,7 @@ class UserAiChatService
         $setting = $this->resolver->defaultSetting($user);
         if (! $setting) {
             throw new RuntimeException(
-                'No AI provider configured. Add one in Settings → AI and mark it as default.',
+                'No chat AI configured. Open Settings → Chat AI and choose a provider.',
             );
         }
 
@@ -34,7 +35,7 @@ class UserAiChatService
 
         $temperature ??= $this->resolver->resolveTemperature($user);
 
-        if ($setting->provider_type === UserAiSetting::PROVIDER_GEMINI) {
+        if ($setting->provider_type === AiProviders::GEMINI) {
             return $this->chatGemini($setting, $messages, $temperature);
         }
 
@@ -45,7 +46,7 @@ class UserAiChatService
      * @param  list<array{role: string, content: string}>  $messages
      * @return array{content: string, reasoning: ?string}
      */
-    private function chatOpenAiCompatible(UserAiSetting $setting, array $messages, float $temperature): array
+    private function chatOpenAiCompatible(UserChatAiSetting $setting, array $messages, float $temperature): array
     {
         $url = $this->openAiCompatibleUrl($setting);
         $model = $setting->model ?: $this->defaultModel($setting->provider_type);
@@ -55,7 +56,7 @@ class UserAiChatService
         if ($apiKey) {
             $headers['Authorization'] = 'Bearer '.$apiKey;
         }
-        if ($setting->provider_type === UserAiSetting::PROVIDER_OPENROUTER) {
+        if ($setting->provider_type === AiProviders::OPENROUTER) {
             $headers['HTTP-Referer'] = config('app.url', 'https://intellix.test');
             $headers['X-Title'] = config('app.name', 'Intellix');
         }
@@ -98,7 +99,7 @@ class UserAiChatService
      * @param  list<array{role: string, content: string}>  $messages
      * @return array{content: string, reasoning: ?string}
      */
-    private function chatGemini(UserAiSetting $setting, array $messages, float $temperature): array
+    private function chatGemini(UserChatAiSetting $setting, array $messages, float $temperature): array
     {
         $apiKey = $setting->effectiveApiKey();
         if (! $apiKey) {
@@ -177,17 +178,17 @@ class UserAiChatService
         ];
     }
 
-    private function openAiCompatibleUrl(UserAiSetting $setting): string
+    private function openAiCompatibleUrl(UserChatAiSetting $setting): string
     {
         return match ($setting->provider_type) {
-            UserAiSetting::PROVIDER_OPENROUTER => 'https://openrouter.ai/api/v1/chat/completions',
-            UserAiSetting::PROVIDER_OPENAI => $this->withV1Completions(
+            AiProviders::OPENROUTER => 'https://openrouter.ai/api/v1/chat/completions',
+            AiProviders::OPENAI => $this->withV1Completions(
                 $setting->endpoint ?: 'https://api.openai.com',
             ),
-            UserAiSetting::PROVIDER_OLLAMA => $this->withV1Completions(
+            AiProviders::OLLAMA => $this->withV1Completions(
                 $setting->endpoint ?: 'http://localhost:11434',
             ),
-            UserAiSetting::PROVIDER_LMSTUDIO => $this->withV1Completions(
+            AiProviders::LMSTUDIO => $this->withV1Completions(
                 $setting->endpoint ?: 'http://localhost:1234',
             ),
             default => throw new RuntimeException(
@@ -209,10 +210,10 @@ class UserAiChatService
     private function defaultModel(string $providerType): string
     {
         return match ($providerType) {
-            UserAiSetting::PROVIDER_OLLAMA => 'llama3.1',
-            UserAiSetting::PROVIDER_OPENROUTER => 'openai/gpt-4o-mini',
-            UserAiSetting::PROVIDER_OPENAI => 'gpt-4o-mini',
-            UserAiSetting::PROVIDER_LMSTUDIO => 'local-model',
+            AiProviders::OLLAMA => 'llama3.1',
+            AiProviders::OPENROUTER => 'openai/gpt-4o-mini',
+            AiProviders::OPENAI => 'gpt-4o-mini',
+            AiProviders::LMSTUDIO => 'local-model',
             default => 'default',
         };
     }

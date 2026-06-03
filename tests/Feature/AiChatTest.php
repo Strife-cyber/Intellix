@@ -1,7 +1,8 @@
 <?php
 
 use App\Models\User;
-use App\Models\UserAiSetting;
+use App\Models\UserChatAiSetting;
+use App\Support\AiProviders;
 use Illuminate\Support\Facades\Http;
 
 test('ai chat accepts numeric session id from dexie', function () {
@@ -17,11 +18,10 @@ test('ai chat accepts numeric session id from dexie', function () {
 
     $user = User::factory()->create();
 
-    UserAiSetting::factory()->for($user)->create([
-        'provider_type' => UserAiSetting::PROVIDER_GEMINI,
+    UserChatAiSetting::factory()->for($user)->create([
+        'provider_type' => AiProviders::GEMINI,
         'model' => 'gemini-2.0-flash',
         'api_key' => 'test-gemini-key',
-        'is_default' => true,
     ]);
 
     $response = $this
@@ -58,11 +58,10 @@ test('ai chat returns provider error details on failure', function () {
 
     $user = User::factory()->create();
 
-    UserAiSetting::factory()->for($user)->create([
-        'provider_type' => UserAiSetting::PROVIDER_GEMINI,
+    UserChatAiSetting::factory()->for($user)->create([
+        'provider_type' => AiProviders::GEMINI,
         'model' => 'gemini-2.0-flash',
         'api_key' => 'bad-key',
-        'is_default' => true,
     ]);
 
     $response = $this

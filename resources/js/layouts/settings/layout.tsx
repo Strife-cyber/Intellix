@@ -6,7 +6,6 @@ import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
-import { edit as editAiSettings } from '@/routes/settings/ai';
 import { edit } from '@/routes/profile';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
@@ -34,8 +33,13 @@ const sidebarNavItems: NavItem[] = [
         icon: null,
     },
     {
-        title: 'AI',
-        href: editAiSettings(),
+        title: 'Chat AI',
+        href: '/settings/ai/chat',
+        icon: null,
+    },
+    {
+        title: 'Embeddings AI',
+        href: '/settings/ai/embeddings',
         icon: null,
     },
 ];
@@ -43,7 +47,6 @@ const sidebarNavItems: NavItem[] = [
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentUrl } = useCurrentUrl();
 
-    // When server-side rendering, we only render the layout on the client...
     if (typeof window === 'undefined') {
         return null;
     }

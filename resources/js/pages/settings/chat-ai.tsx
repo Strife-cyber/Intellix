@@ -44,8 +44,8 @@ type AiSettingRow = {
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'AI settings',
-        href: '/settings/ai',
+        title: 'Chat AI',
+        href: '/settings/ai/chat',
     },
 ];
 
@@ -86,7 +86,7 @@ function ProviderSummary({
             <span className="block text-xs">{meta.summary}</span>
             {parts.length > 0 ? (
                 <span className="block text-xs text-muted-foreground">
-                    {parts.join(' · ')}
+                    {parts.join(' ┬╖ ')}
                 </span>
             ) : (
                 <span className="block text-xs italic text-muted-foreground">
@@ -203,7 +203,7 @@ export default function AiSettings({
 
         if (editing) {
             form.transform(() => payload);
-            form.put(`/settings/ai/${editing.id}`, {
+            form.put(`/settings/ai/chat/${editing.id}`, {
                 preserveScroll: true,
                 onSuccess: closeModal,
             });
@@ -212,7 +212,7 @@ export default function AiSettings({
                 ...payload,
                 provider_type: form.data.provider_type,
             }));
-            form.post('/settings/ai', {
+            form.post('/settings/ai/chat', {
                 preserveScroll: true,
                 onSuccess: closeModal,
             });
@@ -220,18 +220,18 @@ export default function AiSettings({
     };
 
     const setDefault = (row: AiSettingRow) => {
-        router.post(`/settings/ai/${row.id}/default`, {}, { preserveScroll: true });
+        router.post(`/settings/ai/chat/${row.id}/default`, {}, { preserveScroll: true });
     };
 
     const deleteProvider = (row: AiSettingRow) => {
         if (
             !confirm(
-                `Remove the « ${getProviderMeta(row.provider_type, catalogMap).label} » configuration?`,
+                `Remove the ┬½ ${getProviderMeta(row.provider_type, catalogMap).label} ┬╗ configuration?`,
             )
         ) {
             return;
         }
-        router.delete(`/settings/ai/${row.id}`, {
+        router.delete(`/settings/ai/chat/${row.id}`, {
             preserveScroll: true,
             onSuccess: () => {
                 if (editingId === row.id) {
@@ -242,26 +242,26 @@ export default function AiSettings({
     };
 
     const statusMessage =
-        status === 'ai-settings-saved'
+        status === 'chat-ai-settings-saved'
             ? 'Saved.'
-            : status === 'ai-settings-deleted'
+            : status === 'chat-ai-settings-deleted'
               ? 'Provider removed.'
-              : status === 'ai-settings-default-changed'
+              : status === 'chat-ai-settings-default-changed'
                 ? 'Default provider updated.'
                 : null;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="AI settings" />
+            <Head title="Chat Chat AI Settings" />
 
-            <h1 className="sr-only">AI Settings</h1>
+            <h1 className="sr-only">Chat AI Settings</h1>
 
             <SettingsLayout>
                 <div className="space-y-6">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <Heading
                             variant="small"
-                            title="AI provider settings"
+                            title="Chat AI providers"
                             description="Connect the AI services you use. Only the fields required for each provider are shown."
                         />
                         {availableProviderTypes.length > 0 && (

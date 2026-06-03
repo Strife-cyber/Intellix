@@ -5,8 +5,9 @@ namespace App\Actions;
 use App\Models\FlashCard;
 use App\Models\Resource;
 use App\Models\User;
+use App\Services\QdrantService;
+use App\Services\ResourceIngestionService;
 use App\Services\UserAiChatService;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -27,42 +28,22 @@ class GenerateFlashCardsAction
     {
         $count = max(1, min(50, $count));
 
-        // 1. Gather source text from Qdrant (since chunks are vector-stored)
-        $qdrantHost = env('QDRANT_HOST', 'http://localhost:6333');
-        $qdrantKey = env('QDRANT_API_KEY');
-        $collection = 'resources';
+        $user = User::findOrFail($userId);
+        $qdrant = app(QdrantService::class);
 
-        $scrollPayload = [
-            'filter' => [
-                'must' => [[
-                    'key' => 'resource_id',
-                    'match' => ['value' => $resource->id],
-                ]],
-            ],
-            'limit' => 20,
-            'with_payload' => true,
-        ];
+        $sourceText = $this->textFromQdrant($qdrant, $resource->id);
 
-        $qdrantRequest = Http::asJson();
-        if ($qdrantKey) {
-            $qdrantRequest->withHeaders(['api-key' => $qdrantKey]);
+        if (trim($sourceText) === '') {
+            try {
+                app(ResourceIngestionService::class)->ingest($resource, $user);
+                $sourceText = $this->textFromQdrant($qdrant, $resource->id);
+            } catch (\Throwable $e) {
+                Log::warning('On-demand resource ingestion failed before flashcards', [
+                    'resource_id' => $resource->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
-
-        $qdrantResponse = $qdrantRequest->post("{$qdrantHost}/collections/{$collection}/points/scroll", $scrollPayload);
-
-        if ($qdrantResponse->failed()) {
-            Log::error('Qdrant scroll failed in GenerateFlashCardsAction', [
-                'resource_id' => $resource->id,
-                'response' => $qdrantResponse->body(),
-            ]);
-            throw new RuntimeException('Could not retrieve context from vector store.');
-        }
-
-        $points = $qdrantResponse->json()['result']['points'] ?? [];
-        $chunks = array_map(fn ($p) => $p['payload']['full_content'] ?? '', $points);
-        $chunks = array_filter($chunks);
-
-        $sourceText = implode("\n\n", $chunks);
 
         // Truncate to avoid exceeding model context limits (~12000 chars)
         if (strlen($sourceText) > 12000) {
@@ -86,13 +67,11 @@ Text to analyze:
 {$sourceText}
 PROMPT;
 
-        $user = User::findOrFail($userId);
-
         set_time_limit(300);
 
         if (trim($sourceText) === '') {
             throw new RuntimeException(
-                'No document text found in the search index. Process the resource in the library first.',
+                'No document text in Qdrant yet. Configure Settings → Embeddings AI, then re-upload or try again.',
             );
         }
 
@@ -174,5 +153,25 @@ PROMPT;
             ->limit(count($rows))
             ->get()
             ->all();
+    }
+
+    private function textFromQdrant(QdrantService $qdrant, string $resourceId): string
+    {
+        if (! $qdrant->isConfigured()) {
+            return '';
+        }
+
+        try {
+            $points = $qdrant->scrollByResourceId($resourceId);
+        } catch (\Throwable) {
+            return '';
+        }
+
+        $chunks = array_map(
+            fn ($p) => $p['payload']['full_content'] ?? '',
+            $points,
+        );
+
+        return implode("\n\n", array_filter($chunks, fn ($t) => is_string($t) && trim($t) !== ''));
     }
 }

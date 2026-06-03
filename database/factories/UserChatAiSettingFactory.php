@@ -3,15 +3,16 @@
 namespace Database\Factories;
 
 use App\Models\User;
-use App\Models\UserAiSetting;
+use App\Models\UserChatAiSetting;
+use App\Support\AiProviders;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<UserAiSetting>
+ * @extends Factory<UserChatAiSetting>
  */
-class UserAiSettingFactory extends Factory
+class UserChatAiSettingFactory extends Factory
 {
-    protected $model = UserAiSetting::class;
+    protected $model = UserChatAiSetting::class;
 
     /**
      * @return array<string, mixed>
@@ -20,10 +21,9 @@ class UserAiSettingFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'provider_type' => UserAiSetting::PROVIDER_LMSTUDIO,
-            'api_key' => 'test-key',
-            'endpoint' => 'http://localhost:1234',
-            'model' => 'local-model',
+            'provider_type' => AiProviders::GEMINI,
+            'api_key' => 'test-chat-key',
+            'model' => 'gemini-2.0-flash',
             'temperature' => 0.7,
             'is_default' => true,
         ];

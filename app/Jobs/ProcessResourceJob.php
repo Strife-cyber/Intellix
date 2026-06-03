@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\ResourceStatus;
 use App\Models\Resource;
+use App\Services\ResourceIngestionService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -49,14 +50,13 @@ class ProcessResourceJob implements ShouldQueue
         $resource->update(['status' => ResourceStatus::PROCESSING]);
 
         try {
-            // Rust Ingestion temporarily disabled during microservice migration
-            Log::info("Resource {$resource->id} processing – skipping Rust ingestion (migration in progress).");
+            $chunkCount = app(ResourceIngestionService::class)->ingest($resource, $resource->owner);
 
             $resource->update([
                 'status' => ResourceStatus::READY,
                 'metadata' => array_merge($resource->metadata ?? [], [
                     'processed_at' => now()->toDateTimeString(),
-                    'migration_status' => 'pending_microservice_ingestion',
+                    'indexed_chunks' => $chunkCount,
                 ]),
             ]);
 

@@ -470,7 +470,7 @@ export default function Library({ resources }: { resources: Resource[] }) {
                 content:
                     serverMessage ??
                     err.message ??
-                    'Could not reach the AI provider. Check Settings → AI (default provider and API key).',
+                    'Could not reach the AI provider. Check Settings → Chat AI.',
                 createdAt: Date.now(),
             });
         } finally {

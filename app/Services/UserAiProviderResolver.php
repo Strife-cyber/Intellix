@@ -3,19 +3,20 @@
 namespace App\Services;
 
 use App\Models\User;
-use App\Models\UserAiSetting;
+use App\Models\UserChatAiSetting;
+use App\Support\AiProviders;
 use Illuminate\Support\Facades\Http;
 
 class UserAiProviderResolver
 {
-    public function defaultSetting(User $user): ?UserAiSetting
+    public function defaultSetting(User $user): ?UserChatAiSetting
     {
-        $default = $user->aiSettings()->where('is_default', true)->first();
+        $default = $user->chatAiSettings()->where('is_default', true)->first();
         if ($default) {
             return $default;
         }
 
-        return $user->aiSettings()->orderBy('provider_type')->first();
+        return $user->chatAiSettings()->orderBy('provider_type')->first();
     }
 
     public function resolveEndpoint(User $user): ?string
@@ -76,7 +77,7 @@ class UserAiProviderResolver
                 'provider' => null,
                 'endpoint' => config('services.ai.endpoint'),
                 'model' => null,
-                'message' => 'No AI provider configured. Add one in Settings → AI.',
+                'message' => 'No chat AI configured. Open Settings → Chat AI.',
             ];
         }
 
@@ -91,20 +92,20 @@ class UserAiProviderResolver
             'endpoint' => $endpoint,
             'model' => $model,
             'message' => ! $configured
-                ? 'AI provider is missing required settings (e.g. API key).'
+                ? 'Chat AI is missing required settings (e.g. API key).'
                 : ($reachable
-                    ? 'AI provider is configured.'
-                    : 'AI provider is configured but the service is not reachable.'),
+                    ? 'Chat AI is configured.'
+                    : 'Chat AI is configured but the service is not reachable.'),
         ];
     }
 
-    public function endpointForSetting(UserAiSetting $setting): ?string
+    public function endpointForSetting(UserChatAiSetting $setting): ?string
     {
         return match ($setting->provider_type) {
-            UserAiSetting::PROVIDER_GEMINI, UserAiSetting::PROVIDER_OPENROUTER => null,
-            UserAiSetting::PROVIDER_OPENAI => rtrim($setting->endpoint ?: 'https://api.openai.com', '/'),
-            UserAiSetting::PROVIDER_OLLAMA => rtrim($setting->endpoint ?: 'http://localhost:11434', '/'),
-            UserAiSetting::PROVIDER_LMSTUDIO => rtrim($setting->endpoint ?: 'http://localhost:1234', '/'),
+            AiProviders::GEMINI, AiProviders::OPENROUTER => null,
+            AiProviders::OPENAI => rtrim($setting->endpoint ?: 'https://api.openai.com', '/'),
+            AiProviders::OLLAMA => rtrim($setting->endpoint ?: 'http://localhost:11434', '/'),
+            AiProviders::LMSTUDIO => rtrim($setting->endpoint ?: 'http://localhost:1234', '/'),
             default => $setting->endpoint,
         };
     }
@@ -112,10 +113,10 @@ class UserAiProviderResolver
     private function defaultModelForProvider(string $providerType): ?string
     {
         return match ($providerType) {
-            UserAiSetting::PROVIDER_OLLAMA => 'llama3.1',
-            UserAiSetting::PROVIDER_OPENROUTER => 'openai/gpt-4o-mini',
-            UserAiSetting::PROVIDER_OPENAI => 'gpt-4o-mini',
-            UserAiSetting::PROVIDER_GEMINI => 'gemini-2.0-flash',
+            AiProviders::OLLAMA => 'llama3.1',
+            AiProviders::OPENROUTER => 'openai/gpt-4o-mini',
+            AiProviders::OPENAI => 'gpt-4o-mini',
+            AiProviders::GEMINI => 'gemini-2.0-flash',
             default => null,
         };
     }
@@ -130,19 +131,19 @@ class UserAiProviderResolver
         return [];
     }
 
-    public function isConfigured(UserAiSetting $setting): bool
+    public function isConfigured(UserChatAiSetting $setting): bool
     {
         return match ($setting->provider_type) {
-            UserAiSetting::PROVIDER_GEMINI => filled($setting->effectiveApiKey()),
-            UserAiSetting::PROVIDER_OPENROUTER, UserAiSetting::PROVIDER_OPENAI => filled($setting->effectiveApiKey()),
-            UserAiSetting::PROVIDER_OLLAMA, UserAiSetting::PROVIDER_LMSTUDIO => true,
+            AiProviders::GEMINI => filled($setting->effectiveApiKey()),
+            AiProviders::OPENROUTER, AiProviders::OPENAI => filled($setting->effectiveApiKey()),
+            AiProviders::OLLAMA, AiProviders::LMSTUDIO => true,
             default => true,
         };
     }
 
-    private function isReachable(UserAiSetting $setting, ?string $endpoint): bool
+    private function isReachable(UserChatAiSetting $setting, ?string $endpoint): bool
     {
-        if (in_array($setting->provider_type, [UserAiSetting::PROVIDER_GEMINI, UserAiSetting::PROVIDER_OPENROUTER], true)) {
+        if (in_array($setting->provider_type, [AiProviders::GEMINI, AiProviders::OPENROUTER], true)) {
             return filled($setting->effectiveApiKey());
         }
 
@@ -152,8 +153,8 @@ class UserAiProviderResolver
 
         try {
             $url = match ($setting->provider_type) {
-                UserAiSetting::PROVIDER_OLLAMA => rtrim($endpoint, '/').'/api/tags',
-                UserAiSetting::PROVIDER_OPENAI, UserAiSetting::PROVIDER_LMSTUDIO => rtrim($endpoint, '/').'/v1/models',
+                AiProviders::OLLAMA => rtrim($endpoint, '/').'/api/tags',
+                AiProviders::OPENAI, AiProviders::LMSTUDIO => rtrim($endpoint, '/').'/v1/models',
                 default => $endpoint,
             };
 

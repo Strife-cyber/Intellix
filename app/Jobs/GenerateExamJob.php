@@ -6,6 +6,7 @@ use App\Models\Exam;
 use App\Models\Prosit;
 use App\Models\User;
 use App\Services\UserAiChatService;
+use App\Services\UserEmbeddingService;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -44,10 +45,9 @@ class GenerateExamJob implements ShouldQueue
             $user = User::findOrFail($this->userId);
 
             // 1. Gather context from Qdrant
-            $qdrantHost = env('QDRANT_HOST', 'http://localhost:6333');
-            $qdrantKey = env('QDRANT_API_KEY');
-            $collection = 'resources';
-
+            $qdrantHost = rtrim((string) config('services.qdrant.host', 'http://localhost:6333'), '/');
+            $qdrantKey = config('services.qdrant.key');
+            $collection = config('services.qdrant.collection', 'resources');
             // Get relevant documents for this prosit
             $searchPayload = [
                 'vector' => $this->generateEmbedding($prosit->generalisation ?? ''),
@@ -231,9 +231,10 @@ EOT;
 
     private function generateEmbedding(string $text): array
     {
-        // This would typically use the Rust service
-        // For now, return a dummy embedding to avoid complex dependencies
-        return array_fill(0, 384, 0.1); // 384-dimensional embedding
+        $user = User::findOrFail($this->userId);
+        $vectors = app(UserEmbeddingService::class)->embed($user, [$text]);
+
+        return $vectors[0] ?? [];
     }
 
     public function failed(Exception $exception): void

@@ -2,32 +2,14 @@
 
 namespace App\Models;
 
+use App\Support\AiProviders;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class UserAiSetting extends Model
+class UserChatAiSetting extends Model
 {
-    /** @use \Illuminate\Database\Eloquent\Factories\HasFactory<\Database\Factories\UserAiSettingFactory> */
+    /** @use \Illuminate\Database\Eloquent\Factories\HasFactory<\Database\Factories\UserChatAiSettingFactory> */
     use \Illuminate\Database\Eloquent\Factories\HasFactory;
-
-    public const PROVIDER_GEMINI = 'gemini';
-
-    public const PROVIDER_OPENROUTER = 'openrouter';
-
-    public const PROVIDER_OLLAMA = 'ollama';
-
-    public const PROVIDER_LMSTUDIO = 'lmstudio';
-
-    public const PROVIDER_OPENAI = 'openai';
-
-    /** @var list<string> */
-    public const PROVIDER_TYPES = [
-        self::PROVIDER_GEMINI,
-        self::PROVIDER_OPENROUTER,
-        self::PROVIDER_OLLAMA,
-        self::PROVIDER_LMSTUDIO,
-        self::PROVIDER_OPENAI,
-    ];
 
     protected $fillable = [
         'user_id',
@@ -62,7 +44,7 @@ class UserAiSetting extends Model
     {
         return [
             [
-                'type' => self::PROVIDER_GEMINI,
+                'type' => AiProviders::GEMINI,
                 'label' => 'Google Gemini',
                 'summary' => 'Google AI Studio API key and optional model. No server URL — same as micro-cer.',
                 'fields' => [
@@ -82,7 +64,7 @@ class UserAiSetting extends Model
                 ],
             ],
             [
-                'type' => self::PROVIDER_OPENROUTER,
+                'type' => AiProviders::OPENROUTER,
                 'label' => 'OpenRouter',
                 'summary' => 'OpenRouter cloud API — key and optional model only. No server URL.',
                 'fields' => [
@@ -102,7 +84,7 @@ class UserAiSetting extends Model
                 ],
             ],
             [
-                'type' => self::PROVIDER_OLLAMA,
+                'type' => AiProviders::OLLAMA,
                 'label' => 'Ollama',
                 'summary' => 'Local Ollama on your machine.',
                 'fields' => [
@@ -123,7 +105,7 @@ class UserAiSetting extends Model
                 ],
             ],
             [
-                'type' => self::PROVIDER_LMSTUDIO,
+                'type' => AiProviders::LMSTUDIO,
                 'label' => 'LM Studio',
                 'summary' => 'Local LM Studio server.',
                 'fields' => [
@@ -144,7 +126,7 @@ class UserAiSetting extends Model
                 ],
             ],
             [
-                'type' => self::PROVIDER_OPENAI,
+                'type' => AiProviders::OPENAI,
                 'label' => 'OpenAI',
                 'summary' => 'OpenAI or compatible API.',
                 'fields' => [
@@ -172,7 +154,8 @@ class UserAiSetting extends Model
     public static function fallbackApiKeyForType(string $providerType): ?string
     {
         return match ($providerType) {
-            self::PROVIDER_GEMINI => config('services.gemini.api_key'),
+            AiProviders::GEMINI => config('services.gemini.api_key'),
+            AiProviders::OPENROUTER => config('services.openrouter.api_key'),
             default => null,
         };
     }
@@ -198,33 +181,33 @@ class UserAiSetting extends Model
         $temperature = (float) ($this->temperature ?: 0.1);
 
         return match ($this->provider_type) {
-            self::PROVIDER_GEMINI => [
-                'type' => self::PROVIDER_GEMINI,
+            AiProviders::GEMINI => [
+                'type' => AiProviders::GEMINI,
                 'apiKey' => $apiKey,
                 'model' => $model,
                 'temperature' => $temperature,
             ],
-            self::PROVIDER_OPENROUTER => [
-                'type' => self::PROVIDER_OPENROUTER,
+            AiProviders::OPENROUTER => [
+                'type' => AiProviders::OPENROUTER,
                 'apiKey' => $apiKey,
                 'model' => $model,
             ],
-            self::PROVIDER_OLLAMA => [
-                'type' => self::PROVIDER_OLLAMA,
+            AiProviders::OLLAMA => [
+                'type' => AiProviders::OLLAMA,
                 'endpoint' => $this->endpoint ?? '',
                 'apiKey' => $apiKey,
                 'model' => $model,
                 'temperature' => $temperature,
             ],
-            self::PROVIDER_LMSTUDIO => [
-                'type' => self::PROVIDER_LMSTUDIO,
+            AiProviders::LMSTUDIO => [
+                'type' => AiProviders::LMSTUDIO,
                 'endpoint' => $this->endpoint ?? '',
                 'apiKey' => $apiKey,
                 'model' => $model,
                 'temperature' => $temperature,
             ],
-            self::PROVIDER_OPENAI => [
-                'type' => self::PROVIDER_OPENAI,
+            AiProviders::OPENAI => [
+                'type' => AiProviders::OPENAI,
                 'endpoint' => $this->endpoint ?? '',
                 'apiKey' => $apiKey,
                 'model' => $model,

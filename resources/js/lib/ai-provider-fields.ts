@@ -3,6 +3,7 @@ export type ProviderFieldFlags = {
     apiKeyRequired: boolean;
     endpoint: boolean;
     model: boolean;
+    embeddingModel: boolean;
     temperature: boolean;
 };
 
@@ -14,11 +15,13 @@ export type ProviderCatalogEntry = {
     placeholders: {
         endpoint?: string;
         model?: string;
+        embeddingModel?: string;
         apiKey?: string;
     };
     hints: {
         endpoint?: string;
         model?: string;
+        embeddingModel?: string;
         apiKey?: string;
         temperature?: string;
     };
@@ -44,6 +47,7 @@ export function getProviderMeta(
                 apiKeyRequired: false,
                 endpoint: false,
                 model: true,
+                embeddingModel: true,
                 temperature: false,
             },
             placeholders: {},

@@ -1,6 +1,7 @@
 <?php
 
-use App\Http\Controllers\Settings\AiSettingsController;
+use App\Http\Controllers\Settings\ChatAiSettingsController;
+use App\Http\Controllers\Settings\EmbeddingAiSettingsController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
@@ -30,9 +31,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
         ->name('two-factor.show');
 
-    Route::get('settings/ai', [AiSettingsController::class, 'edit'])->name('settings.ai.edit');
-    Route::post('settings/ai', [AiSettingsController::class, 'store'])->name('settings.ai.store');
-    Route::put('settings/ai/{user_ai_setting}', [AiSettingsController::class, 'update'])->name('settings.ai.update');
-    Route::delete('settings/ai/{user_ai_setting}', [AiSettingsController::class, 'destroy'])->name('settings.ai.destroy');
-    Route::post('settings/ai/{user_ai_setting}/default', [AiSettingsController::class, 'makeDefault'])->name('settings.ai.default');
+    Route::redirect('settings/ai', '/settings/ai/chat');
+
+    Route::get('settings/ai/chat', [ChatAiSettingsController::class, 'edit'])->name('settings.ai.chat.edit');
+    Route::post('settings/ai/chat', [ChatAiSettingsController::class, 'store'])->name('settings.ai.chat.store');
+    Route::put('settings/ai/chat/{user_chat_ai_setting}', [ChatAiSettingsController::class, 'update'])->name('settings.ai.chat.update');
+    Route::delete('settings/ai/chat/{user_chat_ai_setting}', [ChatAiSettingsController::class, 'destroy'])->name('settings.ai.chat.destroy');
+    Route::post('settings/ai/chat/{user_chat_ai_setting}/default', [ChatAiSettingsController::class, 'makeDefault'])->name('settings.ai.chat.default');
+
+    Route::get('settings/ai/embeddings', [EmbeddingAiSettingsController::class, 'edit'])->name('settings.ai.embedding.edit');
+    Route::put('settings/ai/embeddings', [EmbeddingAiSettingsController::class, 'update'])->name('settings.ai.embedding.update');
 });

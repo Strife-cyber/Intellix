@@ -55,6 +55,9 @@ return [
     'qdrant' => [
         'host' => env('QDRANT_HOST'),
         'key' => env('QDRANT_API_KEY'),
+        'collection' => env('QDRANT_COLLECTION', 'resources'),
+        'chunk_size' => (int) env('QDRANT_CHUNK_SIZE', 2000),
+        'chunk_overlap' => (int) env('QDRANT_CHUNK_OVERLAP', 200),
     ],
 
     'ai' => [
@@ -63,6 +66,10 @@ return [
 
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
+    ],
+
+    'openrouter' => [
+        'api_key' => env('OPENROUTER_API_KEY'),
     ],
 
     'broker' => [

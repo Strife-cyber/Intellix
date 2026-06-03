@@ -3,37 +3,37 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Settings\UpdateAiSettingsRequest;
-use App\Models\UserAiSetting;
+use App\Http\Requests\Settings\UpdateChatAiSettingsRequest;
+use App\Models\UserChatAiSetting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class AiSettingsController extends Controller
+class ChatAiSettingsController extends Controller
 {
     public function edit(Request $request): Response
     {
         $settings = $request->user()
-            ->aiSettings()
+            ->chatAiSettings()
             ->orderByDesc('is_default')
             ->orderBy('provider_type')
             ->get()
-            ->map(fn (UserAiSetting $setting) => $this->toRow($setting));
+            ->map(fn (UserChatAiSetting $setting) => $this->toRow($setting));
 
-        return Inertia::render('settings/ai', [
+        return Inertia::render('settings/chat-ai', [
             'settings' => $settings,
-            'providerCatalog' => UserAiSetting::providerCatalog(),
+            'providerCatalog' => UserChatAiSetting::providerCatalog(),
             'status' => $request->session()->get('status'),
         ]);
     }
 
-    public function store(UpdateAiSettingsRequest $request): RedirectResponse
+    public function store(UpdateChatAiSettingsRequest $request): RedirectResponse
     {
         $validated = $request->validated();
         $user = $request->user();
 
-        $exists = UserAiSetting::query()
+        $exists = UserChatAiSetting::query()
             ->where('user_id', $user->id)
             ->where('provider_type', $validated['provider_type'])
             ->exists();
@@ -44,7 +44,7 @@ class AiSettingsController extends Controller
             ]);
         }
 
-        $setting = UserAiSetting::query()->create([
+        $setting = UserChatAiSetting::query()->create([
             'user_id' => $user->id,
             'provider_type' => $validated['provider_type'],
             'endpoint' => $validated['endpoint'] ?? null,
@@ -56,54 +56,54 @@ class AiSettingsController extends Controller
 
         $this->syncDefaultFlag($user->id, $setting);
 
-        return to_route('settings.ai.edit')->with('status', 'ai-settings-saved');
+        return to_route('settings.ai.chat.edit')->with('status', 'chat-ai-settings-saved');
     }
 
-    public function update(UpdateAiSettingsRequest $request, UserAiSetting $userAiSetting): RedirectResponse
+    public function update(UpdateChatAiSettingsRequest $request, UserChatAiSetting $userChatAiSetting): RedirectResponse
     {
-        $this->authorizeSetting($request, $userAiSetting);
+        $this->authorizeSetting($request, $userChatAiSetting);
 
         $validated = $request->validated();
 
-        $userAiSetting->fill([
+        $userChatAiSetting->fill([
             'endpoint' => $validated['endpoint'] ?? null,
             'model' => $validated['model'] ?? null,
-            'temperature' => $validated['temperature'] ?? $userAiSetting->temperature,
-            'is_default' => (bool) ($validated['is_default'] ?? $userAiSetting->is_default),
+            'temperature' => $validated['temperature'] ?? $userChatAiSetting->temperature,
+            'is_default' => (bool) ($validated['is_default'] ?? $userChatAiSetting->is_default),
         ]);
 
         if (array_key_exists('api_key', $validated) && filled($validated['api_key'])) {
-            $userAiSetting->api_key = $validated['api_key'];
+            $userChatAiSetting->api_key = $validated['api_key'];
         }
 
-        $userAiSetting->save();
+        $userChatAiSetting->save();
 
-        $this->syncDefaultFlag($request->user()->id, $userAiSetting);
+        $this->syncDefaultFlag($request->user()->id, $userChatAiSetting);
 
-        return to_route('settings.ai.edit')->with('status', 'ai-settings-saved');
+        return to_route('settings.ai.chat.edit')->with('status', 'chat-ai-settings-saved');
     }
 
-    public function makeDefault(Request $request, UserAiSetting $userAiSetting): RedirectResponse
+    public function makeDefault(Request $request, UserChatAiSetting $userChatAiSetting): RedirectResponse
     {
-        $this->authorizeSetting($request, $userAiSetting);
+        $this->authorizeSetting($request, $userChatAiSetting);
 
-        $userAiSetting->update(['is_default' => true]);
-        $this->syncDefaultFlag($request->user()->id, $userAiSetting);
+        $userChatAiSetting->update(['is_default' => true]);
+        $this->syncDefaultFlag($request->user()->id, $userChatAiSetting);
 
-        return to_route('settings.ai.edit')->with('status', 'ai-settings-default-changed');
+        return to_route('settings.ai.chat.edit')->with('status', 'chat-ai-settings-default-changed');
     }
 
-    public function destroy(Request $request, UserAiSetting $userAiSetting): RedirectResponse
+    public function destroy(Request $request, UserChatAiSetting $userChatAiSetting): RedirectResponse
     {
-        $this->authorizeSetting($request, $userAiSetting);
+        $this->authorizeSetting($request, $userChatAiSetting);
 
         $userId = $request->user()->id;
-        $wasDefault = $userAiSetting->is_default;
+        $wasDefault = $userChatAiSetting->is_default;
 
-        $userAiSetting->delete();
+        $userChatAiSetting->delete();
 
         if ($wasDefault) {
-            $next = UserAiSetting::query()
+            $next = UserChatAiSetting::query()
                 ->where('user_id', $userId)
                 ->orderBy('provider_type')
                 ->first();
@@ -113,18 +113,18 @@ class AiSettingsController extends Controller
             }
         }
 
-        return to_route('settings.ai.edit')->with('status', 'ai-settings-deleted');
+        return to_route('settings.ai.chat.edit')->with('status', 'chat-ai-settings-deleted');
     }
 
-    private function authorizeSetting(Request $request, UserAiSetting $userAiSetting): void
+    private function authorizeSetting(Request $request, UserChatAiSetting $userChatAiSetting): void
     {
-        abort_unless($userAiSetting->user_id === $request->user()->id, 403);
+        abort_unless($userChatAiSetting->user_id === $request->user()->id, 403);
     }
 
-    private function syncDefaultFlag(int $userId, UserAiSetting $setting): void
+    private function syncDefaultFlag(int $userId, UserChatAiSetting $setting): void
     {
         if (! $setting->is_default) {
-            $hasDefault = UserAiSetting::query()
+            $hasDefault = UserChatAiSetting::query()
                 ->where('user_id', $userId)
                 ->where('is_default', true)
                 ->exists();
@@ -136,7 +136,7 @@ class AiSettingsController extends Controller
             return;
         }
 
-        UserAiSetting::query()
+        UserChatAiSetting::query()
             ->where('user_id', $userId)
             ->whereKeyNot($setting->id)
             ->update(['is_default' => false]);
@@ -145,7 +145,7 @@ class AiSettingsController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function toRow(UserAiSetting $setting): array
+    private function toRow(UserChatAiSetting $setting): array
     {
         return [
             'id' => $setting->id,
