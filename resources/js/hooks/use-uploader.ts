@@ -259,9 +259,16 @@ export const useUploader = (options: UploaderOptions = {}) => {
                 if (result.status_url) {
                     pollStatus(id, result.status_url);
                 }
-            } catch (error: any) {
+            } catch (error: unknown) {
+                const err = error as {
+                    response?: { data?: { message?: string; error?: string } };
+                    message?: string;
+                };
                 const errorMessage =
-                    error.response?.data?.message || 'Upload failed';
+                    err.response?.data?.message ??
+                    err.response?.data?.error ??
+                    err.message ??
+                    'Upload failed';
                 setFiles((prev) =>
                     prev.map((f) =>
                         f.id === id

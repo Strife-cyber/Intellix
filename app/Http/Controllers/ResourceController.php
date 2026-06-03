@@ -74,13 +74,24 @@ class ResourceController extends Controller
 
         $results = [];
 
-        foreach ($request->file('files') as $file) {
-            $resource = $service->upload($file);
-            $results[] = [
-                'resource_id' => $resource->id,
-                'file_name' => $resource->original_name,
-                'status_url' => "/resources/{$resource->id}/status",
-            ];
+        try {
+            foreach ($request->file('files') as $file) {
+                $resource = $service->upload($file);
+                $results[] = [
+                    'resource_id' => $resource->id,
+                    'file_name' => $resource->original_name,
+                    'status_url' => "/resources/{$resource->id}/status",
+                ];
+            }
+        } catch (\Throwable $e) {
+            report($e);
+
+            $message = $e->getMessage();
+            if (str_contains($message, 'connection attempt failed') || str_contains($message, 'Could not connect')) {
+                $message = 'Storage service unreachable. Check MinIO/S3 (AWS_ENDPOINT) is running and reachable from this machine.';
+            }
+
+            return response()->json(['message' => $message], 503);
         }
 
         return response()->json($results, 202);

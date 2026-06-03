@@ -130,7 +130,7 @@ class UserAiProviderResolver
         return [];
     }
 
-    private function isConfigured(UserAiSetting $setting): bool
+    public function isConfigured(UserAiSetting $setting): bool
     {
         return match ($setting->provider_type) {
             UserAiSetting::PROVIDER_GEMINI => filled($setting->effectiveApiKey()),

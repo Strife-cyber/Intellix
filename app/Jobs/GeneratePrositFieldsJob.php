@@ -4,14 +4,13 @@ namespace App\Jobs;
 
 use App\Models\Prosit;
 use App\Models\User;
-use App\Services\AiModelManager;
+use App\Services\UserAiChatService;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class GeneratePrositFieldsJob implements ShouldQueue
@@ -37,16 +36,7 @@ class GeneratePrositFieldsJob implements ShouldQueue
 
             $user = User::findOrFail($this->userId);
 
-            // 1. Auto-detect AI endpoint and model
-            $aiEndpoint = AiModelManager::getBestEndpoint($user);
-
-            if (! $aiEndpoint) {
-                throw new Exception('No AI service available');
-            }
-
-            $model = AiModelManager::getBestModel($aiEndpoint, $user) ?? 'local-model';
-
-            // 2. Generate prosit fields using AI
+            // 1. Generate prosit fields using AI
             $systemInstruction = <<<EOT
 You are an expert educational architect specializing in the Problem-Based Approach (PBA). 
 Your task is to analyze the provided "Original Text" and extract/generate a structured Prosit following these strict definitions:
@@ -75,29 +65,18 @@ Text to analyze:
 {$this->originalText}
 EOT;
 
-            $response = Http::timeout(600)
-                ->withHeaders(AiModelManager::chatHeaders($user))
-                ->post("{$aiEndpoint}/v1/chat/completions", [
-                    'model' => $model,
-                    'messages' => [
-                        [
-                            'role' => 'system',
-                            'content' => 'You are a JSON-only API. Return only valid JSON. Never add explanations or markdown.',
-                        ],
-                        [
-                            'role' => 'user',
-                            'content' => $systemInstruction,
-                        ],
-                    ],
-                    'temperature' => 0.7,
-                ]);
+            $result = app(UserAiChatService::class)->chat($user, [
+                [
+                    'role' => 'system',
+                    'content' => 'You are a JSON-only API. Return only valid JSON. Never add explanations or markdown.',
+                ],
+                [
+                    'role' => 'user',
+                    'content' => $systemInstruction,
+                ],
+            ], 0.7);
 
-            if ($response->failed()) {
-                throw new Exception('AI API failed: '.$response->body());
-            }
-
-            $data = $response->json();
-            $content = $data['choices'][0]['message']['content'] ?? null;
+            $content = $result['content'] ?? null;
 
             if (! $content) {
                 throw new Exception('No content received from AI');

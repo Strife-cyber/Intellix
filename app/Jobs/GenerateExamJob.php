@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Models\Exam;
 use App\Models\Prosit;
 use App\Models\User;
-use App\Services\AiModelManager;
+use App\Services\UserAiChatService;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -43,16 +43,7 @@ class GenerateExamJob implements ShouldQueue
 
             $user = User::findOrFail($this->userId);
 
-            // 1. Auto-detect AI endpoint and model
-            $aiEndpoint = AiModelManager::getBestEndpoint($user);
-
-            if (! $aiEndpoint) {
-                throw new Exception('No AI service available');
-            }
-
-            $model = AiModelManager::getBestModel($aiEndpoint, $user) ?? 'local-model';
-
-            // 2. Gather context from Qdrant
+            // 1. Gather context from Qdrant
             $qdrantHost = env('QDRANT_HOST', 'http://localhost:6333');
             $qdrantKey = env('QDRANT_API_KEY');
             $collection = 'resources';
@@ -162,29 +153,18 @@ EOT;
 
             $userMessage = "Context:\n".$context."\n\nCompetences:\n".$competencesContext.$existingQuestionsContext."\n\nGenerate NEW exam questions.";
 
-            $response = Http::timeout(900)
-                ->withHeaders(AiModelManager::chatHeaders($user))
-                ->post("{$aiEndpoint}/v1/chat/completions", [
-                    'model' => $model,
-                    'messages' => [
-                        [
-                            'role' => 'system',
-                            'content' => 'You are a JSON-only API. Return only valid JSON. Never add explanations or markdown.',
-                        ],
-                        [
-                            'role' => 'user',
-                            'content' => $systemInstruction."\n\n".$userMessage,
-                        ],
-                    ],
-                    'temperature' => 0.8,
-                ]);
+            $result = app(UserAiChatService::class)->chat($user, [
+                [
+                    'role' => 'system',
+                    'content' => 'You are a JSON-only API. Return only valid JSON. Never add explanations or markdown.',
+                ],
+                [
+                    'role' => 'user',
+                    'content' => $systemInstruction."\n\n".$userMessage,
+                ],
+            ], 0.8);
 
-            if ($response->failed()) {
-                throw new Exception('AI API failed: '.$response->body());
-            }
-
-            $data = $response->json();
-            $content = $data['choices'][0]['message']['content'] ?? null;
+            $content = $result['content'] ?? null;
 
             if (! $content) {
                 throw new Exception('No content received from AI');

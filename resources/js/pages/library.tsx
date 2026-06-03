@@ -421,12 +421,12 @@ export default function Library({ resources }: { resources: Resource[] }) {
         const resourceId = selectedResources[0]?.id;
 
         // Get recent conversation history for memory (last 10 messages)
-        const recentMessages = await db.messages
-            .where('sessionId')
-            .equals(activeSessionId)
-            .orderBy('createdAt')
-            .limit(10)
-            .toArray();
+        const recentMessages = (
+            await db.messages
+                .where('sessionId')
+                .equals(activeSessionId)
+                .sortBy('createdAt')
+        ).slice(-10);
 
         try {
             const response = await window.axios.post('/ai/chat', {
@@ -452,13 +452,25 @@ export default function Library({ resources }: { resources: Resource[] }) {
                     createdAt: Date.now(),
                 });
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('AI Chat Error:', error);
+            const err = error as {
+                response?: {
+                    data?: { details?: string; error?: string; message?: string };
+                };
+                message?: string;
+            };
+            const serverMessage =
+                err.response?.data?.details ??
+                err.response?.data?.error ??
+                err.response?.data?.message;
             await db.messages.add({
                 sessionId: activeSessionId,
                 role: 'system',
                 content:
-                    'Error connection to AI service. Please verify LM Studio status.',
+                    serverMessage ??
+                    err.message ??
+                    'Could not reach the AI provider. Check Settings → AI (default provider and API key).',
                 createdAt: Date.now(),
             });
         } finally {

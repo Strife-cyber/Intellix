@@ -61,11 +61,13 @@ class ResourceUploadService
         $serviceId = config('app.name', 'intellix');
 
         try {
-            $response = Http::post($brokerUrl.'/api/tasks', [
-                'service_id' => $serviceId,
-                'file_url' => $fileUrl,
-                'task_type' => 'vectorize',
-            ]);
+            $response = Http::timeout(5)
+                ->connectTimeout(3)
+                ->post($brokerUrl.'/api/tasks', [
+                    'service_id' => $serviceId,
+                    'file_url' => $fileUrl,
+                    'task_type' => 'vectorize',
+                ]);
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -80,18 +82,38 @@ class ResourceUploadService
                         'broker_submitted_at' => now()->toDateTimeString(),
                     ]),
                 ]);
-            } else {
-                Log::error("Failed to submit resource {$resource->id} to broker", [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-                // Fallback to Laravel queue if broker fails
-                ProcessResourceJob::dispatch($resource->id);
+
+                return;
             }
-        } catch (\Exception $e) {
+
+            Log::error("Failed to submit resource {$resource->id} to broker", [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+        } catch (\Throwable $e) {
             Log::error("Exception submitting resource {$resource->id} to broker: ".$e->getMessage());
-            // Fallback to Laravel queue if broker is unavailable
+        }
+
+        $this->queueProcessing($resource);
+    }
+
+    /**
+     * Enqueue (or run inline) post-upload processing without failing the HTTP upload.
+     */
+    protected function queueProcessing(Resource $resource): void
+    {
+        try {
             ProcessResourceJob::dispatch($resource->id);
+
+            return;
+        } catch (\Throwable $e) {
+            Log::warning("Queue dispatch failed for resource {$resource->id}: {$e->getMessage()}");
+        }
+
+        try {
+            ProcessResourceJob::dispatchSync($resource->id);
+        } catch (\Throwable $e) {
+            Log::error("Could not process resource {$resource->id} after upload: {$e->getMessage()}");
         }
     }
 }

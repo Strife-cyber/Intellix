@@ -5,7 +5,7 @@ namespace App\Actions;
 use App\Models\FlashCard;
 use App\Models\Resource;
 use App\Models\User;
-use App\Services\AiModelManager;
+use App\Services\UserAiChatService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -88,42 +88,30 @@ PROMPT;
 
         $user = User::findOrFail($userId);
 
-        // 3. Auto-detect best AI endpoint and model
-        $aiEndpoint = AiModelManager::getBestEndpoint($user);
+        set_time_limit(300);
 
-        if (! $aiEndpoint) {
+        if (trim($sourceText) === '') {
             throw new RuntimeException(
-                'No AI service available. Please ensure LM Studio is running with a loaded model, or check your AI_ENDPOINT configuration.'
+                'No document text found in the search index. Process the resource in the library first.',
             );
         }
 
-        $model = AiModelManager::getBestModel($aiEndpoint, $user) ?? 'local-model';
-
-        set_time_limit(300);
-
-        $response = Http::timeout(120)
-            ->withHeaders(AiModelManager::chatHeaders($user))
-            ->post("{$aiEndpoint}/v1/chat/completions", [
-                'model' => $model,
-                'messages' => [
-                    [
-                        'role' => 'system',
-                        'content' => 'You are a JSON-only API. Return only valid JSON. Never add explanations or markdown.',
-                    ],
-                    [
-                        'role' => 'user',
-                        'content' => $prompt,
-                    ],
+        try {
+            $result = app(UserAiChatService::class)->chat($user, [
+                [
+                    'role' => 'system',
+                    'content' => 'You are a JSON-only API. Return only valid JSON. Never add explanations or markdown.',
                 ],
-                'temperature' => 0.4,
-            ]);
-
-        if ($response->failed()) {
-            throw new RuntimeException('AI provider request failed: '.$response->body());
+                [
+                    'role' => 'user',
+                    'content' => $prompt,
+                ],
+            ], 0.4);
+        } catch (RuntimeException $e) {
+            throw new RuntimeException('AI provider request failed: '.$e->getMessage());
         }
 
-        $data = $response->json();
-        $rawContent = $data['choices'][0]['message']['content'] ?? '';
+        $rawContent = $result['content'];
 
         // 4. Parse and validate JSON output
         // Strip any potential markdown code fences
