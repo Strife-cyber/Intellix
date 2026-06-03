@@ -50,10 +50,21 @@ export async function listProsits(): Promise<StoredProsit[]> {
   return data.prosits ?? [];
 }
 
-export async function uploadProsit(file: File): Promise<StoredProsit> {
+export async function uploadProsit(file: File, displayName?: string): Promise<StoredProsit> {
   const form = new FormData();
   form.append('file', file);
+  if (displayName?.trim()) {
+    form.append('filename', displayName.trim());
+  }
   return request<StoredProsit>('/prosits', { method: 'POST', body: form });
+}
+
+export async function renameProsit(id: string, filename: string): Promise<StoredProsit> {
+  return request<StoredProsit>(`/prosits/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename }),
+  });
 }
 
 export async function getProsit(id: string): Promise<StoredProsit> {

@@ -22,7 +22,10 @@ func ReadFileAsLines(filePath string) ([]string, error) {
 		return readODT(filePath)
 
 	default:
-		return nil, fmt.Errorf("unsupported file type: %s", ext)
+		if ext == "" {
+			return nil, fmt.Errorf("unsupported file type: missing extension (use .docx, .pdf, .odt, or .txt)")
+		}
+		return nil, fmt.Errorf("unsupported file type: %s (supported: .docx, .pdf, .odt, .txt)", ext)
 	}
 }
 
