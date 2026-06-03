@@ -22,6 +22,7 @@ func NewExtractor() *Extractor {
 		{"mots cles", "keywords"},
 		{"contexte", "context"},
 		{"besoins", "needs"},
+		{"contrainte", "constraints"},
 		{"contraintes", "constraints"},
 		{"problematique", "problems"},
 		{"generalisation", "generalisation"},
