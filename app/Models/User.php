@@ -71,4 +71,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Note::class);
     }
+
+    public function aiSettings(): HasMany
+    {
+        return $this->hasMany(UserAiSetting::class);
+    }
 }

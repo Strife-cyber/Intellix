@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Exam;
 use App\Models\Prosit;
+use App\Models\User;
 use App\Services\AiModelManager;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -19,7 +20,9 @@ class GenerateExamJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public int $timeout = 900; // 15 minutes
+
     public array $backoff = [60, 300, 900]; // 1min, 5min, 15min
 
     public function __construct(
@@ -33,19 +36,21 @@ class GenerateExamJob implements ShouldQueue
     {
         try {
             $prosit = Prosit::with(['competences'])->findOrFail($this->prositId);
-            
+
             if ($prosit->competences->isEmpty()) {
                 throw new Exception('Prosit has no competences defined');
             }
 
+            $user = User::findOrFail($this->userId);
+
             // 1. Auto-detect AI endpoint and model
-            $aiEndpoint = AiModelManager::getBestEndpoint();
-            
-            if (!$aiEndpoint) {
+            $aiEndpoint = AiModelManager::getBestEndpoint($user);
+
+            if (! $aiEndpoint) {
                 throw new Exception('No AI service available');
             }
 
-            $model = AiModelManager::getBestModel($aiEndpoint) ?? 'local-model';
+            $model = AiModelManager::getBestModel($aiEndpoint, $user) ?? 'local-model';
 
             // 2. Gather context from Qdrant
             $qdrantHost = env('QDRANT_HOST', 'http://localhost:6333');
@@ -86,7 +91,7 @@ class GenerateExamJob implements ShouldQueue
                 $payload = $point['payload'] ?? [];
                 $text = $payload['full_content'] ?? '';
                 if (is_string($text) && trim($text) !== '') {
-                    $context .= $text . "\n\n";
+                    $context .= $text."\n\n";
                 }
             }
 
@@ -103,7 +108,7 @@ class GenerateExamJob implements ShouldQueue
                 $existingQuestionsContext .= "\n\nEXISTING QUESTIONS TO AVOID:\n";
                 foreach ($existingExams as $exam) {
                     foreach ($exam->questions as $question) {
-                        $existingQuestionsContext .= "- " . substr($question->question, 0, 100) . "...\n";
+                        $existingQuestionsContext .= '- '.substr($question->question, 0, 100)."...\n";
                     }
                 }
                 $existingQuestionsContext .= "\nDO NOT REPEAT THESE QUESTIONS!\n";
@@ -114,7 +119,7 @@ class GenerateExamJob implements ShouldQueue
             $mcqPercent = $this->distribution['mcq'] * 100;
             $trueFalsePercent = $this->distribution['true_false'] * 100;
             $structuredPercent = $this->distribution['structured'] * 100;
-            
+
             $systemInstruction = <<<EOT
 You are an expert educational assessment designer. Generate high-quality exam questions based on the provided context and competences.
 
@@ -155,31 +160,33 @@ Important:
 - Each question must be answerable from the provided context
 EOT;
 
-            $userMessage = "Context:\n" . $context . "\n\nCompetences:\n" . $competencesContext . $existingQuestionsContext . "\n\nGenerate NEW exam questions.";
+            $userMessage = "Context:\n".$context."\n\nCompetences:\n".$competencesContext.$existingQuestionsContext."\n\nGenerate NEW exam questions.";
 
-            $response = Http::timeout(900)->post("{$aiEndpoint}/v1/chat/completions", [
-                'model' => $model,
-                'messages' => [
-                    [
-                        'role' => 'system',
-                        'content' => 'You are a JSON-only API. Return only valid JSON. Never add explanations or markdown.',
+            $response = Http::timeout(900)
+                ->withHeaders(AiModelManager::chatHeaders($user))
+                ->post("{$aiEndpoint}/v1/chat/completions", [
+                    'model' => $model,
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'You are a JSON-only API. Return only valid JSON. Never add explanations or markdown.',
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => $systemInstruction."\n\n".$userMessage,
+                        ],
                     ],
-                    [
-                        'role' => 'user',
-                        'content' => $systemInstruction . "\n\n" . $userMessage,
-                    ],
-                ],
-                'temperature' => 0.8,
-            ]);
+                    'temperature' => 0.8,
+                ]);
 
             if ($response->failed()) {
-                throw new Exception('AI API failed: ' . $response->body());
+                throw new Exception('AI API failed: '.$response->body());
             }
 
             $data = $response->json();
             $content = $data['choices'][0]['message']['content'] ?? null;
 
-            if (!$content) {
+            if (! $content) {
                 throw new Exception('No content received from AI');
             }
 
@@ -187,17 +194,17 @@ EOT;
             $questions = json_decode($content, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new Exception('Invalid JSON response from AI: ' . json_last_error_msg());
+                throw new Exception('Invalid JSON response from AI: '.json_last_error_msg());
             }
 
-            if (!is_array($questions) || count($questions) !== $this->totalQuestions) {
-                throw new Exception("Expected {$this->totalQuestions} questions, got " . count($questions));
+            if (! is_array($questions) || count($questions) !== $this->totalQuestions) {
+                throw new Exception("Expected {$this->totalQuestions} questions, got ".count($questions));
             }
 
             // Create exam
             $exam = Exam::create([
                 'prosit_id' => $this->prositId,
-                'title' => "Examen - " . ($prosit->generalisation ?? 'Prosit'),
+                'title' => 'Examen - '.($prosit->generalisation ?? 'Prosit'),
                 'total_questions' => $this->totalQuestions,
                 'distribution' => $this->distribution,
                 'status' => 'draft',
@@ -221,7 +228,7 @@ EOT;
                 ]);
             }
 
-            Log::info("Exam generation completed successfully", [
+            Log::info('Exam generation completed successfully', [
                 'exam_id' => $exam->id,
                 'prosit_id' => $this->prositId,
                 'user_id' => $this->userId,
@@ -231,7 +238,7 @@ EOT;
             ]);
 
         } catch (Exception $e) {
-            Log::error("Exam generation failed", [
+            Log::error('Exam generation failed', [
                 'prosit_id' => $this->prositId,
                 'user_id' => $this->userId,
                 'error' => $e->getMessage(),
@@ -251,7 +258,7 @@ EOT;
 
     public function failed(Exception $exception): void
     {
-        Log::error("Exam generation job failed permanently", [
+        Log::error('Exam generation job failed permanently', [
             'prosit_id' => $this->prositId,
             'user_id' => $this->userId,
             'error' => $exception->getMessage(),

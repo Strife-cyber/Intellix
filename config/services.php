@@ -61,11 +61,16 @@ return [
         'endpoint' => env('AI_ENDPOINT', 'http://100.93.40.102:9090'),
     ],
 
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
+
     'broker' => [
         'url' => env('BROKER_URL', 'http://localhost:8080'),
     ],
 
     'cer' => [
         'base_url' => env('CER_BASE_URL', 'http://localhost:8080'),
+        'shared_secret' => env('CER_SHARED_SECRET', ''),
     ],
 ];

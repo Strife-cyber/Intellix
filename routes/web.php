@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\CahierController;
+use App\Http\Controllers\CerWebController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\FlashCardController;
 use App\Http\Controllers\GithubController;
@@ -289,6 +290,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('cers/save', [CahierController::class, 'store'])->name('cers.save');
 
     Route::get('cers/all', [CahierController::class, 'all'])->name('cers.all');
+
+    Route::get('cers/generate', [CerWebController::class, 'generate'])->name('cers.generate');
+    Route::post('cers/generate', [CerWebController::class, 'startGeneration'])->name('cers.generate.start');
+    Route::post('cers/prosits/import', [CerWebController::class, 'importProsit'])->name('cers.prosits.import');
+    Route::patch('cers/prosits/{id}', [CerWebController::class, 'updateProsit'])->name('cers.prosits.update');
+    Route::delete('cers/prosits/{id}', [CerWebController::class, 'destroyProsit'])->name('cers.prosits.destroy');
+    Route::get('cers/jobs/{id}/status', [CerWebController::class, 'jobStatus'])->name('cers.jobs.status');
+    Route::get('cers/jobs/{id}/{kind}', [CerWebController::class, 'jobDownload'])
+        ->where('kind', 'pdf|latex|download')
+        ->name('cers.jobs.download');
+
+    Route::get('cers/jobs', function () {
+        return Inertia::render('cers/jobs');
+    })->name('cers.jobs');
 
     Route::resource('cers', CahierController::class);
 });

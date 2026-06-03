@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Prosit;
+use App\Models\User;
 use App\Services\AiModelManager;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -18,7 +19,9 @@ class GeneratePrositFieldsJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public int $timeout = 600; // 10 minutes
+
     public array $backoff = [60, 300, 900]; // 1min, 5min, 15min
 
     public function __construct(
@@ -31,15 +34,17 @@ class GeneratePrositFieldsJob implements ShouldQueue
     {
         try {
             $prosit = Prosit::findOrFail($this->prositId);
-            
+
+            $user = User::findOrFail($this->userId);
+
             // 1. Auto-detect AI endpoint and model
-            $aiEndpoint = AiModelManager::getBestEndpoint();
-            
-            if (!$aiEndpoint) {
+            $aiEndpoint = AiModelManager::getBestEndpoint($user);
+
+            if (! $aiEndpoint) {
                 throw new Exception('No AI service available');
             }
 
-            $model = AiModelManager::getBestModel($aiEndpoint) ?? 'local-model';
+            $model = AiModelManager::getBestModel($aiEndpoint, $user) ?? 'local-model';
 
             // 2. Generate prosit fields using AI
             $systemInstruction = <<<EOT
@@ -70,29 +75,31 @@ Text to analyze:
 {$this->originalText}
 EOT;
 
-            $response = Http::timeout(600)->post("{$aiEndpoint}/v1/chat/completions", [
-                'model' => $model,
-                'messages' => [
-                    [
-                        'role' => 'system',
-                        'content' => 'You are a JSON-only API. Return only valid JSON. Never add explanations or markdown.',
+            $response = Http::timeout(600)
+                ->withHeaders(AiModelManager::chatHeaders($user))
+                ->post("{$aiEndpoint}/v1/chat/completions", [
+                    'model' => $model,
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'You are a JSON-only API. Return only valid JSON. Never add explanations or markdown.',
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => $systemInstruction,
+                        ],
                     ],
-                    [
-                        'role' => 'user',
-                        'content' => $systemInstruction,
-                    ],
-                ],
-                'temperature' => 0.7,
-            ]);
+                    'temperature' => 0.7,
+                ]);
 
             if ($response->failed()) {
-                throw new Exception('AI API failed: ' . $response->body());
+                throw new Exception('AI API failed: '.$response->body());
             }
 
             $data = $response->json();
             $content = $data['choices'][0]['message']['content'] ?? null;
 
-            if (!$content) {
+            if (! $content) {
                 throw new Exception('No content received from AI');
             }
 
@@ -100,13 +107,13 @@ EOT;
             $prositsData = json_decode($content, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new Exception('Invalid JSON response from AI: ' . json_last_error_msg());
+                throw new Exception('Invalid JSON response from AI: '.json_last_error_msg());
             }
 
             // Validate required fields
             $requiredFields = ['mots_cles', 'contexte', 'besoin', 'problematique', 'generalisation', 'piste_de_solution', 'plan_d_action', 'competences'];
             foreach ($requiredFields as $field) {
-                if (!isset($prositsData[$field])) {
+                if (! isset($prositsData[$field])) {
                     throw new Exception("Missing required field: {$field}");
                 }
             }
@@ -132,7 +139,7 @@ EOT;
                 ]);
             }
 
-            Log::info("Prosit generation completed successfully", [
+            Log::info('Prosit generation completed successfully', [
                 'prosit_id' => $this->prositId,
                 'user_id' => $this->userId,
                 'model' => $model,
@@ -140,7 +147,7 @@ EOT;
             ]);
 
         } catch (Exception $e) {
-            Log::error("Prosit generation failed", [
+            Log::error('Prosit generation failed', [
                 'prosit_id' => $this->prositId,
                 'user_id' => $this->userId,
                 'error' => $e->getMessage(),
@@ -153,7 +160,7 @@ EOT;
 
     public function failed(Exception $exception): void
     {
-        Log::error("Prosit generation job failed permanently", [
+        Log::error('Prosit generation job failed permanently', [
             'prosit_id' => $this->prositId,
             'user_id' => $this->userId,
             'error' => $exception->getMessage(),

@@ -4,6 +4,7 @@ namespace App\Actions;
 
 use App\Models\FlashCard;
 use App\Models\Resource;
+use App\Models\User;
 use App\Services\AiModelManager;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -85,33 +86,37 @@ Text to analyze:
 {$sourceText}
 PROMPT;
 
+        $user = User::findOrFail($userId);
+
         // 3. Auto-detect best AI endpoint and model
-        $aiEndpoint = AiModelManager::getBestEndpoint();
-        
-        if (!$aiEndpoint) {
+        $aiEndpoint = AiModelManager::getBestEndpoint($user);
+
+        if (! $aiEndpoint) {
             throw new RuntimeException(
                 'No AI service available. Please ensure LM Studio is running with a loaded model, or check your AI_ENDPOINT configuration.'
             );
         }
 
-        $model = AiModelManager::getBestModel($aiEndpoint) ?? 'local-model';
+        $model = AiModelManager::getBestModel($aiEndpoint, $user) ?? 'local-model';
 
         set_time_limit(300);
 
-        $response = Http::timeout(120)->post("{$aiEndpoint}/v1/chat/completions", [
-            'model' => $model,
-            'messages' => [
-                [
-                    'role' => 'system',
-                    'content' => 'You are a JSON-only API. Return only valid JSON. Never add explanations or markdown.',
+        $response = Http::timeout(120)
+            ->withHeaders(AiModelManager::chatHeaders($user))
+            ->post("{$aiEndpoint}/v1/chat/completions", [
+                'model' => $model,
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'You are a JSON-only API. Return only valid JSON. Never add explanations or markdown.',
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $prompt,
+                    ],
                 ],
-                [
-                    'role' => 'user',
-                    'content' => $prompt,
-                ],
-            ],
-            'temperature' => 0.4,
-        ]);
+                'temperature' => 0.4,
+            ]);
 
         if ($response->failed()) {
             throw new RuntimeException('AI provider request failed: '.$response->body());

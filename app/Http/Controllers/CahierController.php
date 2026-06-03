@@ -5,30 +5,58 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCahierRequest;
 use App\Http\Requests\UpdateCahierRequest;
 use App\Models\Cahier;
+use App\Services\CerMicroserviceClient;
 use App\Services\CerService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use RuntimeException;
 use Throwable;
 
 class CahierController extends Controller
 {
+    public function __construct(
+        private CerMicroserviceClient $cerClient,
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $prosits = [];
+        $microserviceError = null;
+
+        try {
+            $prosits = $this->cerClient->listProsits($request->user());
+        } catch (RuntimeException $e) {
+            $microserviceError = $e->getMessage();
+        }
+
         return Inertia::render('cers/index', [
-            'sections' => [],
+            'prosits' => $prosits,
+            'microserviceError' => $microserviceError,
+            'selectedPrositId' => session('cer_selected_prosit_id'),
+            'cerFlash' => session('cer_flash'),
         ]);
     }
 
-    public function all()
+    public function all(Request $request)
     {
-        $cahiers = Cahier::all();
+        $generatedCers = [];
+        $microserviceError = null;
+
+        try {
+            $generatedCers = $this->cerClient->listCerJobs($request->user());
+        } catch (RuntimeException $e) {
+            $microserviceError = $e->getMessage();
+        }
 
         return Inertia::render('cers/all', [
-            'cahiers' => $cahiers,
+            'generatedCers' => $generatedCers,
+            'microserviceError' => $microserviceError,
         ]);
     }
 
@@ -43,7 +71,7 @@ class CahierController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreCahierRequest $request)
+    public function store(StoreCahierRequest $request): RedirectResponse
     {
         $sections = $request->input('sections', []);
 
@@ -62,11 +90,7 @@ class CahierController extends Controller
             'perspectives' => [],
         ]);
 
-        return Inertia::render('cers/index', [
-            'sections' => $sections,
-            'saved' => true,
-            'cahierId' => $cahier->id,
-        ]);
+        return redirect()->route('cers.show', $cahier);
     }
 
     /**
@@ -124,20 +148,64 @@ class CahierController extends Controller
             $originalFileName = $uploadedFile->getClientOriginalName();
             $result = $cerService->splitProsit($fullPath, $originalFileName);
         } catch (Throwable $e) {
-            dd($e->getMessage());
+            Log::error('CER extraction failed', [
+                'error' => $e->getMessage(),
+                'file_name' => $uploadedFile->getClientOriginalName(),
+            ]);
+
             return Inertia::render('cers/index', [
                 'sections' => [],
             ]);
         }
 
-        dd($result);
+        $sections = [];
 
-        $sections = array_map(function (array $section): array {
-            return [
-                'title' => $section['title'] ?? '',
-                'content' => $section['content'] ?? '',
+        // micro-cer returns a `core.Prosit` object:
+        // { keywords: string[], context: string, needs: string[], constraints: string[], problems: string[], generalisation: string, pistes: string[], plan: string[] }
+        if (is_array($result) && isset($result['keywords'])) {
+            $sections = [
+                [
+                    'title' => 'Keywords',
+                    'content' => implode('; ', $result['keywords'] ?? []),
+                ],
+                [
+                    'title' => 'Context',
+                    'content' => (string) ($result['context'] ?? ''),
+                ],
+                [
+                    'title' => 'Needs',
+                    'content' => implode(";\n", $result['needs'] ?? []),
+                ],
+                [
+                    'title' => 'Constraints',
+                    'content' => implode(";\n", $result['constraints'] ?? []),
+                ],
+                [
+                    'title' => 'Problems',
+                    'content' => implode(";\n", $result['problems'] ?? []),
+                ],
+                [
+                    'title' => 'Generalisation',
+                    'content' => (string) ($result['generalisation'] ?? ''),
+                ],
+                [
+                    'title' => 'Pistes',
+                    'content' => implode(";\n", $result['pistes'] ?? []),
+                ],
+                [
+                    'title' => 'Plan',
+                    'content' => implode("\n", $result['plan'] ?? []),
+                ],
             ];
-        }, $result['sections'] ?? []);
+        } elseif (is_array($result) && isset($result['sections']) && is_array($result['sections'])) {
+            // Backwards compatibility: some older responses may already be in `sections` format.
+            $sections = array_map(function (array $section): array {
+                return [
+                    'title' => $section['title'] ?? '',
+                    'content' => $section['content'] ?? '',
+                ];
+            }, $result['sections'] ?? []);
+        }
 
         return Inertia::render('cers/index', [
             'sections' => $sections,

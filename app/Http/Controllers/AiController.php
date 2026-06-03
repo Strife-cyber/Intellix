@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\AiModelManager;
+use App\Services\UserAiProviderResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -40,16 +41,16 @@ class AiController extends Controller
 
         // 3. Auto-detect best AI endpoint and model
         $aiEndpoint = AiModelManager::getBestEndpoint();
-        
-        if (!$aiEndpoint) {
+
+        if (! $aiEndpoint) {
             return response()->json([
                 'error' => 'No AI service available',
                 'details' => 'Please ensure LM Studio is running with a loaded model, or check your AI_ENDPOINT configuration',
                 'troubleshooting' => [
                     '1. Start LM Studio and load a model (DeepSeek, Llama, etc.)',
                     '2. Ensure LM Studio is listening on http://localhost:1234 or http://localhost:8080',
-                    '3. Or set AI_ENDPOINT in your .env file to your preferred endpoint'
-                ]
+                    '3. Or set AI_ENDPOINT in your .env file to your preferred endpoint',
+                ],
             ], 503);
         }
 
@@ -78,7 +79,7 @@ SYS;
         ];
 
         // Add conversation history if provided
-        if (!empty($conversationHistory)) {
+        if (! empty($conversationHistory)) {
             // Add previous messages to give AI memory of conversation
             foreach ($conversationHistory as $msg) {
                 $messages[] = [
@@ -94,11 +95,13 @@ SYS;
             'content' => "Document Context:\n".$context."\n\nCurrent Question:\n".$message,
         ];
 
-        $response = Http::timeout(300)->post("{$aiEndpoint}/v1/chat/completions", [
-            'model' => $model,
-            'messages' => $messages,
-            'temperature' => 0.7,
-        ]);
+        $response = Http::timeout(300)
+            ->withHeaders(AiModelManager::chatHeaders())
+            ->post("{$aiEndpoint}/v1/chat/completions", [
+                'model' => $model,
+                'messages' => $messages,
+                'temperature' => app(UserAiProviderResolver::class)->resolveTemperature($request->user()),
+            ]);
 
         if ($response->failed()) {
             return response()->json([

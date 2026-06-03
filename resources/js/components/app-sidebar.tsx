@@ -87,19 +87,27 @@ const mainNavItems: NavItem[] = [
         icon: Layers2Icon,
     },
     {
-        title: 'Cahier d\'etude',
-        href: cers.index.url(),
+        title: "Cahier d'étude",
+        href: cers.index().url,
         icon: SearchCode,
         items: [
             {
-                title: 'All Cer\'s',
+                title: 'Bibliothèque PROSIT',
+                href: cers.index().url,
+            },
+            {
+                title: 'Cahiers générés',
                 href: cers.all().url,
             },
             {
-                title: 'Prosit File',
-                href: cers.index.url()
-            }
-        ]
+                title: 'Générer un CER',
+                href: '/cers/generate',
+            },
+            {
+                title: 'Travaux en cours',
+                href: '/cers/jobs',
+            },
+        ],
     }
 ];
 

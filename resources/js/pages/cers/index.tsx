@@ -1,14 +1,21 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import {
     FileText,
     LoaderCircle,
-    Sparkles,
-    Save,
-    CheckCircle2,
+    Pencil,
+    Trash2,
+    Upload,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -17,443 +24,404 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { UploadDropzone } from '@/components/uploader/upload-dropzone';
-
 import AppLayout from '@/layouts/app-layout';
+import type { Prosit, StoredProsit } from '@/lib/cer-api';
+import {
+    formatSemicolonsToNewlines,
+    PROSIT_SECTION_LABELS,
+} from '@/lib/prosit-utils';
 import cers from '@/routes/cers';
-
-import type { BreadcrumbItem, CerSection } from '@/types';
+import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'CER',
-        href: cers.index.url(),
+        title: 'Bibliothèque PROSIT',
+        href: cers.index().url,
     },
 ];
 
-export default function Cers() {
-    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+type CerFlash = { type: string; message: string };
 
-    const [isProcessing, setIsProcessing] = useState(false);
+type PageProps = {
+    prosits: StoredProsit[];
+    microserviceError: string | null;
+    selectedPrositId: string | null;
+    cerFlash: CerFlash | null;
+};
 
-    const [isSaving, setIsSaving] = useState(false);
+function displayNameWithoutExt(filename: string): string {
+    const dot = filename.lastIndexOf('.');
+    return dot > 0 ? filename.slice(0, dot) : filename;
+}
 
-    const [sections, setSections] = useState<CerSection[]>([]);
+export default function CersLibrary() {
+    const {
+        prosits: serverProsits,
+        microserviceError,
+        selectedPrositId,
+        cerFlash,
+    } = usePage<PageProps>().props;
 
-    const hasSections = sections.length > 0;
+    const errors = usePage().props.errors as Record<string, string | undefined>;
 
-    const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+    const prosits = useMemo(
+        () =>
+            [...serverProsits].sort(
+                (a, b) =>
+                    new Date(b.uploaded_at).getTime() -
+                    new Date(a.uploaded_at).getTime(),
+            ),
+        [serverProsits],
+    );
 
-    const [saveForm, setSaveForm] = useState<{
-        title: string;
-        description: string;
-        version: number;
-    }>({
-        title: '',
-        description: '',
-        version: 1,
-    });
+    const [selected, setSelected] = useState<StoredProsit | null>(null);
+
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
+    const [uploadName, setUploadName] = useState('');
+    const [uploading, setUploading] = useState(false);
+
+    const [renameOpen, setRenameOpen] = useState(false);
+    const [renameValue, setRenameValue] = useState('');
+
+    useEffect(() => {
+        if (!selectedPrositId) return;
+        const match = prosits.find((p) => p.id === selectedPrositId);
+        if (match) setSelected(match);
+    }, [selectedPrositId, prosits]);
+
+    const statusMessage =
+        errors.prosit ??
+        (cerFlash?.message ? cerFlash.message : null);
 
     const handleFilesAdded = (files: FileList) => {
         if (!files.length) return;
-
         const file = files[0];
-
-        setUploadedFile(file);
-
-        // Upload is triggered when the user clicks "Process CER".
+        setPendingFile(file);
+        setUploadName(displayNameWithoutExt(file.name));
     };
 
-    const updateSection = (
-        index: number,
-        field: keyof CerSection,
-        value: string,
-    ) => {
-        const updated = [...sections];
+    const confirmUpload = () => {
+        if (!pendingFile) return;
+        setUploading(true);
 
-        updated[index] = {
-            ...updated[index],
-            [field]: value,
-        };
+        const form = new FormData();
+        form.append('file', pendingFile);
+        if (uploadName.trim()) {
+            form.append('filename', uploadName.trim());
+        }
 
-        setSections(updated);
+        router.post('/cers/prosits/import', form, {
+            forceFormData: true,
+            preserveScroll: true,
+            onFinish: () => setUploading(false),
+            onSuccess: () => {
+                setPendingFile(null);
+                setUploadName('');
+            },
+        });
     };
 
-    const handleSave = () => {
-        if (!hasSections) return;
+    const openRename = (item: StoredProsit) => {
+        setSelected(item);
+        setRenameValue(displayNameWithoutExt(item.filename));
+        setRenameOpen(true);
+    };
 
-        setIsSaveDialogOpen(true);
+    const confirmRename = () => {
+        if (!selected) return;
+        router.patch(
+            `/cers/prosits/${selected.id}`,
+            { filename: renameValue },
+            {
+                preserveScroll: true,
+                onSuccess: () => setRenameOpen(false),
+            },
+        );
+    };
+
+    const handleDelete = (item: StoredProsit) => {
+        if (!confirm(`Supprimer « ${item.filename} » ?`)) return;
+        router.delete(`/cers/prosits/${item.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                if (selected?.id === item.id) setSelected(null);
+            },
+        });
+    };
+
+    const renderSection = (key: keyof Prosit, label: string, prosit: Prosit) => {
+        const val = prosit[key];
+        if (Array.isArray(val)) {
+            if (!val.length) {
+                return (
+                    <p className="text-sm italic text-muted-foreground">— vide —</p>
+                );
+            }
+            return (
+                <ul className="list-inside list-disc text-sm text-muted-foreground">
+                    {val.map((line, i) => (
+                        <li key={i}>{line}</li>
+                    ))}
+                </ul>
+            );
+        }
+        if (typeof val === 'string' && val.trim()) {
+            return (
+                <p className="whitespace-pre-line text-sm text-muted-foreground">
+                    {formatSemicolonsToNewlines(val)}
+                </p>
+            );
+        }
+        return (
+            <p className="text-sm italic text-muted-foreground">— vide —</p>
+        );
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <div className="flex h-full w-full flex-col gap-6 p-6 lg:flex-row">
-
-                <div className="flex-1 rounded-3xl border border-border bg-card p-6 shadow-sm">
-
-                    {!uploadedFile && !hasSections && (
-                        <div className="flex h-full min-h-125 flex-col items-center justify-center text-center">
-                            <div className="mb-5 rounded-3xl bg-muted p-5">
-                                <FileText className="h-10 w-10 text-muted-foreground" />
-                            </div>
-
-                            <h2 className="text-2xl font-bold">
-                                No CER Processed Yet
-                            </h2>
-
-                            <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                                Upload a CER document to automatically extract
-                                and structure its sections.
-                            </p>
-                        </div>
-                    )}
-
-                    {uploadedFile && !hasSections && !isProcessing && (
-                        <div className="flex h-full min-h-125 flex-col items-center justify-center text-center">
-                            <div className="mb-5 rounded-3xl bg-primary/10 p-5">
-                                <CheckCircle2 className="h-10 w-10 text-primary" />
-                            </div>
-
-                            <h2 className="text-2xl font-bold">
-                                File Uploaded
-                            </h2>
-
-                            <p className="mt-3 text-sm font-medium">
-                                {uploadedFile.name}
-                            </p>
-
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                {(
-                                    uploadedFile.size /
-                                    1024 /
-                                    1024
-                                ).toFixed(2)}{' '}
-                                MB
-                            </p>
-
-                            <Button
-                                className="mt-8 h-11 rounded-2xl px-6"
-                                onClick={() => {
-                                    if (!uploadedFile) return;
-
-                                    const formData = new FormData();
-                                    formData.append('file', uploadedFile);
-
-                                    router.post('/cers/upload', formData, {
-                                        forceFormData: true,
-                                        preserveState: true,
-                                        preserveScroll: true,
-
-                                        onStart: () => {
-                                            setIsProcessing(true);
-                                        },
-
-                                        onSuccess: (page) => {
-                                            setIsProcessing(false);
-
-                                            const extractedSections =
-                                                (page as any)?.props
-                                                    ?.sections ?? [];
-
-                                            setSections(extractedSections);
-                                        },
-
-                                        onError: (error) => {
-                                            console.error(error);
-                                            setIsProcessing(false);
-                                        },
-                                    });
-                                }}
+            <div className="space-y-6 p-6">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            Bibliothèque PROSIT
+                        </h1>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Importez des documents, puis générez un CER depuis{' '}
+                            <a
+                                href="/cers/generate"
+                                className="font-medium text-primary underline"
                             >
-                                <Sparkles className="mr-2 h-4 w-4" />
-                                Process CER
-                            </Button>
-                        </div>
-                    )}
+                                Générer un CER
+                            </a>
+                            .
+                        </p>
+                    </div>
+                    <Button className="rounded-2xl" asChild>
+                        <a href="/cers/generate">Générer un CER</a>
+                    </Button>
+                </div>
 
-                    {isProcessing && (
-                        <div className="flex h-full min-h-125 flex-col items-center justify-center text-center">
-                            <div className="mb-6 rounded-full border border-border bg-muted p-5">
-                                <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-                            </div>
+                {microserviceError && (
+                    <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                        {microserviceError}
+                    </div>
+                )}
 
-                            <h2 className="text-2xl font-bold">
-                                Processing CER
-                            </h2>
-
-                            <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                                Your document is being analyzed and split into
-                                structured sections by the processing service.
-                            </p>
-                        </div>
-                    )}
-
-                    {hasSections && !isProcessing && (
-                        <>
-                            <div className="mb-8 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="rounded-2xl bg-muted p-3">
-                                        <FileText className="h-5 w-5" />
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Importer un PROSIT</CardTitle>
+                            <CardDescription>
+                                .docx, .pdf, .odt, .txt — extraction via le
+                                microservice CER
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {!pendingFile ? (
+                                //@ts-expect-error files added error
+                                <UploadDropzone onFilesAdded={handleFilesAdded} />
+                            ) : (
+                                <div className="space-y-3 rounded-xl border bg-muted/20 p-4">
+                                    <p className="text-sm font-medium">
+                                        {pendingFile.name}
+                                    </p>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="upload-filename">
+                                            Nom affiché
+                                        </Label>
+                                        <Input
+                                            id="upload-filename"
+                                            value={uploadName}
+                                            onChange={(e) =>
+                                                setUploadName(e.target.value)
+                                            }
+                                        />
                                     </div>
-
-                                    <div>
-                                        <h2 className="text-xl font-semibold">
-                                            CER Sections
-                                        </h2>
-
-                                        <p className="text-sm text-muted-foreground">
-                                            Review and edit extracted sections
-                                        </p>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            onClick={confirmUpload}
+                                            disabled={uploading}
+                                        >
+                                            {uploading ? (
+                                                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Upload className="mr-2 h-4 w-4" />
+                                            )}
+                                            Importer et extraire
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                setPendingFile(null);
+                                                setUploadName('');
+                                            }}
+                                            disabled={uploading}
+                                        >
+                                            Annuler
+                                        </Button>
                                     </div>
                                 </div>
-
-                                <Button
-                                    onClick={handleSave}
-                                    disabled={isSaving}
-                                    className="rounded-2xl"
+                            )}
+                            {statusMessage && (
+                                <p
+                                    className={`text-sm ${
+                                        errors.prosit
+                                            ? 'text-destructive'
+                                            : 'text-muted-foreground'
+                                    }`}
                                 >
-                                    {isSaving ? (
-                                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Save className="mr-2 h-4 w-4" />
-                                    )}
+                                    {statusMessage}
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
 
-                                    Save
+                    <Card>
+                        <CardHeader>
+                            <div>
+                                <CardTitle>Fichiers enregistrés</CardTitle>
+                                <CardDescription>
+                                    Stockés dans le microservice (isolés par
+                                    utilisateur).
+                                </CardDescription>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {prosits.length === 0 ? (
+                                <p className="py-8 text-center text-sm text-muted-foreground">
+                                    Aucun PROSIT enregistré.
+                                </p>
+                            ) : (
+                                <ul className="max-h-80 space-y-2 overflow-y-auto">
+                                    {prosits.map((item) => (
+                                        <li
+                                            key={item.id}
+                                            className={`flex items-center justify-between gap-2 rounded-xl border p-3 transition-colors ${
+                                                selected?.id === item.id
+                                                    ? 'border-primary bg-primary/5'
+                                                    : 'bg-background hover:bg-accent/40'
+                                            }`}
+                                        >
+                                            <button
+                                                type="button"
+                                                className="min-w-0 flex-1 text-left"
+                                                onClick={() => setSelected(item)}
+                                            >
+                                                <div className="truncate font-medium">
+                                                    {item.filename}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {new Date(
+                                                        item.uploaded_at,
+                                                    ).toLocaleString()}
+                                                </div>
+                                            </button>
+                                            <div className="flex shrink-0 gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() =>
+                                                        openRename(item)
+                                                    }
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() =>
+                                                        handleDelete(item)
+                                                    }
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {selected && (
+                    <Card>
+                        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <CardTitle>
+                                    Sections — {selected.filename}
+                                </CardTitle>
+                                <CardDescription>
+                                    Aperçu des champs extraits par le
+                                    microservice.
+                                </CardDescription>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                <Button variant="outline" asChild>
+                                    <a
+                                        href={`/cers/generate?prosit=${encodeURIComponent(selected.id)}`}
+                                    >
+                                        <FileText className="mr-2 h-4 w-4" />
+                                        Générer le CER
+                                    </a>
+                                </Button>
+                                <Button variant="outline" asChild>
+                                    <a href={cers.all().url}>Cahiers générés</a>
                                 </Button>
                             </div>
-
-                            <Dialog
-                                open={isSaveDialogOpen}
-                                onOpenChange={setIsSaveDialogOpen}
-                            >
-                                <DialogContent className="sm:max-w-md">
-                                    <DialogHeader>
-                                        <DialogTitle>
-                                            Save as Cahier
-                                        </DialogTitle>
-                                    </DialogHeader>
-
-                                    <form
-                                        onSubmit={(e) => {
-                                            e.preventDefault();
-
-                                            setIsSaving(true);
-
-                                            router.post(
-                                                '/cers/save',
-                                                {
-                                                    title:
-                                                        saveForm.title,
-                                                    description:
-                                                        saveForm.description ||
-                                                        null,
-                                                    version:
-                                                        Number(
-                                                            saveForm.version,
-                                                        ),
-                                                    sections,
-                                                },
-                                                {
-                                                    onStart: () => {
-                                                        setIsSaving(true);
-                                                    },
-                                                    onSuccess: (page) => {
-                                                        setIsSaving(false);
-                                                        setIsSaveDialogOpen(false);
-
-                                                        const nextSections =
-                                                            (page as any)
-                                                                ?.props
-                                                                ?.sections ??
-                                                            sections;
-
-                                                        setSections(nextSections);
-                                                    },
-                                                    onError: (error) => {
-                                                        console.error(
-                                                            error,
-                                                        );
-                                                        setIsSaving(false);
-                                                    },
-                                                },
-                                            );
-                                        }}
-                                        className="space-y-4"
-                                    >
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">
-                                                Title
-                                            </label>
-                                            <Input
-                                                value={saveForm.title}
-                                                onChange={(e) =>
-                                                    setSaveForm((prev) => ({
-                                                        ...prev,
-                                                        title: e.target.value,
-                                                    }))
-                                                }
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">
-                                                Description
-                                            </label>
-                                            <Textarea
-                                                value={
-                                                    saveForm.description
-                                                }
-                                                onChange={(e) =>
-                                                    setSaveForm((prev) => ({
-                                                        ...prev,
-                                                        description:
-                                                            e.target.value,
-                                                    }))
-                                                }
-                                                rows={3}
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">
-                                                Version
-                                            </label>
-                                            <Input
-                                                type="number"
-                                                value={saveForm.version}
-                                                onChange={(e) =>
-                                                    setSaveForm((prev) => ({
-                                                        ...prev,
-                                                        version: Number(
-                                                            e.target.value,
-                                                        ),
-                                                    }))
-                                                }
-                                                required
-                                            />
-                                        </div>
-
-                                        <DialogFooter>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() =>
-                                                    setIsSaveDialogOpen(false)
-                                                }
-                                                disabled={isSaving}
-                                            >
-                                                Cancel
-                                            </Button>
-                                            <Button type="submit" disabled={isSaving}>
-                                                {isSaving ? (
-                                                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <Save className="mr-2 h-4 w-4" />
-                                                )}
-                                                Save
-                                            </Button>
-                                        </DialogFooter>
-                                    </form>
-                                </DialogContent>
-                            </Dialog>
-
-                            <div className="space-y-5">
-                                {sections.map((part, index) => (
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                {(
+                                    Object.entries(
+                                        PROSIT_SECTION_LABELS,
+                                    ) as [keyof Prosit, string][]
+                                ).map(([key, label]) => (
                                     <div
-                                        key={index}
-                                        className="rounded-2xl border border-border bg-background p-5"
+                                        key={key}
+                                        className="rounded-xl border bg-muted/20 p-4"
                                     >
-                                        <div className="mb-4 flex items-center justify-between">
-                                            <input
-                                                value={part.title}
-                                                onChange={(e) =>
-                                                    updateSection(
-                                                        index,
-                                                        'title',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="w-full bg-transparent text-lg font-semibold outline-none"
-                                            />
-
-                                            <span className="ml-4 rounded-md bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-                                                Section {index + 1}
-                                            </span>
+                                        <h4 className="text-xs font-semibold uppercase tracking-wider text-primary">
+                                            {label}
+                                        </h4>
+                                        <div className="mt-2">
+                                            {renderSection(
+                                                key,
+                                                label,
+                                                selected.prosit,
+                                            )}
                                         </div>
-
-                                        <Textarea
-                                            value={part.content}
-                                            onChange={(e) =>
-                                                updateSection(
-                                                    index,
-                                                    'content',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            className="min-h-35 resize-none rounded-2xl"
-                                        />
                                     </div>
                                 ))}
                             </div>
-                        </>
-                    )}
-                </div>
-
-                <div className="w-[40%]">
-                    <div className="sticky top-6 rounded-3xl border border-dashed border-border bg-card p-6 shadow-sm">
-                        <div className="mb-5">
-                            <h2 className="text-xl font-semibold">
-                                Upload CER
-                            </h2>
-
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                Upload and process CER documents automatically
-                            </p>
-                        </div>
-
-                        {!uploadedFile ? (
-                            //@ts-expect-error files added error
-                            <UploadDropzone onFilesAdded={handleFilesAdded} />
-                        ) : (
-                            <div className="rounded-2xl border border-border bg-muted/30 p-5">
-                                <div className="flex items-start gap-4">
-                                    <div className="rounded-xl bg-background p-3">
-                                        <FileText className="h-5 w-5" />
-                                    </div>
-
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate font-medium">
-                                            {uploadedFile.name}
-                                        </p>
-
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            {(
-                                                uploadedFile.size /
-                                                1024 /
-                                                1024
-                                            ).toFixed(2)}{' '}
-                                            MB
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <Button
-                                    variant="outline"
-                                    className="mt-5 w-full rounded-2xl"
-                                    onClick={() => {
-                                        setUploadedFile(null);
-                                        setSections([]);
-                                    }}
-                                >
-                                    Upload Another File
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-                </div>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
+
+            <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Renommer le fichier</DialogTitle>
+                    </DialogHeader>
+                    <Input
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                    />
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setRenameOpen(false)}
+                        >
+                            Annuler
+                        </Button>
+                        <Button onClick={confirmRename}>Enregistrer</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
         </AppLayout>
     );
 }
