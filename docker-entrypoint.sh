@@ -14,10 +14,14 @@ fi
 # Run migrations
 php artisan migrate --force || echo "Warning: Migrations may have failed"
 
-# Clear and cache config
+# Clear stale caches, then regenerate
+php artisan optimize:clear || true
 php artisan config:cache || true
 php artisan route:cache || true
 php artisan view:cache || true
+
+# Restart OPcache so PHP doesn't serve stale compiled files
+kill -USR2 1 2>/dev/null || true
 
 # Execute the main command
 exec "$@"
