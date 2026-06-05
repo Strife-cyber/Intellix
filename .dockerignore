@@ -4,7 +4,6 @@
 .idea/
 .claude/
 *.md
-go.sum
 web/
 files/
 internal/template/*.aux
