@@ -1,4 +1,33 @@
 services:
+  # ──────────────────────────────────────────────
+  # micro-cer — Go microservice for CER generation
+  # Repo: ../micro-cer (sibling of intellix on VPS)
+  # ──────────────────────────────────────────────
+  micro-cer:
+    build:
+      context: ../micro-cer
+      dockerfile: Dockerfile
+    container_name: micro-cer
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - cer_data:/app/data
+      - cer_uploads:/app/uploads
+    networks:
+      - intellix-local
+    environment:
+      - CER_SHARED_SECRET=${CER_SHARED_SECRET:-a8b2c6d4-e0f1-4a3b-8c9d-0e1f2a3b4c5d}
+    # Health check — no dedicated endpoint, so we probe the TCP port
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ──────────────────────────────────────────────
+  # Intellix — Laravel + Rust app
+  # ──────────────────────────────────────────────
   app:
     build:
       context: .
@@ -12,12 +41,22 @@ services:
       - ./bootstrap/cache:/var/www/html/bootstrap/cache
       - ./.env:/var/www/html/.env
     networks:
-      - internal        
-      - intellix-local  
+      - internal
+      - intellix-local
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
+      # Point micro-cer client at the Docker service (container name = hostname)
+      - CER_BASE_URL=http://micro-cer:8080
+      - CER_SHARED_SECRET=${CER_SHARED_SECRET:-a8b2c6d4-e0f1-4a3b-8c9d-0e1f2a3b4c5d}
+      - REDIS_HOST=redis
+    depends_on:
+      micro-cer:
+        condition: service_started
 
+  # ──────────────────────────────────────────────
+  # Nginx reverse-proxy (Traefik-facing)
+  # ──────────────────────────────────────────────
   nginx:
     image: nginx:alpine
     container_name: intellix-nginx
@@ -26,17 +65,22 @@ services:
       - public_files:/var/www/html/public
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
     networks:
-      - traefik-net    
-      - intellix-local 
+      - traefik-net
+      - intellix-local
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.intellix.rule=Host(`intellix.strife-cyber.org`)"
       - "traefik.http.routers.intellix.entrypoints=https"
-      - "traefik.http.routers.intellix.tls.certresolver=letsencrypt" 
+      - "traefik.http.routers.intellix.tls.certresolver=letsencrypt"
       - "traefik.http.routers.intellix-router.service=intellix"
       - "traefik.http.services.intellix.loadbalancer.server.port=80"
       - "traefik.docker.network=traefik-net"
+    depends_on:
+      - app
 
+  # ──────────────────────────────────────────────
+  # Redis
+  # ──────────────────────────────────────────────
   redis:
     image: redis:alpine
     container_name: intellix-redis
@@ -54,3 +98,5 @@ networks:
 
 volumes:
   public_files:
+  cer_data:
+  cer_uploads:

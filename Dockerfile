@@ -1,19 +1,5 @@
 # ------------------------
-# Stage 1: Rust build
-# ------------------------
-FROM rust:1.93-slim AS rust-builder
-
-RUN apt-get update && apt-get install -y \
-    pkg-config libssl-dev ca-certificates g++ \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /build
-COPY Cargo.toml Cargo.lock ./
-COPY src/ ./src/
-RUN cargo build --release
-
-# ------------------------
-# Stage 2: PHP + Node build (single stage for Laravel + Vite)
+# PHP + Node build (single stage for Laravel + Vite)
 # ------------------------
 FROM php:8.4.8-fpm
 
@@ -30,10 +16,6 @@ RUN pecl install redis && docker-php-ext-enable redis
 
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Rust binary
-COPY --from=rust-builder /build/target/release/intellix /usr/local/bin/intellix
-RUN chmod +x /usr/local/bin/intellix
 
 # Laravel workdir
 WORKDIR /var/www/html

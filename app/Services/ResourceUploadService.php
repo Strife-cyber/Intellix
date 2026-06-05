@@ -98,22 +98,31 @@ class ResourceUploadService
     }
 
     /**
-     * Enqueue (or run inline) post-upload processing without failing the HTTP upload.
+     * Queue post-upload processing after the HTTP response (never block upload with ingest/embed).
      */
     protected function queueProcessing(Resource $resource): void
     {
+        $resourceId = $resource->id;
+
         try {
-            ProcessResourceJob::dispatch($resource->id);
+            ProcessResourceJob::dispatch($resourceId)->afterResponse();
 
             return;
         } catch (\Throwable $e) {
-            Log::warning("Queue dispatch failed for resource {$resource->id}: {$e->getMessage()}");
+            Log::warning("Queue dispatch failed for resource {$resourceId}: {$e->getMessage()}");
         }
 
         try {
-            ProcessResourceJob::dispatchSync($resource->id);
+            dispatch(function () use ($resourceId): void {
+                ProcessResourceJob::dispatchSync($resourceId);
+            })->afterResponse();
         } catch (\Throwable $e) {
-            Log::error("Could not process resource {$resource->id} after upload: {$e->getMessage()}");
+            Log::error("Could not schedule processing for resource {$resourceId}: {$e->getMessage()}");
+            $resource->update([
+                'metadata' => array_merge($resource->metadata ?? [], [
+                    'processing_error' => 'Could not queue indexing. Start a queue worker or fix QUEUE_CONNECTION.',
+                ]),
+            ]);
         }
     }
 }
