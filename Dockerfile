@@ -40,7 +40,7 @@ COPY package.json package-lock.json ./
 COPY vite.config.ts ./
 
 # Build Vite assets (Laravel fully available)
-RUN npm ci && npm run build
+RUN npm ci --legacy-peer-deps && npm run build
 
 # Permissions
 RUN chown -R www-data:www-data /var/www/html \
