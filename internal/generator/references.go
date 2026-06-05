@@ -66,7 +66,13 @@ Structure attendue :
 
 ### Vidéos et conférences
 - **[Titre vidéo 1](url)** : Description...
-- **[Titre vidéo 2](url)** : Description...`
+- **[Titre vidéo 2](url)** : Description...
+
+À la fin de ta réponse, ajoute un bloc <CONTEXT_UPDATE> contenant les informations clés à retenir pour la suite, en 1 à 3 phrases. Par exemple :
+
+<CONTEXT_UPDATE>
+L'étudiant a étudié le concept X qui se base sur Y. Les résultats montrent Z.
+</CONTEXT_UPDATE>`
 
 	log.Printf("Generating References for topic: %s...\n", mainTopic)
 

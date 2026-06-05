@@ -100,7 +100,13 @@ Pour chaque perspective :
 
 ### Perspectives d'amélioration
 - **Titre perspective 1** : Proposition concrète...
-- **Titre perspective 2** : Proposition concrète...`, diffText, perspText)
+- **Titre perspective 2** : Proposition concrète...
+
+À la fin de ta réponse, ajoute un bloc <CONTEXT_UPDATE> contenant les informations clés à retenir pour la suite, en 1 à 3 phrases. Par exemple :
+
+<CONTEXT_UPDATE>
+L'étudiant a étudié le concept X qui se base sur Y. Les résultats montrent Z.
+</CONTEXT_UPDATE>`, diffText, perspText)
 
 	log.Println("Generating Chapter 6: Bilan du travail...")
 

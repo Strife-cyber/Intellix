@@ -1,0 +1,78 @@
+% Elegant cover: ornamental frame, centered title block
+\begin{titlepage}
+\newgeometry{top=3cm, bottom=3cm, left=3.5cm, right=3.5cm}
+\thispagestyle{empty}
+
+\begin{tikzpicture}[remember picture, overlay]
+    % Outer decorative frame
+    \draw[themePrimary, line width=0.8pt]
+        ($(current page.north west) + (1.5cm, -1.5cm)$) rectangle
+        ($(current page.south east) + (-1.5cm, 1.5cm)$);
+
+    \draw[themeAccent, line width=0.3pt]
+        ($(current page.north west) + (1.7cm, -1.7cm)$) rectangle
+        ($(current page.south east) + (-1.7cm, 1.7cm)$);
+
+    % Top ornamental line
+    \draw[themePrimary, line width=0.5pt]
+        ($(current page.north west) + (3cm, -4cm)$) -- ++(0.35\paperwidth, 0);
+
+    % Logo
+    \coordinate (logoCenter) at ($(current page.north) + (0, -3cm)$);
+    \begin{scope}
+        \fill[themeLight] (logoCenter) circle (0.9cm);
+        \clip (logoCenter) circle (0.9cm);
+        \node at (logoCenter) {\includegraphics[width=1.4cm]{\docLogoPath}};
+    \end{scope}
+
+    % Brand
+    \node[anchor=north, font=\color{themePrimary}\normalsize\bfseries]
+        at ($(logoCenter) + (0, -1.2cm)$) {\docBrandLabel};
+
+    % Title
+    \node[anchor=north, align=center, font=\fontsize{34}{42}\bfseries\color{themeDark},
+          inner sep=0pt, text width=0.7\paperwidth]
+        at ($(current page.center) + (0, 1.5cm)$)
+        {\docTitle};
+
+    % Version
+    \node[anchor=north, align=center, font=\fontsize{18}{22}\color{themePrimary}\bfseries]
+        at ([yshift=-1cm]current page.center)
+        {Version \docNumber};
+
+    % Horizontal rule
+    \draw[themeAccent, line width=0.6pt]
+        ([yshift=-1.8cm]current page.center) ++(-3.5cm, 0) -- ++(7cm, 0);
+
+    % Subtitle
+    \node[anchor=north, align=center, font=\fontsize{20}{26}\bfseries\color{themeDark},
+          text width=0.65\paperwidth, inner sep=0pt]
+        at ([yshift=-2.5cm]current page.center)
+        {\docSubtitle};
+
+    % Meta information box
+    \node[anchor=north, text width=0.5\paperwidth, align=center,
+          font=\color{textGray}\small, inner sep=8pt,
+          fill=themeLight, rounded corners=3pt]
+        at ([yshift=-4.5cm]current page.center)
+        {\textbf{Auteur :} \docAuthor \hfill \textbf{Pilote :} \docPilot \\[4pt]
+         \textbf{Promotion :} \docPromotion \hfill \textbf{Date :} \docDate};
+
+    % Description
+    \node[anchor=north, text width=0.7\paperwidth, align=center,
+          font=\color{textGray!80}\footnotesize, inner sep=0pt]
+        at ([yshift=-7cm]current page.center)
+        {\raggedright\docAbstract};
+
+    % Bottom ornamental line
+    \draw[themePrimary, line width=0.5pt]
+        ($(current page.south west) + (3cm, 3.5cm)$) -- ++(0.35\paperwidth, 0);
+
+    % Footer
+    \node[anchor=south, font=\footnotesize\color{themeMuted}]
+        at ($(current page.south) + (0, 2cm)$)
+        {\textcopyright{} \the\year{} \docCopyrightOwner};
+\end{tikzpicture}
+
+\end{titlepage}
+\restoregeometry

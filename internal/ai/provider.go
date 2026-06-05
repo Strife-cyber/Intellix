@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	defaultTimeout  = 3 * time.Minute
-	maxPromptLogged = 200
+	defaultTimeoutMinutes = 3
+	maxPromptLogged      = 200
 )
 
 type Provider interface {
@@ -24,11 +24,12 @@ type Provider interface {
 // Assistant manages AI interactions with per-client context accumulation.
 // Instead of storing a growing list of Q&A pairs (which requires expensive
 // bulk compression), it maintains a running "project context" that gets
-// incrementally updated after each response. This keeps context bounded
+// incrementally updated after each response by parsing the structured
+// <CONTEXT_UPDATE> block the AI includes. This keeps context bounded
 // in size without the need for threshold-based compression.
 type Assistant struct {
 	provider  Provider
-	timeout   time.Duration
+	timeout   int // minutes
 	contexts  map[string]string // clientID → accumulated project context
 	mu        sync.RWMutex
 }
@@ -42,7 +43,7 @@ var (
 func NewAssistantInstance(provider Provider, _ int) *Assistant {
 	return &Assistant{
 		provider: provider,
-		timeout:  defaultTimeout,
+		timeout:  defaultTimeoutMinutes,
 		contexts: make(map[string]string),
 	}
 }
@@ -54,7 +55,7 @@ func GetAIAssistant(provider Provider, _ int) *Assistant {
 	if instance == nil {
 		instance = &Assistant{
 			provider: provider,
-			timeout:  defaultTimeout,
+			timeout:  defaultTimeoutMinutes,
 			contexts: make(map[string]string),
 		}
 	}
@@ -77,37 +78,30 @@ func (a *Assistant) getContext(clientID string) string {
 	return ""
 }
 
-// extractKeyInfo asks the AI to distill new key information from a response
-// into 1-3 concise sentences that can be appended to the running context.
-// This is much lighter than bulk compression — it only needs to parse the
-// latest response, not re-process all past history.
-func (a *Assistant) extractKeyInfo(ctx context.Context, prompt, response string) string {
-	extractionPrompt := fmt.Sprintf(
-		`À partir de l'échange suivant, extrais UNIQUEMENT les informations factuelles clés (concepts, décisions, résultats) en 1 à 3 phrases maximum.
+// parseContextUpdate extracts the text between <CONTEXT_UPDATE> and </CONTEXT_UPDATE>
+// from the AI's response. If no such block is found, falls back to the first 150
+// characters of the response.
+func parseContextUpdate(response string) string {
+	startTag := "<CONTEXT_UPDATE>"
+	endTag := "</CONTEXT_UPDATE>"
 
-Question: %s
-Réponse: %s
+	startIdx := strings.Index(response, startTag)
+	if startIdx == -1 {
+		// No CONTEXT_UPDATE block — use fallback
+		return truncateText(response, 150)
+	}
+	startIdx += len(startTag)
 
-Ne fais aucune introduction. Renvoie uniquement les informations clés extraites.`,
-		truncateText(prompt, 800),
-		truncateText(response, 2000),
-	)
-
-	a.mu.RLock()
-	prov := a.provider
-	a.mu.RUnlock()
-
-	extractionCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-
-	summary, err := prov.Generate(extractionCtx, extractionPrompt)
-	if err != nil {
-		log.Printf("Context extraction failed: %v — using raw response snippet", err)
-		// Fallback: just take the first 200 chars of the response
-		return truncateText(response, 200)
+	endIdx := strings.Index(response[startIdx:], endTag)
+	if endIdx == -1 {
+		return truncateText(response, 150)
 	}
 
-	return strings.TrimSpace(summary)
+	content := strings.TrimSpace(response[startIdx : startIdx+endIdx])
+	if content == "" {
+		return truncateText(response, 150)
+	}
+	return content
 }
 
 // updateContext appends new key information to the running context for a client.
@@ -141,7 +135,7 @@ func (a *Assistant) formatContext(clientID string) string {
 func (a *Assistant) SetTimeout(d time.Duration) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	a.timeout = d
+	a.timeout = int(d.Minutes())
 }
 
 // ClearMemory clears the accumulated context for a client.
@@ -162,7 +156,7 @@ func (a *Assistant) Ask(ctx context.Context, prompt string, clientID string, use
 
 	a.mu.RLock()
 	prov := a.provider
-	timeout := a.timeout
+	timeoutMinutes := a.timeout
 	a.mu.RUnlock()
 
 	// Truncate prompt for logging to avoid leaking content
@@ -182,7 +176,7 @@ func (a *Assistant) Ask(ctx context.Context, prompt string, clientID string, use
 	}
 
 	// Apply deadline to prevent indefinite hangs
-	reqCtx, cancel := context.WithTimeout(ctx, timeout)
+	reqCtx, cancel := context.WithTimeout(ctx, time.Duration(timeoutMinutes)*time.Minute)
 	defer cancel()
 
 	response, err := prov.Generate(reqCtx, fullPrompt)
@@ -196,9 +190,9 @@ func (a *Assistant) Ask(ctx context.Context, prompt string, clientID string, use
 	}
 
 	if useMemory {
-		// Incrementally extract key info from this exchange and append to context.
-		// This is O(1) per call — no bulk compression, no threshold, no loss.
-		extraction := a.extractKeyInfo(ctx, prompt, response)
+		// Parse the <CONTEXT_UPDATE> block from the response to incrementally
+		// update the running context. No extra AI call needed.
+		extraction := parseContextUpdate(response)
 		if extraction != "" {
 			a.updateContext(clientID, extraction)
 			log.Printf("[%s] Context updated (+%d chars, total: %d chars)",

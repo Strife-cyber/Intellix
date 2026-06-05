@@ -59,7 +59,13 @@ Structure attendue pour chaque mot-clé :
 - [Exemple 1 avec explication]
 - [Exemple 2 avec explication]
 
-**Applications en ingénierie :** [Comment ce concept est utilisé dans le domaine]`
+**Applications en ingénierie :** [Comment ce concept est utilisé dans le domaine]
+
+À la fin de ta réponse, ajoute un bloc <CONTEXT_UPDATE> contenant les informations clés à retenir pour la suite, en 1 à 3 phrases. Par exemple :
+
+<CONTEXT_UPDATE>
+L'étudiant a étudié le concept X qui se base sur Y. Les résultats montrent Z.
+</CONTEXT_UPDATE>`
 
 	log.Printf("Requesting definitions for %d keywords in one batch...\n", len(keywords))
 
@@ -98,7 +104,13 @@ func (r *Realisation) StudyTopic(ctx context.Context, clientID, topic string) st
 - Utilise des notations mathématiques lorsque c'est approprié (complexité, formules, etc.).
 - Conclus par une synthèse des points clés à retenir.
 
-Sujet à étudier : ` + topic
+Sujet à étudier : ` + topic + `
+
+À la fin de ta réponse, ajoute un bloc <CONTEXT_UPDATE> contenant les informations clés à retenir pour la suite, en 1 à 3 phrases. Par exemple :
+
+<CONTEXT_UPDATE>
+L'étudiant a étudié le concept X qui se base sur Y. Les résultats montrent Z.
+</CONTEXT_UPDATE>`
 
 	log.Printf("Generating study for topic: %s...\n", topic)
 

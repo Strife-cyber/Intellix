@@ -54,7 +54,13 @@ Structure attendue :
 
 ### Perspectives
 
-[Paragraphe de clôture sur les applications pratiques et l'importance des concepts étudiés]`
+[Paragraphe de clôture sur les applications pratiques et l'importance des concepts étudiés]
+
+À la fin de ta réponse, ajoute un bloc <CONTEXT_UPDATE> contenant les informations clés à retenir pour la suite, en 1 à 3 phrases. Par exemple :
+
+<CONTEXT_UPDATE>
+L'étudiant a étudié le concept X qui se base sur Y. Les résultats montrent Z.
+</CONTEXT_UPDATE>`
 
 	data, err := GenerateMarkdown(
 		ctx, c.assistant, "conclusion", "main_conclusion_md", prompt, clientID, true,
@@ -114,7 +120,13 @@ Structure attendue :
   - **Statut :** Atteint / Partiellement atteint / Non atteint
   - **Preuve :** [Preuve concrète...]
 
-**Conclusion :** [Phrase finale sur l'atteinte globale des objectifs]`
+**Conclusion :** [Phrase finale sur l'atteinte globale des objectifs]
+
+À la fin de ta réponse, ajoute un bloc <CONTEXT_UPDATE> contenant les informations clés à retenir pour la suite, en 1 à 3 phrases. Par exemple :
+
+<CONTEXT_UPDATE>
+L'étudiant a étudié le concept X qui se base sur Y. Les résultats montrent Z.
+</CONTEXT_UPDATE>`
 
 	data, err := GenerateMarkdown(
 		ctx, c.assistant, "conclusion", "objectifs_review_md", prompt, clientID, true,

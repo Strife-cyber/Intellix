@@ -25,6 +25,15 @@ type Info struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 }
 
+// builtinTemplateDisplayNames maps template directory IDs to human-readable names.
+var builtinTemplateDisplayNames = map[string]string{
+	"default": "Classic",
+	"modern":  "Modern",
+	"elegant": "Elegant",
+	"compact": "Compact",
+	"academic": "Academic",
+}
+
 type Registry struct {
 	defaultDir string
 	customDir  string
@@ -41,10 +50,23 @@ func NewRegistry(defaultDir, customDir string) (*Registry, error) {
 	return &Registry{defaultDir: absDefault, customDir: customDir}, nil
 }
 
+// Resolve returns the directory path for a template ID.
+// It checks built-in templates (subdirectories of defaultDir) first,
+// then falls back to custom uploaded templates.
 func (r *Registry) Resolve(templateID string) (string, error) {
 	if templateID == "" || templateID == DefaultTemplateID {
 		return r.defaultDir, nil
 	}
+
+	// Check for built-in template subdirectory (inside defaultDir)
+	builtinDir := filepath.Join(r.defaultDir, templateID)
+	if info, err := os.Stat(builtinDir); err == nil && info.IsDir() {
+		if _, err := os.Stat(filepath.Join(builtinDir, "main.tex")); err == nil {
+			return builtinDir, nil
+		}
+	}
+
+	// Fall back to custom uploaded template
 	dir := filepath.Join(r.customDir, templateID)
 	info, err := os.Stat(dir)
 	if err != nil || !info.IsDir() {
@@ -53,13 +75,56 @@ func (r *Registry) Resolve(templateID string) (string, error) {
 	return dir, nil
 }
 
-func (r *Registry) List() ([]Info, error) {
-	out := []Info{{
-		ID:      DefaultTemplateID,
-		Name:    "Default CER template",
-		Builtin: true,
-	}}
+// scanBuiltinTemplates scans the default template directory for subdirectories
+// that contain a main.tex file, treating each as a built-in template variant.
+func (r *Registry) scanBuiltinTemplates() []Info {
+	var out []Info
 
+	// Always include the root default template
+	out = append(out, Info{
+		ID:      DefaultTemplateID,
+		Name:    displayName(DefaultTemplateID),
+		Builtin: true,
+	})
+
+	// Scan for built-in subdirectory templates
+	entries, err := os.ReadDir(r.defaultDir)
+	if err != nil {
+		return out
+	}
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		// Skip hidden directories
+		if strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
+		mainPath := filepath.Join(r.defaultDir, e.Name(), "main.tex")
+		if _, err := os.Stat(mainPath); err == nil {
+			out = append(out, Info{
+				ID:      e.Name(),
+				Name:    displayName(e.Name()),
+				Builtin: true,
+			})
+		}
+	}
+	return out
+}
+
+func displayName(id string) string {
+	if name, ok := builtinTemplateDisplayNames[id]; ok {
+		return name
+	}
+	// Title-case the ID as fallback
+	return strings.Title(strings.ReplaceAll(id, "_", " "))
+}
+
+func (r *Registry) List() ([]Info, error) {
+	// Start with built-in templates
+	out := r.scanBuiltinTemplates()
+
+	// Add custom templates
 	entries, err := os.ReadDir(r.customDir)
 	if err != nil {
 		return out, err
@@ -92,8 +157,13 @@ func (r *Registry) Get(templateID string) (Info, string, error) {
 	if err != nil {
 		return Info{}, "", err
 	}
-	info := Info{ID: templateID, Name: templateID, Builtin: templateID == DefaultTemplateID}
-	if templateID != DefaultTemplateID {
+	info := Info{
+		ID:      templateID,
+		Name:    displayName(templateID),
+		Builtin: templateID == DefaultTemplateID || r.isBuiltinSubdir(templateID),
+	}
+
+	if !info.Builtin {
 		metaPath := filepath.Join(dir, "meta.json")
 		if data, err := os.ReadFile(metaPath); err == nil {
 			var meta struct {
@@ -109,6 +179,20 @@ func (r *Registry) Get(templateID string) (Info, string, error) {
 		}
 	}
 	return info, dir, nil
+}
+
+// isBuiltinSubdir checks if a template ID is a built-in subdirectory of defaultDir.
+func (r *Registry) isBuiltinSubdir(templateID string) bool {
+	if templateID == DefaultTemplateID {
+		return false
+	}
+	dir := filepath.Join(r.defaultDir, templateID)
+	if info, err := os.Stat(dir); err == nil && info.IsDir() {
+		if _, err := os.Stat(filepath.Join(dir, "main.tex")); err == nil {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *Registry) Validate(templateID string) (core.TemplateValidationResult, error) {
@@ -148,8 +232,8 @@ func (r *Registry) SaveFromDir(srcDir, name string) (Info, error) {
 }
 
 func (r *Registry) Delete(templateID string) error {
-	if templateID == DefaultTemplateID {
-		return errors.New("cannot delete built-in default template")
+	if templateID == DefaultTemplateID || r.isBuiltinSubdir(templateID) {
+		return errors.New("cannot delete built-in template")
 	}
 	dir := filepath.Join(r.customDir, templateID)
 	if _, err := os.Stat(dir); err != nil {

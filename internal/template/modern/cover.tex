@@ -1,0 +1,80 @@
+% Modern cover: full-width color block at top, white content area below
+\begin{titlepage}
+\newgeometry{margin=0cm}
+\thispagestyle{empty}
+
+\begin{tikzpicture}[remember picture, overlay]
+    % Top color block — full width, ~40% of page height
+    \fill[themeDark]
+        (current page.north west) rectangle
+        ($(current page.north west) + (\paperwidth, -0.42\paperheight)$);
+
+    % Accent stripe
+    \fill[themePrimary]
+        ($(current page.north west) + (0, -0.42\paperheight)$) --
+        ($(current page.north west) + (\paperwidth, -0.42\paperheight)$) --
+        ($(current page.north west) + (\paperwidth, -0.44\paperheight)$) --
+        ($(current page.north west) + (0, -0.44\paperheight)$) -- cycle;
+
+    % Bottom accent bar
+    \fill[themePrimary!15]
+        (current page.south west) rectangle
+        ($(current page.south west) + (\paperwidth, 1.5cm)$);
+
+    % Logo — white circle top left
+    \coordinate (logoCenter) at ($(current page.north west) + (2.5cm, -1.8cm)$);
+    \begin{scope}
+        \fill[white] (logoCenter) circle (0.7cm);
+        \clip (logoCenter) circle (0.7cm);
+        \node at (logoCenter) {\includegraphics[width=1.2cm]{\docLogoPath}};
+    \end{scope}
+    \node[anchor=west, white, font=\bfseries\Large] at ($(logoCenter) + (0.9cm, 0)$) {\docBrandLabel};
+
+    % Title in the color block
+    \node[anchor=north west, text width=0.85\paperwidth, align=left,
+          font=\fontsize{36}{44}\bfseries\color{white}, inner sep=0pt]
+        at ($(current page.north west) + (2.5cm, -7cm)$)
+        {\docTitle};
+
+    \node[anchor=north west, text width=0.85\paperwidth, align=left,
+          font=\fontsize{24}{30}\bfseries\color{themeAccent!80!white}, inner sep=0pt]
+        at ([yshift=-0.8cm]current page.north west |- 0,-9cm)
+        {Version \docNumber};
+
+    % Subtitle in white area
+    \node[anchor=north west, text width=0.85\paperwidth, align=left,
+          font=\fontsize{22}{28}\bfseries\color{themeDark}, inner sep=0pt]
+        at ($(current page.north west) + (2.5cm, -0.48\paperheight)$)
+        {\docSubtitle};
+
+    \draw[themePrimary, thick]
+        ([yshift=-0.3cm]current page.north west |- 0,-0.48\paperheight-2.8cm)
+        -- ++(6cm, 0);
+
+    % Abstract
+    \node[anchor=north west, text width=0.85\paperwidth, align=left,
+          font=\color{textGray}\small, inner sep=0pt]
+        at ($(current page.north west) + (2.5cm, -0.48\paperheight-3.5cm)$)
+        {\raggedright\docAbstract};
+
+    % Info columns
+    \node[anchor=north west, text width=0.25\paperwidth, font=\small, inner sep=0pt]
+        at ($(current page.north west) + (2.5cm, -0.48\paperheight-6cm)$)
+        {\textbf{\color{themeDark}Auteur}\\[2pt]\color{textGray}\docAuthor};
+
+    \node[anchor=north west, text width=0.25\paperwidth, font=\small, inner sep=0pt]
+        at ($(current page.north west) + (7.5cm, -0.48\paperheight-6cm)$)
+        {\textbf{\color{themeDark}Pilote}\\[2pt]\color{textGray}\docPilot};
+
+    \node[anchor=north west, text width=0.25\paperwidth, font=\small, inner sep=0pt]
+        at ($(current page.north west) + (12.5cm, -0.48\paperheight-6cm)$)
+        {\textbf{\color{themeDark}Date}\\[2pt]\color{textGray}\docDate};
+
+    % Footer
+    \node[anchor=south west, font=\footnotesize\color{themeMuted}]
+        at ($(current page.south west) + (2.5cm, 0.5cm)$)
+        {\textcopyright{} \the\year{} \docCopyrightOwner};
+\end{tikzpicture}
+
+\end{titlepage}
+\restoregeometry

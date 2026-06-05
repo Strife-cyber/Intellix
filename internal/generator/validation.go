@@ -62,7 +62,13 @@ Structure attendue :
 - Preuve 3 : [Description de la preuve, si applicable]
 
 ### Analyse et recommandations
-[Analyse critique et suggestions d'amélioration]`, hypothesisNumber, hypothesisText, hypothesisNumber, hypothesisText)
+[Analyse critique et suggestions d'amélioration]
+
+À la fin de ta réponse, ajoute un bloc <CONTEXT_UPDATE> contenant les informations clés à retenir pour la suite, en 1 à 3 phrases. Par exemple :
+
+<CONTEXT_UPDATE>
+L'étudiant a étudié le concept X qui se base sur Y. Les résultats montrent Z.
+</CONTEXT_UPDATE>`, hypothesisNumber, hypothesisText, hypothesisNumber, hypothesisText)
 }
 
 // Validate processes a single hypothesis and returns Markdown.

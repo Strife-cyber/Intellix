@@ -1,0 +1,81 @@
+% Compact cover: sidebar with info, title on the right
+\begin{titlepage}
+\newgeometry{margin=0cm}
+\thispagestyle{empty}
+
+\begin{tikzpicture}[remember picture, overlay]
+    % Left sidebar — dark, full height
+    \fill[themeDark]
+        (current page.north west) rectangle
+        ($(current page.north west) + (0.3\paperwidth, -\paperheight)$);
+
+    % Diagonal accent
+    \fill[themePrimary]
+        ($(current page.north west) + (0.3\paperwidth, 0)$) --
+        ($(current page.north west) + (0.33\paperwidth, 0)$) --
+        ($(current page.south west) + (0.33\paperwidth, 0)$) --
+        ($(current page.south west) + (0.3\paperwidth, 0)$) -- cycle;
+
+    % Logo in sidebar
+    \coordinate (logoCenter) at ($(current page.north west) + (1.6cm, -2cm)$);
+    \begin{scope}
+        \fill[white] (logoCenter) circle (0.5cm);
+        \clip (logoCenter) circle (0.5cm);
+        \node at (logoCenter) {\includegraphics[width=0.85cm]{\docLogoPath}};
+    \end{scope}
+    \node[anchor=west, white, font=\bfseries\small] at ($(logoCenter) + (0.7cm, 0)$) {\docBrandLabel};
+
+    % Sidebar info
+    \node[anchor=north west, text width=4.2cm, white!80, font=\tiny\bfseries, inner sep=0pt]
+        at ($(current page.north west) + (0.6cm, -5cm)$)
+        {INFORMATIONS};
+
+    \node[anchor=north west, text width=4.2cm, font=\footnotesize, inner sep=0pt]
+        at ($(current page.north west) + (0.6cm, -6cm)$)
+        {\textbf{\color{white!90}AUTEUR}\\[2pt]\color{white}\docAuthor};
+
+    \node[anchor=north west, text width=4.2cm, font=\footnotesize, inner sep=0pt]
+        at ($(current page.north west) + (0.6cm, -8.5cm)$)
+        {\textbf{\color{white!90}PILOTE}\\[2pt]\color{white}\docPilot};
+
+    \node[anchor=north west, text width=4.2cm, font=\footnotesize, inner sep=0pt]
+        at ($(current page.north west) + (0.6cm, -11cm)$)
+        {\textbf{\color{white!90}PROMOTION}\\[2pt]\color{white}\docPromotion};
+
+    \node[anchor=north west, text width=4.2cm, font=\footnotesize, inner sep=0pt]
+        at ($(current page.north west) + (0.6cm, -13.5cm)$)
+        {\textbf{\color{white!90}DATE}\\[2pt]\color{white}\docDate};
+
+    % Right side — title area
+    \node[anchor=north west, text width=0.6\paperwidth, align=left,
+          font=\fontsize{32}{38}\bfseries\color{themeDark}, inner sep=0pt]
+        at ($(current page.north west) + (0.36\paperwidth, -5cm)$)
+        {\docTitle};
+
+    \node[anchor=north west, text width=0.6\paperwidth, align=left,
+          font=\fontsize{16}{20}\bfseries\color{themePrimary}, inner sep=0pt]
+        at ([yshift=-0.8cm]current page.north west |- 0,-10.5cm)
+        {Version \docNumber};
+
+    \draw[themePrimary, thick]
+        ([yshift=-0.3cm]current page.north west |- 0,-11.5cm)
+        -- ++(5cm, 0);
+
+    \node[anchor=north west, text width=0.6\paperwidth, align=left,
+          font=\fontsize{18}{24}\bfseries\color{themeDark}, inner sep=0pt]
+        at ([yshift=-0.8cm]current page.north west |- 0,-12cm)
+        {\docSubtitle};
+
+    \node[anchor=north west, text width=0.6\paperwidth, align=left,
+          font=\color{textGray}\footnotesize, inner sep=0pt]
+        at ([yshift=-0.6cm]current page.north west |- 0,-14.5cm)
+        {\raggedright\docAbstract};
+
+    % Footer
+    \node[anchor=south west, font=\footnotesize\color{white!60}]
+        at ($(current page.south west) + (0.6cm, 1cm)$)
+        {\textcopyright{} \the\year{} \docCopyrightOwner};
+\end{tikzpicture}
+
+\end{titlepage}
+\restoregeometry
