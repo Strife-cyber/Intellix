@@ -13,16 +13,16 @@ COPY . .
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /build/micro-cer ./cmd/api
 
 # ---- Runtime stage ----
-FROM alpine:3.21
+FROM debian:bookworm-slim
 
 # Install runtime dependencies: ca-certificates for HTTPS AI providers, pdflatex
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     texlive-latex-base \
     texlive-latex-extra \
     texlive-fonts-recommended \
     texlive-lang-french \
-    && rm -rf /var/cache/apk/*
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
