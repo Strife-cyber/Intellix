@@ -7,20 +7,7 @@ import (
 	"strings"
 
 	"micro-cer/internal/ai"
-	"micro-cer/internal/core"
 )
-
-// --- Structs defining the expected JSON from AI for Study Topics ---
-
-type StudyPoint struct {
-	Concept    string   `json:"concept"`
-	Definition string   `json:"definition"`
-	Examples   []string `json:"examples"`
-}
-
-type StudyTopicData struct {
-	Points []StudyPoint `json:"points"`
-}
 
 // --- The Realisation Class ---
 
@@ -34,123 +21,112 @@ func NewRealisation(assistant *ai.Assistant) *Realisation {
 	}
 }
 
-// GenerateKeywords fetches definitions and returns them as a map.
-func (r *Realisation) GenerateKeywords(ctx context.Context, clientID string, keywords []string) (map[string]string, error) {
+// GenerateKeywords fetches definitions and returns them as a Markdown string.
+func (r *Realisation) GenerateKeywords(ctx context.Context, clientID string, keywords []string) (string, error) {
 	if len(keywords) == 0 {
-		return map[string]string{}, nil
+		return "", nil
 	}
 
 	keywordsStr := strings.Join(keywords, ", ")
 
-	prompt := `You are a technical assistant helping a software engineering student.
-Please provide a concise, technical definition for each of the following keywords:
+	prompt := `Tu es un assistant académique spécialisé en ingénierie et en sciences. Tu rédiges en français.
 
-Keywords: ` + keywordsStr + `
+## Consignes de formatage
+- Rédige UNIQUEMENT en Markdown.
+- Utilise ` + "`##`" + ` pour les titres de section.
+- Utilise ` + "`$...$`" + ` pour les formules mathématiques inline (par exemple $E = mc^2$, $\theta$, $\mathcal{O}(n)$).
+- Utilise ` + "`$$...$$`" + ` pour les blocs mathématiques.
+- Utilise ` + "`-`" + ` pour les listes à puces.
+- Utilise ` + "`**texte**`" + ` pour mettre en gras les concepts importants.
+- N'utilise PAS de JSON, pas de XML, pas de code block inutile.
 
-You MUST respond ONLY with a valid JSON object where the keys are the exact keywords 
-and the values are their definitions. Do not include markdown formating like %%%json.
+## Consignes rédactionnelles
+- Pour chaque mot-clé, fournis une définition détaillée et technique (3 à 5 phrases).
+- Inclus des exemples concrets d'application dans le domaine du génie logiciel.
+- Explique pourquoi ce concept est important et où il s'applique.
+- Si le mot-clé implique des concepts mathématiques (complexité, algorithmes, etc.), utilise $...$ pour les noter.
+- Sois pédagogique : explique comme si tu t'adressais à un étudiant de niveau bac+2/3.
 
-IMPORTANT - CONSIGNES DE FORMATAGE LATEX :
-- Les définitions des mots-clés et leur contenu NE DOIVENT PAS être juste jetés en vrac ("dumped"). Ils DOIVENT être du LaTeX valide, pertinent et prêt à être affiché.
-- Tout symbole mathématique, lettre grecque (theta, omega, etc.) ou notation de complexité (Big O, small o) DOIT être écrit en code LaTeX valide dans un environnement mathématique (par exemple $\theta$, $\Omega$, $\mathcal{O}(n)$).
-- N'utilise AUCUN caractère Unicode brut pour ces symboles.
-- Échappe adéquatement les caractères spéciaux courants en LaTeX (%, &, _, #, $) dans les définitions pour garantir la compilation.`
+Mots-clés à définir : ` + keywordsStr + `
+
+Structure attendue pour chaque mot-clé :
+
+## Mot-clé : [Nom du mot-clé]
+
+**Définition :** [Définition technique détaillée, 3-5 phrases]
+
+**Exemples concrets :**
+- [Exemple 1 avec explication]
+- [Exemple 2 avec explication]
+
+**Applications en ingénierie :** [Comment ce concept est utilisé dans le domaine]`
 
 	log.Printf("Requesting definitions for %d keywords in one batch...\n", len(keywords))
 
-	cacheKey := fmt.Sprintf("keywords_%s", keywordsStr)
+	cacheKey := fmt.Sprintf("keywords_md_%s", keywordsStr)
 
-	// Use map[string]string as the generic type to parse dynamic JSON keys!
-	data, err := GenerateJSON[map[string]string](
+	data, err := GenerateMarkdown(
 		ctx, r.assistant, "realisation", cacheKey, prompt, clientID, false,
 	)
 
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return *data, nil
+	return data, nil
 }
 
 // StudyTopic fetches detailed analysis for a specific action plan topic.
 func (r *Realisation) StudyTopic(ctx context.Context, clientID, topic string) string {
-	prompt := `Tu es un assistant académique. Rédige une étude sur le sujet suivant : ` + topic + `
+	prompt := `Tu es un assistant académique spécialisé en ingénierie. Tu rédiges en français une étude détaillée sur un sujet technique dans le cadre d'un rapport CER (Compte Rendu d'Étude et de Recherche).
 
-Ta réponse DOIT être un objet JSON strict au format exact suivant:
-{
-    "points": [
-        {
-            "concept": "Nom du concept ou de la sous-partie",
-            "definition": "Une explication détaillée et technique",
-            "examples": ["Exemple concret 1", "Exemple concret 2"]
-        }
-    ]
-}
+## Consignes de formatage
+- Rédige UNIQUEMENT en Markdown.
+- Utilise ` + "`##`" + ` pour le titre principal du sujet.
+- Utilise ` + "`###`" + ` pour les sous-sections (concepts, définitions, exemples).
+- Utilise ` + "`$...$`" + ` pour les formules mathématiques inline.
+- Utilise ` + "`$$...$$`" + ` pour les blocs mathématiques si nécessaire.
+- Utilise ` + "`-`" + ` pour les listes à puces.
+- N'utilise PAS de JSON.
 
-Renvoie SEULEMENT ce JSON, sans formatage Markdown supplémentaire. Ajoute 2 ou 3 concepts maximum.
+## Consignes rédactionnelles
+- Rédige une étude complète et détaillée (minimum 300-500 mots).
+- Structure ton étude en plusieurs sous-parties claires.
+- Explique les concepts fondamentaux liés au sujet.
+- Donne des exemples concrets d'implémentation ou d'application.
+- Si pertinent, inclus des comparaisons entre différentes approches ou technologies.
+- Utilise des notations mathématiques lorsque c'est approprié (complexité, formules, etc.).
+- Conclus par une synthèse des points clés à retenir.
 
-IMPORTANT - CONSIGNES DE FORMATAGE LATEX :
-- Tout symbole mathématique, lettre grecque DOIT être écrit en code LaTeX valide dans un environnement mathématique (par exemple $\theta$, $\mathcal{O}(n)$).
-- N'utilise AUCUN caractère Unicode brut pour ces symboles.
-- Le contenu DOIT être directement compilable en LaTeX (échappe adéquatement les caractères spéciaux comme %, &, _, #, $).`
+Sujet à étudier : ` + topic
 
 	log.Printf("Generating study for topic: %s...\n", topic)
 
-	// True for useMemory so the AI remembers previous topics it studied
-	data, err := GenerateJSON[StudyTopicData](
+	data, err := GenerateMarkdown(
 		ctx, r.assistant, "realisation", topic, prompt, clientID, true,
 	)
 
 	if err != nil {
 		log.Printf("Error generating study topic: %v\n", err)
-		return fmt.Sprintf("\\subsection{%s}\nErreur de parsing AI pour cette partie.\n", topic)
+		return fmt.Sprintf("## %s\n\n*Erreur de génération AI pour cette partie.*\n", topic)
 	}
 
-	var latex strings.Builder
-	for _, p := range data.Points {
-		safeConcept := core.LatexEscape(p.Concept)
-		safeDef := core.LatexEscape(p.Definition)
-
-		latex.WriteString(fmt.Sprintf("\\subsection{%s}\n", safeConcept))
-		latex.WriteString(fmt.Sprintf("\\textbf{Définition :} %s\n\n", safeDef))
-
-		if len(p.Examples) > 0 {
-			latex.WriteString("\\textbf{Exemples :}\n\\begin{itemize}\n")
-			for _, ex := range p.Examples {
-				safeEx := core.LatexEscape(ex)
-				latex.WriteString(fmt.Sprintf("    \\item %s\n", safeEx))
-			}
-			latex.WriteString("\\end{itemize}\n\n")
-		}
-	}
-
-	return strings.TrimSpace(latex.String())
+	return data
 }
 
 // GenerateFullRealisation executes the full pipeline: keywords -> action plan topics
 func (r *Realisation) GenerateFullRealisation(ctx context.Context, clientID string, keywords []string, actionPlan []string) string {
-	var finalLatexBlocks []string
+	var mdParts []string
 
-	// 1. Process and format Keywords
+	// 1. Process keywords
 	if len(keywords) > 0 {
-		finalLatexBlocks = append(finalLatexBlocks, "\\section{Définition des mots-clés}")
-
-		definitions, err := r.GenerateKeywords(ctx, clientID, keywords)
+		kwMD, err := r.GenerateKeywords(ctx, clientID, keywords)
 		if err != nil {
-			// Fallback if parsing fails, dump the error context
-			finalLatexBlocks = append(finalLatexBlocks, "\\begin{verbatim}")
-			finalLatexBlocks = append(finalLatexBlocks, fmt.Sprintf("Erreur AI: %v", err))
-			finalLatexBlocks = append(finalLatexBlocks, "\\end{verbatim}")
+			log.Printf("Keywords generation error: %v\n", err)
+			mdParts = append(mdParts, "## Définition des mots-clés\n\n*Erreur de génération AI.*\n")
 		} else {
-			finalLatexBlocks = append(finalLatexBlocks, "\\begin{itemize}")
-			for kw, df := range definitions {
-				safeKw := core.LatexEscape(kw)
-				safeDf := core.LatexEscape(df)
-				finalLatexBlocks = append(finalLatexBlocks, fmt.Sprintf("    \\item \\textbf{%s} : %s", safeKw, safeDf))
-			}
-			finalLatexBlocks = append(finalLatexBlocks, "\\end{itemize}")
+			mdParts = append(mdParts, kwMD)
 		}
-		finalLatexBlocks = append(finalLatexBlocks, "\n")
 	}
 
 	// 2. Process Action Plan Topics
@@ -172,12 +148,10 @@ func (r *Realisation) GenerateFullRealisation(ctx context.Context, clientID stri
 		}
 
 		log.Printf("Processing action plan topic %d/%d: %s...\n", i+1, len(actionPlan), topic)
-		finalLatexBlocks = append(finalLatexBlocks, fmt.Sprintf("\\section{%s}", topic))
-
 		topicContent := r.StudyTopic(ctx, clientID, topic)
-		finalLatexBlocks = append(finalLatexBlocks, topicContent)
-		finalLatexBlocks = append(finalLatexBlocks, "\n")
+		mdParts = append(mdParts, topicContent)
 	}
 
-	return strings.Join(finalLatexBlocks, "\n")
+	fullMD := strings.Join(mdParts, "\n\n")
+	return MustMarkdownToLatex(fullMD)
 }

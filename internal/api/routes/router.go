@@ -43,7 +43,7 @@ func GetAppRouter() *chi.Mux {
 		panic(err)
 	}
 
-	store := jobs.NewStore()
+	store := jobs.NewStore("./data")
 	processor := jobs.DefaultProcessor{Store: store}
 	queueCfg := jobs.QueueConfig{
 		Workers:       2,

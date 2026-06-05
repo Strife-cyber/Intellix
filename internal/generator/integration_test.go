@@ -18,7 +18,7 @@ import (
 	"micro-cer/internal/generator"
 )
 
-// mockProvider returns realistic JSON for each prompt type without calling a real LLM.
+// mockProvider returns realistic Markdown for each prompt type without calling a real LLM.
 type mockProvider struct {
 	model string
 }
@@ -27,23 +27,121 @@ func (m *mockProvider) Generate(_ context.Context, prompt string) (string, error
 	upper := strings.ToUpper(prompt)
 	switch {
 	case strings.Contains(upper, "MOTS CLÉS") || strings.Contains(upper, "MOTS CLES") || (strings.Contains(upper, "KEYWORD") && strings.Contains(upper, "DEFINITION")):
-		return `{"Méthode MDA": "Une approche de modélisation dirigée par les modèles permettant de séparer les préoccupations.", "Go": "Langage compilé et concurrent développé par Google."}`, nil
-	case strings.Contains(upper, "CONCEPT") && strings.Contains(upper, "EXAMPLES"):
-		return `{"points": [{"concept": "Concept clé", "definition": "Explication technique détaillée du concept.", "examples": ["Application concrète numero 1", "Cas d'utilisation numero 2"]}]}`, nil
-	case strings.Contains(upper, "STATUS") && strings.Contains(upper, "CONFIRMÉE"):
-		return `{"status": "CONFIRMÉE", "explanation": "L'hypothèse est validée par les résultats obtenus lors de l'étude.", "proofs": ["Preuve extraite du travail effectué"]}`, nil
-	case strings.Contains(upper, "SUMMARY") && strings.Contains(upper, "KEY_LEARNINGS"):
-		return `{"summary": "Ce travail a permis d'explorer les concepts fondamentaux.", "key_learnings": [{"title": "Apprentissage principal", "explanation": "Compréhension approfondie du sujet."}], "closing": "Ces concepts seront applicables dans de futurs projets."}`, nil
-	case strings.Contains(upper, "OBJECTIVES_STATUS") || strings.Contains(upper, "OBJECTIF"):
-		return `{"objectives_status": [{"objective_text": "Comprendre le modèle MDA", "status": "Atteint", "proof": "Le concept a été étudié en détail."}], "conclusion_sentence": "Tous les objectifs ont été atteints avec succès."}`, nil
-	case strings.Contains(upper, "STRENGTHS") || strings.Contains(upper, "POINTS FORTS"):
-		return `{"strengths": [{"title": "Rigueur méthodologique", "explanation": "Approche structurée tout au long du travail."}], "difficulties": [{"title": "Complexité technique", "explanation": "Certains concepts étaient avancés."}], "learnings": [{"title": "Nouvelles compétences", "explanation": "Maîtrise des outils de modélisation."}], "perspectives": [{"title": "Approfondissement", "explanation": "Continuer l'étude des aspects avancés."}]}`, nil
-	case strings.Contains(upper, "CATEGORIES") && strings.Contains(upper, "RESOURCES"):
-		return `{"categories": [{"name": "Vidéos YouTube", "resources": [{"title": "Tutoriel complet", "link": "https://youtube.com/watch?v=example", "description": "Vidéo explicative détaillée du concept."}]}]}`, nil
+		return `## Mot-clé : Méthode MDA
+
+**Définition :** Une approche de modélisation dirigée par les modèles permettant de séparer les préoccupations à différents niveaux d'abstraction.
+
+**Exemples concrets :**
+- Transformation de modèles PIM en PSM dans le développement piloté par les modèles
+- Utilisation de QVT (Query/View/Transformation) pour les transformations de modèles
+
+**Applications en ingénierie :** Utilisé dans le génie logiciel pour la génération automatique de code et la vérification formelle de modèles.
+
+## Mot-clé : Go
+
+**Définition :** Langage compilé et concurrent développé par Google, conçu pour la simplicité, l'efficacité et la programmation système.
+
+**Exemples concrets :**
+- Développement de microservices avec Gin ou Echo
+- Création d'outils CLI comme Docker et Kubernetes
+
+**Applications en ingénierie :** Large utilisation dans le cloud computing, les API REST et les outils de devops.`, nil
+	case strings.Contains(upper, "CER"):
+		return `## Étude du sujet
+
+### Concepts fondamentaux
+Le concept clé repos sur une architecture en couches permettant une séparation claire des responsabilités.
+
+### Analyse technique
+L'approche utilisée permet de réduire la complexité en décomposant le problème en sous-problèmes plus simples.
+
+### Exemples d'application
+- Cas d'utilisation 1 : Application concrète dans un contexte réel
+- Cas d'utilisation 2 : Mise en œuvre pratique des concepts étudiés
+
+### Synthèse
+Cette étude démontre l'importance d'une approche structurée pour résoudre des problèmes complexes en ingénierie.`, nil
+	case strings.Contains(upper, "HYPOTHÈSE") || strings.Contains(upper, "HYPOTHESE"):
+		return `## Hypothèse 1 : Test hypothesis
+
+**Statut :** CONFIRMÉE
+
+### Justification détaillée
+L'hypothèse est validée par les résultats obtenus lors de l'étude. Les concepts théoriques ont été appliqués avec succès dans le contexte du projet.
+
+### Preuves à l'appui
+- Preuve 1 : Résultat concret extrait du travail réalisé
+- Preuve 2 : Analyse des données montrant la cohérence avec l'hypothèse
+
+### Analyse et recommandations
+L'approche utilisée s'est révélée pertinente. Il serait intéressant d'explorer des variantes pour généraliser ces résultats.`, nil
+	case strings.Contains(upper, "CONCLUSION"):
+		return `## Conclusion
+
+Ce travail a permis d'explorer les concepts fondamentaux et de les appliquer à un cas concret.
+
+### Principaux enseignements
+
+- **Apprentissage principal** : Compréhension approfondie du sujet et de ses implications pratiques.
+- **Compétences développées** : Maîtrise des outils et méthodes liés au domaine d'étude.
+
+### Perspectives
+
+Ces concepts seront applicables dans de futurs projets professionnels et académiques.`, nil
+	case strings.Contains(upper, "OBJECTIF") || strings.Contains(upper, "OBJECTIVES"):
+		return `## Retour sur les objectifs
+
+- **Objectif :** Comprendre le modèle MDA
+  - **Statut :** Atteint
+  - **Preuve :** Le concept a été étudié en détail et appliqué dans un cas pratique
+
+- **Objectif :** Maîtriser les outils associés
+  - **Statut :** Atteint
+  - **Preuve :** Implémentation réussie des transformations de modèles
+
+**Conclusion :** Tous les objectifs ont été atteints avec succès.`, nil
+	case strings.Contains(upper, "BILAN") || strings.Contains(upper, "POINTS FORTS"):
+		return `## BILAN DU TRAVAIL
+
+### Points forts
+- **Rigueur méthodologique** : Approche structurée tout au long du travail, respect des normes académiques.
+- **Analyse approfondie** : Étude détaillée des concepts avec des exemples concrets.
+
+### Difficultés rencontrées
+- **Complexité technique** : Certains concepts avancés ont nécessité un travail d'approfondissement supplémentaire.
+- **Gestion du temps** : La phase d'implémentation a été plus longue que prévu.
+
+### Apprentissages
+- **Nouvelles compétences** : Maîtrise des outils de modélisation et des langages associés.
+- **Méthodologie de travail** : Amélioration de la capacité à structurer un projet de recherche.
+
+### Perspectives d'amélioration
+- **Approfondissement** : Continuer l'étude des aspects avancés du sujet.
+- **Automatisation** : Explorer les possibilités d'automatisation des processus identifiés.`, nil
+	case strings.Contains(upper, "RÉFÉRENCES") || strings.Contains(upper, "REFERENCES"):
+		return `## RÉFÉRENCES ET POUR ALLER PLUS LOIN
+
+### Documentation officielle
+- [Documentation Go](https://go.dev/doc/) : Documentation officielle du langage Go
+- [MDA Guide](https://www.omg.org/mda/) : Guide officiel de l'OMG sur l'architecture MDA
+
+### Livres de référence
+- **The Go Programming Language** (Donovan & Kernighan, Addison-Wesley) : Référence complète sur Go
+- **Model-Driven Architecture** (Frankel, OMG Press) : Ouvrage de référence sur MDA
+
+### Ressources en ligne
+- [Go by Example](https://gobyexample.com/) : Tutoriel pratique pour apprendre Go
+- [MDA Explained](https://www.omg.org/mda/mda_files/MDA_Explained.pdf) : Article détaillé sur MDA
+
+### Vidéos et conférences
+- [GopherCon Talks](https://www.youtube.com/c/GopherAcademy) : Conférences annuelles sur Go
+- [Model-Driven Engineering](https://www.youtube.com/watch?v=example) : Introduction au MDE`, nil
 	case strings.Contains(upper, "COMPRESS"):
 		return `Étudiant a travaillé sur le modèle MDA et ses applications en génie logiciel. Les concepts clés incluent la séparation des préoccupations et l'abstraction.`, nil
 	default:
-		return `{"status": "ok"}`, nil
+		return `## Section générée
+
+Contenu par défaut pour la section demandée.`, nil
 	}
 }
 
@@ -96,6 +194,22 @@ func TestFullCERGeneration(t *testing.T) {
 		t.Error("Reference is nil")
 	}
 
+	// Verify that fields contain valid LaTeX (start with section or subsection commands)
+	for _, phase := range []struct{ name, content string }{
+		{"realisation.tex", cer.Realisation},
+		{"validation.tex", cer.Validation},
+		{"conclusion.tex", cer.Conclusion},
+		{"bilan.tex", cer.Bilan},
+	} {
+		if len(phase.content) < 50 {
+			t.Errorf("%s suspiciously short (%d chars)", phase.name, len(phase.content))
+		}
+		// Content should contain LaTeX sectioning commands (from markdown conversion)
+		if !strings.Contains(phase.content, `\section`) && !strings.Contains(phase.content, `\subsection`) {
+			t.Logf("%s may not have proper sectioning: %s", phase.name, phase.content[:min(100, len(phase.content))])
+		}
+	}
+
 	// Render to LaTeX
 	templateDir := filepath.Join("..", "template")
 	renderer, err := core.NewLatexRenderer(templateDir)
@@ -140,18 +254,6 @@ func TestFullCERGeneration(t *testing.T) {
 		}
 	}
 
-	// Verify generated content has meaningful length
-	for _, phase := range []struct{ name, content string }{
-		{"realisation.tex", cer.Realisation},
-		{"validation.tex", cer.Validation},
-		{"conclusion.tex", cer.Conclusion},
-		{"bilan.tex", cer.Bilan},
-	} {
-		if len(phase.content) < 100 {
-			t.Errorf("%s suspiciously short (%d chars)", phase.name, len(phase.content))
-		}
-	}
-
 	// Try to compile PDF — non-fatal
 	pdfPath := tryCompilePDF(t, outputDir)
 	if pdfPath != "" {
@@ -170,6 +272,13 @@ func TestFullCERGeneration(t *testing.T) {
 	}
 
 	t.Logf("Full CER output in: %s", outputDir)
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // tryOllamaProvider checks if Ollama is running with llama3.1 and returns a provider if so.

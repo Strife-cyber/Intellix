@@ -6,30 +6,7 @@ import (
 	"strings"
 
 	"micro-cer/internal/ai"
-	"micro-cer/internal/core"
 )
-
-type KeyLearning struct {
-	Title       string `json:"title"`
-	Explanation string `json:"explanation"`
-}
-
-type ConclusionData struct {
-	Summary      string        `json:"summary"`
-	KeyLearnings []KeyLearning `json:"key_learnings"`
-	Closing      string        `json:"closing"`
-}
-
-type ObjectiveStatus struct {
-	ObjectiveText string `json:"objective_text"`
-	Status        string `json:"status"`
-	Proof         string `json:"proof"`
-}
-
-type RetourObjectifsData struct {
-	ObjectivesStatus   []ObjectiveStatus `json:"objectives_status"`
-	ConclusionSentence string            `json:"conclusion_sentence"`
-}
 
 // --- The Conclusion Class ---
 
@@ -41,110 +18,123 @@ func NewConclusion(assistant *ai.Assistant) *Conclusion {
 	return &Conclusion{assistant: assistant}
 }
 
+// GenerateConclusion generates the conclusion section in Markdown.
 func (c *Conclusion) GenerateConclusion(ctx context.Context, clientID string) string {
-	prompt := `Tu es un assistant académique. Rédige la 'Conclusion' d'un rapport Prosit.
+	prompt := `Tu es un assistant académique spécialisé en ingénierie. Tu rédiges la section **Conclusion** d'un rapport CER (Compte Rendu d'Étude et de Recherche) pour un étudiant en école d'ingénieurs.
 
-Ta réponse DOIT être un objet JSON strict au format exact suivant:
-{
-    "summary": "Un paragraphe introductif résumant la portée de l'étude",
-    "key_learnings": [
-        {"title": "Enseignement clé 1", "explanation": "Brève explication"}
-    ],
-    "closing": "Un paragraphe de clôture sur l'application pratique des concepts étudiés"
-}
+## Consignes de formatage
+- Rédige UNIQUEMENT en Markdown.
+- Utilise ` + "`##`" + ` pour le titre.
+- Utilise ` + "`###`" + ` pour les sous-sections.
+- Utilise ` + "`$...$`" + ` pour les formules mathématiques.
+- Utilise ` + "`-`" + ` pour les listes.
+- N'utilise PAS de JSON.
 
-Renvoie SEULEMENT ce JSON. Max 6 enseignements.
+## Consignes rédactionnelles
+Rédige une conclusion complète et structurée comprenant :
 
-IMPORTANT - CONSIGNES DE FORMATAGE LATEX :
-- Tout symbole mathématique ou lettre grecque DOIT être écrit en code LaTeX valide dans un environnement mathématique (par exemple $\theta$, $\mathcal{O}(n)$).
-- N'utilise AUCUN caractère Unicode brut pour ces symboles.
-- Le contenu DOIT être compilable en LaTeX (échappe %, &, _, #, $).`
+1. **Résumé de l'étude** (2-3 phrases) : Synthétise la portée et les objectifs du travail réalisé.
+2. **Principaux enseignements** (4-6 points) : Détaille les apprentissages clés sous forme de liste structurée. Pour chaque enseignement :
+   - **Titre** de l'enseignement
+   - **Explication** détaillée de ce qui a été appris et pourquoi c'est important
+3. **Clôture** (2-3 phrases) : Ouvre sur les perspectives d'application pratique des concepts étudiés et leur importance dans le contexte professionnel.
 
-	// Using the generic base engine
-	data, err := GenerateJSON[ConclusionData](
-		ctx, c.assistant, "conclusion", "main_summary", prompt, clientID, true,
+Structure attendue :
+
+## Conclusion
+
+[Résumé de l'étude - 2 à 3 phrases]
+
+### Principaux enseignements
+
+- **Titre enseignement 1** : Explication détaillée...
+- **Titre enseignement 2** : Explication détaillée...
+- **Titre enseignement 3** : Explication détaillée...
+- **Titre enseignement 4** : Explication détaillée...
+
+### Perspectives
+
+[Paragraphe de clôture sur les applications pratiques et l'importance des concepts étudiés]`
+
+	data, err := GenerateMarkdown(
+		ctx, c.assistant, "conclusion", "main_conclusion_md", prompt, clientID, true,
 	)
 
 	if err != nil {
 		fmt.Printf("Error generating conclusion: %v\n", err)
-		return "\\subsection{Conclusion}\nErreur de génération AI.\n"
+		return "## Conclusion\n\n*Erreur de génération AI.*\n"
 	}
 
-	// Format LaTeX
-	var sb strings.Builder
-	sb.WriteString("\\subsection{Conclusion}\n")
-	sb.WriteString(fmt.Sprintf("%s\n\n", data.Summary))
-	sb.WriteString("Les principaux enseignements tirés de cette étude sont :\n\\begin{itemize}\n")
-
-	for _, item := range data.KeyLearnings {
-		safeTitle := core.LatexEscape(item.Title)
-		safeExp := core.LatexEscape(item.Explanation)
-		sb.WriteString(fmt.Sprintf("    \\item \\textbf{%s} : %s\n", safeTitle, safeExp))
-	}
-
-	sb.WriteString("\\end{itemize}\n\n")
-	sb.WriteString(fmt.Sprintf("%s\n", data.Closing))
-
-	return sb.String()
+	return data
 }
 
+// GenerateRetourObjectifs generates the objectives review section in Markdown.
 func (c *Conclusion) GenerateRetourObjectifs(ctx context.Context, clientID string, objectifs []string) string {
 	if len(objectifs) == 0 {
-		return "% Aucun objectif fourni."
+		return "## Retour sur les objectifs\n\n*Aucun objectif fourni.*\n"
 	}
 
 	var sb strings.Builder
 	for i, obj := range objectifs {
-		sb.WriteString(fmt.Sprintf("Objectif %d : %s\n", i+1, obj))
+		sb.WriteString(fmt.Sprintf("- Objectif %d : %s\n", i+1, obj))
 	}
 	objectifsStr := sb.String()
 
-	prompt := `Tu es un assistant académique. Rédige le 'Retour sur les objectifs'.
+	prompt := `Tu es un assistant académique spécialisé en ingénierie. Tu rédiges la section **Retour sur les objectifs** d'un rapport CER.
+
+## Consignes de formatage
+- Rédige UNIQUEMENT en Markdown.
+- Utilise ` + "`##`" + ` pour le titre.
+- Utilise ` + "`$...$`" + ` pour les formules mathématiques.
+- N'utilise PAS de JSON.
+
+## Consignes rédactionnelles
+Pour chaque objectif initial, évalue son niveau d'atteinte et fournis une preuve concrète.
 
 Voici la liste des objectifs initiaux :
 ` + objectifsStr + `
 
-Ta réponse DOIT être un objet JSON strict au format exact suivant:
-{
-    "objectives_status": [
-        {"objective_text": "Objectif 1...", "status": "Atteint", "proof": "Preuve spécifique tirée du travail"}
-    ],
-    "conclusion_sentence": "Une phrase finale (ex: Tous les objectifs ont été atteints)."
-}
+Pour chaque objectif, structure ta réponse ainsi :
 
-Renvoie SEULEMENT ce JSON.
+- **Objectif :** [Rappel de l'objectif]
+  - **Statut :** Atteint / Partiellement atteint / Non atteint
+  - **Preuve :** [Description de la preuve montrant comment l'objectif a été atteint, avec des détails concrets]
 
-IMPORTANT - CONSIGNES DE FORMATAGE LATEX :
-- Respecte les mêmes règles de formatage LaTeX que précédemment (échappe les caractères spéciaux, utilise le mode mathématique).`
+Termine par une phrase de conclusion générale sur l'atteinte globale des objectifs.
 
-	data, err := GenerateJSON[RetourObjectifsData](
-		ctx, c.assistant, "conclusion", "objectifs_review", prompt, clientID, true,
+Structure attendue :
+
+## Retour sur les objectifs
+
+- **Objectif :** [Objectif 1]
+  - **Statut :** Atteint / Partiellement atteint / Non atteint
+  - **Preuve :** [Preuve concrète...]
+
+- **Objectif :** [Objectif 2]
+  - **Statut :** Atteint / Partiellement atteint / Non atteint
+  - **Preuve :** [Preuve concrète...]
+
+**Conclusion :** [Phrase finale sur l'atteinte globale des objectifs]`
+
+	data, err := GenerateMarkdown(
+		ctx, c.assistant, "conclusion", "objectifs_review_md", prompt, clientID, true,
 	)
 
 	if err != nil {
 		fmt.Printf("Error generating retour objectifs: %v\n", err)
-		return "\\subsection{Retour sur les objectifs}\nErreur de génération AI.\n"
+		return "## Retour sur les objectifs\n\n*Erreur de génération AI.*\n"
 	}
 
-	// Format LaTeX
-	var latex strings.Builder
-	latex.WriteString("\\subsection{Retour sur les objectifs}\n\n")
-	for _, obj := range data.ObjectivesStatus {
-		latex.WriteString(fmt.Sprintf("\\textbf{Objectif : %s}\n", obj.ObjectiveText))
-		latex.WriteString("\\begin{itemize}\n")
-		latex.WriteString(fmt.Sprintf("    \\item %s : %s\n", obj.Status, obj.Proof))
-		latex.WriteString("\\end{itemize}\n\n")
-	}
-	latex.WriteString(fmt.Sprintf("%s\n", data.ConclusionSentence))
-
-	return latex.String()
+	return data
 }
 
+// GenerateFullSection assembles Conclusion + RetourObjectifs and converts to LaTeX.
 func (c *Conclusion) GenerateFullSection(ctx context.Context, clientID string, objectifs []string) string {
 	fmt.Println("Starting Generation of Final Chapter...")
 
-	conclusionLatex := c.GenerateConclusion(ctx, clientID)
-	retourLatex := c.GenerateRetourObjectifs(ctx, clientID, objectifs)
+	conclusionMD := c.GenerateConclusion(ctx, clientID)
+	retourMD := c.GenerateRetourObjectifs(ctx, clientID, objectifs)
 
-	return fmt.Sprintf("\\section{CONCLUSION ET RETOUR DES OBJECTIFS}\n%s\n\n%s", conclusionLatex, retourLatex)
+	fullMD := fmt.Sprintf("# CONCLUSION ET RETOUR DES OBJECTIFS\n\n%s\n\n%s", conclusionMD, retourMD)
+	return MustMarkdownToLatex(fullMD)
 }

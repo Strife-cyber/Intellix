@@ -92,7 +92,7 @@ func summaryFromJob(job *Job) CERJobSummary {
 	return sum
 }
 
-// ListCERJobsForUser returns completed CER jobs from memory and on-disk outputs.
+// ListCERJobsForUser returns completed CER jobs from the store and on-disk outputs.
 func ListCERJobsForUser(store *Store, workDir, userKey string) ([]CERJobSummary, error) {
 	userKey = strings.TrimSpace(userKey)
 	if userKey == "" {
@@ -102,17 +102,16 @@ func ListCERJobsForUser(store *Store, workDir, userKey string) ([]CERJobSummary,
 	byID := make(map[string]CERJobSummary)
 
 	if store != nil {
-		store.mu.RLock()
-		for _, job := range store.jobs {
-			if job.UserKey != userKey || job.Kind != KindCERGenerate {
-				continue
-			}
+		jobs, err := store.ListByUserKind(userKey, KindCERGenerate)
+		if err != nil {
+			return nil, err
+		}
+		for _, job := range jobs {
 			if job.Status != StatusCompleted {
 				continue
 			}
 			byID[job.ID] = summaryFromJob(job)
 		}
-		store.mu.RUnlock()
 	}
 
 	jobsDir := filepath.Join(workDir, "users", userKey, "jobs")

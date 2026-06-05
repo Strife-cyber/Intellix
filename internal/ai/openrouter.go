@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/sashabaranov/go-openai"
@@ -42,14 +41,6 @@ func (p *OpenRouterProvider) Generate(ctx context.Context, prompt string) (strin
 			{Role: openai.ChatMessageRoleUser, Content: prompt},
 		},
 		Temperature: 0.1,
-	}
-
-	// Detect JSON requirement
-	promptUpper := strings.ToUpper(prompt)
-	if strings.Contains(promptUpper, "JSON") || strings.Contains(promptUpper, "OBJET JSON") {
-		req.ResponseFormat = &openai.ChatCompletionResponseFormat{
-			Type: openai.ChatCompletionResponseFormatTypeJSONObject,
-		}
 	}
 
 	resp, err := p.client.CreateChatCompletion(ctx, req)

@@ -4,30 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 
 	"micro-cer/internal/ai"
-	"micro-cer/internal/core"
 )
-
-// --- Structs defining the expected JSON from AI ---
-
-type BilanItem struct {
-	Title       string `json:"title"`
-	Explanation string `json:"explanation"`
-}
-
-type BilanData struct {
-	Strengths    []BilanItem `json:"strengths"`
-	Difficulties []BilanItem `json:"difficulties"`
-	Learnings    []BilanItem `json:"learnings"`
-	Perspectives []BilanItem `json:"perspectives"`
-}
 
 // --- The Bilan Class ---
 
 type Bilan struct {
-	assistant *ai.Assistant // Assuming ai.Assistant is the correct type in your package
+	assistant *ai.Assistant
 }
 
 func NewBilan(assistant *ai.Assistant) *Bilan {
@@ -36,76 +20,91 @@ func NewBilan(assistant *ai.Assistant) *Bilan {
 	}
 }
 
-// generateLatexSubSection is a helper to keep the string building clean
-func generateLatexSubSection(sb *strings.Builder, title string, items []BilanItem) {
-	if len(items) == 0 {
-		return
-	}
-	sb.WriteString(fmt.Sprintf("\\subsection{%s}\n\\begin{itemize}\n", title))
-	for _, item := range items {
-		// Escape any stray percent signs that might ruin LaTeX compilation
-		safeTitle := core.LatexEscape(item.Title)
-		safeExp := core.LatexEscape(item.Explanation)
-		sb.WriteString(fmt.Sprintf("    \\item \\textbf{%s} : %s\n", safeTitle, safeExp))
-	}
-	sb.WriteString("\\end{itemize}\n\n")
-}
-
+// GenerateFullSection generates the full Bilan section in Markdown and converts to LaTeX.
 func (b *Bilan) GenerateFullSection(ctx context.Context, clientID string, difficulties, perspectives []string) string {
-	// 1. Handle dynamic injection of user-provided difficulties
+	// Build dynamic sections for difficulties and perspectives
 	var diffText string
 	if len(difficulties) > 0 {
-		diffText = "Voici les difficultés spécifiques rencontrées par l'étudiant à adapter en points :\n"
+		diffText = "Voici les difficultés spécifiques rencontrées par l'étudiant à intégrer dans ton analyse :\n"
 		for _, d := range difficulties {
 			diffText += fmt.Sprintf("- %s\n", d)
 		}
 	} else {
-		diffText = "Déduis logiquement 3 difficultés probables et académiques rencontrées lors de l'étude de ce sujet technique."
+		diffText = "Déduis logiquement 3 à 4 difficultés probables et académiques rencontrées lors de l'étude de ce sujet technique. Sois précis et contexte."
 	}
 
-	// 2. Handle dynamic injection of user-provided perspectives
 	var perspText string
 	if len(perspectives) > 0 {
-		perspText = "Voici les perspectives d'amélioration spécifiques à adapter en points :\n"
+		perspText = "Voici les perspectives d'amélioration spécifiques fournies par l'étudiant à intégrer dans ton analyse :\n"
 		for _, p := range perspectives {
 			perspText += fmt.Sprintf("- %s\n", p)
 		}
 	} else {
-		perspText = "Déduis logiquement 3 à 4 perspectives pertinentes pour la suite de ce travail."
+		perspText = "Déduis logiquement 3 à 4 perspectives pertinentes pour la suite de ce travail. Propose des pistes concrètes et réalisables."
 	}
 
-	// 3. Build Prompt
-	prompt := `Tu es un assistant académique. Rédige le 'Bilan du travail' d'un rapport Prosit.
+	prompt := fmt.Sprintf(`Tu es un assistant académique spécialisé en ingénierie. Tu rédiges la section **Bilan du travail** d'un rapport CER (Compte Rendu d'Étude et de Recherche).
 
-` + diffText + `
-` + perspText + `
+## Consignes de formatage
+- Rédige UNIQUEMENT en Markdown.
+- Utilise `+"`##`"+` pour le titre principal.
+- Utilise `+"`###`"+` pour les sous-sections.
+- Utilise `+"`$...$`"+` pour les formules mathématiques.
+- Utilise `+"`-`"+` pour les listes à puces.
+- Mets en `+"`**gras**`"+` les titres de chaque point.
+- N'utilise PAS de JSON.
 
-Ta réponse DOIT être un objet JSON strict au format exact suivant:
-{
-    "strengths": [
-        {"title": "Point fort 1", "explanation": "Explication..."}
-    ],
-    "difficulties": [
-        {"title": "Difficulté 1", "explanation": "Explication..."}
-    ],
-    "learnings": [
-        {"title": "Apprentissage 1", "explanation": "Explication..."}
-    ],
-    "perspectives": [
-        {"title": "Perspective 1", "explanation": "Explication..."}
-    ]
-}
+## Consignes rédactionnelles
+Rédige un bilan complet et structuré avec les sections suivantes :
 
-Renvoie SEULEMENT ce JSON. Chaque tableau doit avoir environ 3 éléments.
+### 1. Points forts
+Détaille 3 à 4 points forts du travail réalisé. Pour chaque point :
+- Explique pourquoi c'est un point fort
+- Montre en quoi cela a contribué à la réussite du projet
 
-IMPORTANT - CONSIGNES DE FORMATAGE LATEX :
-- Tout symbole mathématique, lettre grecque (theta, omega, etc.) ou notation de complexité (Big O, small o) DOIT être écrit en code LaTeX valide dans un environnement mathématique (par exemple $\theta$, $\Omega$, $\mathcal{O}(n)$).
-- N'utilise AUCUN caractère Unicode brut pour ces symboles.
-- Le contenu (valeurs du JSON) DOIT être directement compilable en LaTeX (échappe adéquatement les caractères spéciaux comme %, &, _, #, $).`
+### 2. Difficultés rencontrées
+%s
+
+Pour chaque difficulté :
+- Décris la difficulté de manière précise
+- Explique comment elle a été surmontée (ou pourquoi elle persiste)
+- Tire un apprentissage de cette difficulté
+
+### 3. Apprentissages
+Identifie 3 à 4 apprentissages clés. Pour chaque apprentissage :
+- **Titre** : nom de l'apprentissage
+- **Explication** : ce qui a été appris et comment cela sera réutilisable
+
+### 4. Perspectives d'amélioration
+%s
+
+Pour chaque perspective :
+- **Titre** : nom de la perspective
+- **Explication** : comment cette amélioration pourrait être mise en œuvre
+
+## Structure attendue
+
+## BILAN DU TRAVAIL
+
+### Points forts
+- **Titre point fort 1** : Explication détaillée...
+- **Titre point fort 2** : Explication détaillée...
+
+### Difficultés rencontrées
+- **Titre difficulté 1** : Description et analyse...
+- **Titre difficulté 2** : Description et analyse...
+
+### Apprentissages
+- **Titre apprentissage 1** : Explication...
+- **Titre apprentissage 2** : Explication...
+
+### Perspectives d'amélioration
+- **Titre perspective 1** : Proposition concrète...
+- **Titre perspective 2** : Proposition concrète...`, diffText, perspText)
 
 	log.Println("Generating Chapter 6: Bilan du travail...")
 
-	// 4. Cache Key Generation
+	// Build cache key from inputs
 	safeDiff := diffText
 	if len(safeDiff) > 50 {
 		safeDiff = safeDiff[:50]
@@ -114,11 +113,9 @@ IMPORTANT - CONSIGNES DE FORMATAGE LATEX :
 	if len(safePersp) > 50 {
 		safePersp = safePersp[:50]
 	}
-	cacheKey := fmt.Sprintf("bilan_%s_%s", safeDiff, safePersp)
+	cacheKey := fmt.Sprintf("bilan_md_%s_%s", safeDiff, safePersp)
 
-	// 5. Use the Base Engine for AI and Parsing
-	// false = no conversational memory needed for strict JSON generation
-	data, err := GenerateJSON[BilanData](
+	data, err := GenerateMarkdown(
 		ctx, b.assistant, "bilan", cacheKey, prompt, clientID, false,
 	)
 
@@ -127,14 +124,5 @@ IMPORTANT - CONSIGNES DE FORMATAGE LATEX :
 		return "\\section{BILAN DU TRAVAIL}\nErreur de génération AI."
 	}
 
-	// 6. Build LaTeX String
-	var latex strings.Builder
-	latex.WriteString("\\section{BILAN DU TRAVAIL}\n\n")
-
-	generateLatexSubSection(&latex, "Points forts", data.Strengths)
-	generateLatexSubSection(&latex, "Difficultés rencontrées", data.Difficulties)
-	generateLatexSubSection(&latex, "Apprentissages", data.Learnings)
-	generateLatexSubSection(&latex, "Perspectives d'amélioration", data.Perspectives)
-
-	return strings.TrimSpace(latex.String())
+	return MustMarkdownToLatex(data)
 }

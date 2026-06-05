@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/google/generative-ai-go/genai"
@@ -40,12 +39,6 @@ func (p *GeminiProvider) Generate(ctx context.Context, prompt string) (string, e
 	p.mu.RUnlock()
 
 	model := p.client.GenerativeModel(modelName)
-
-	promptUpper := strings.ToUpper(prompt)
-	if strings.Contains(promptUpper, "JSON") || strings.Contains(promptUpper, "OBJET JSON") {
-		model.ResponseMIMEType = "application/json"
-		model.Temperature = new(float32(0.1))
-	}
 
 	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
 	if err != nil {

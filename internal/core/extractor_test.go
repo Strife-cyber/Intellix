@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -8,10 +9,12 @@ import (
 func TestSamplePrositExtraction(t *testing.T) {
 	extractor := NewExtractor()
 
-	prosit, err := extractor.Extract("../files/PROSIT ALLER N°05.docx")
+	prosit, err := extractor.Extract("../../files/PROSIT ALLER 4.pdf")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+
+	fmt.Println(prosit)
 
 	// ---- REQUIRED STRING FIELDS ----
 	if strings.TrimSpace(prosit.Context) == "" {

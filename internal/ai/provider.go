@@ -21,16 +21,15 @@ type Provider interface {
 	Name() string
 }
 
-type MemoryItem struct {
-	User     string
-	Response string
-}
-
+// Assistant manages AI interactions with per-client context accumulation.
+// Instead of storing a growing list of Q&A pairs (which requires expensive
+// bulk compression), it maintains a running "project context" that gets
+// incrementally updated after each response. This keeps context bounded
+// in size without the need for threshold-based compression.
 type Assistant struct {
 	provider  Provider
-	threshold int
 	timeout   time.Duration
-	memories  map[string][]MemoryItem
+	contexts  map[string]string // clientID → accumulated project context
 	mu        sync.RWMutex
 }
 
@@ -40,25 +39,23 @@ var (
 )
 
 // NewAssistantInstance creates a fresh assistant instance per request.
-// This avoids shared in-memory state (memories) and keeps the service stateless.
-func NewAssistantInstance(provider Provider, threshold int) *Assistant {
+func NewAssistantInstance(provider Provider, _ int) *Assistant {
 	return &Assistant{
-		provider:  provider,
-		threshold: threshold,
-		timeout:   defaultTimeout,
-		memories:  make(map[string][]MemoryItem),
+		provider: provider,
+		timeout:  defaultTimeout,
+		contexts: make(map[string]string),
 	}
 }
 
-func GetAIAssistant(provider Provider, threshold int) *Assistant {
+// GetAIAssistant returns or creates a shared global assistant instance.
+func GetAIAssistant(provider Provider, _ int) *Assistant {
 	instMu.Lock()
 	defer instMu.Unlock()
 	if instance == nil {
 		instance = &Assistant{
-			provider:  provider,
-			threshold: threshold,
-			timeout:   defaultTimeout,
-			memories:  make(map[string][]MemoryItem),
+			provider: provider,
+			timeout:  defaultTimeout,
+			contexts: make(map[string]string),
 		}
 	}
 	return instance
@@ -70,71 +67,74 @@ func (a *Assistant) SetProvider(provider Provider) {
 	a.provider = provider
 }
 
-func (a *Assistant) getMemory(clientID string) []MemoryItem {
+// getContext returns the accumulated project context for a client.
+func (a *Assistant) getContext(clientID string) string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-	if mem, exists := a.memories[clientID]; exists {
-		return mem
+	if ctx, exists := a.contexts[clientID]; exists {
+		return ctx
 	}
-	return []MemoryItem{}
+	return ""
 }
 
-func (a *Assistant) formatMemory(clientID string) string {
-	memory := a.getMemory(clientID)
-	if len(memory) == 0 {
-		return ""
-	}
+// extractKeyInfo asks the AI to distill new key information from a response
+// into 1-3 concise sentences that can be appended to the running context.
+// This is much lighter than bulk compression — it only needs to parse the
+// latest response, not re-process all past history.
+func (a *Assistant) extractKeyInfo(ctx context.Context, prompt, response string) string {
+	extractionPrompt := fmt.Sprintf(
+		`À partir de l'échange suivant, extrais UNIQUEMENT les informations factuelles clés (concepts, décisions, résultats) en 1 à 3 phrases maximum.
 
-	var sb strings.Builder
-	sb.WriteString("Voici le contexte des tâches précédentes que tu as déjà accomplies pour ce projet. Utilise ces informations pour rester cohérent :\n")
-	for _, task := range memory {
-		sb.WriteString(fmt.Sprintf("User: %s\nResponse: %s\n\n", task.User, task.Response))
-	}
-	return sb.String()
-}
+Question: %s
+Réponse: %s
 
-func (a *Assistant) summarizeMemory(ctx context.Context, clientID string) {
-	memory := a.getMemory(clientID)
-	if len(memory) <= a.threshold {
-		return
-	}
+Ne fais aucune introduction. Renvoie uniquement les informations clés extraites.`,
+		truncateText(prompt, 800),
+		truncateText(response, 2000),
+	)
 
-	log.Printf("[%s] Memory reached %d items. Compressing context...", clientID, a.threshold)
-	memoryText := a.formatMemory(clientID)
-
-	prompt := fmt.Sprintf(`
-Tu es un système de compression de contexte mémoire.
-Voici l'historique des travaux d'un étudiant en ingénierie :
-
-%s
-
-Rédige un résumé EXTRÊMEMENT dense et factuel (max 5 phrases). 
-Conserve uniquement les concepts clés, les définitions importantes et le contexte global.
-Ne fais aucune introduction ni conclusion. Renvoie uniquement le texte compressé.
-`, memoryText)
-
-	// Lock purely to read the current provider safely
 	a.mu.RLock()
 	prov := a.provider
 	a.mu.RUnlock()
 
-	compressedContext, err := prov.Generate(ctx, prompt)
+	extractionCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	summary, err := prov.Generate(extractionCtx, extractionPrompt)
 	if err != nil {
-		log.Printf("[%s] Failed to compress memory: %v", clientID, err)
+		log.Printf("Context extraction failed: %v — using raw response snippet", err)
+		// Fallback: just take the first 200 chars of the response
+		return truncateText(response, 200)
+	}
+
+	return strings.TrimSpace(summary)
+}
+
+// updateContext appends new key information to the running context for a client.
+func (a *Assistant) updateContext(clientID, extraction string) {
+	if extraction == "" {
 		return
 	}
 
-	// Safely overwrite the memory with the new compressed item
 	a.mu.Lock()
-	a.memories[clientID] = []MemoryItem{
-		{
-			User:     "Compress memory",
-			Response: strings.TrimSpace(compressedContext),
-		},
-	}
-	a.mu.Unlock()
+	defer a.mu.Unlock()
 
-	log.Printf("[%s] Memory compressed successfully.", clientID)
+	existing := a.contexts[clientID]
+	if existing == "" {
+		a.contexts[clientID] = extraction
+	} else {
+		// Append with a separator to keep structure readable
+		a.contexts[clientID] = existing + "\n- " + extraction
+	}
+}
+
+// formatContext returns the accumulated context as a prependable string.
+func (a *Assistant) formatContext(clientID string) string {
+	ctx := a.getContext(clientID)
+	if ctx == "" {
+		return ""
+	}
+	return "Contexte du projet (informations accumulées des étapes précédentes) :\n" + ctx + "\n\n"
 }
 
 // SetTimeout overrides the default request timeout for this assistant.
@@ -144,26 +144,15 @@ func (a *Assistant) SetTimeout(d time.Duration) {
 	a.timeout = d
 }
 
+// ClearMemory clears the accumulated context for a client.
 func (a *Assistant) ClearMemory(clientID string) {
 	if clientID == "" {
 		clientID = "default"
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	a.memories[clientID] = []MemoryItem{}
-	log.Printf("[%s] Memory cleared.", clientID)
-}
-
-func (a *Assistant) appendMemory(clientID, prompt, response string) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	if _, exists := a.memories[clientID]; !exists {
-		a.memories[clientID] = []MemoryItem{}
-	}
-	a.memories[clientID] = append(a.memories[clientID], MemoryItem{
-		User:     prompt,
-		Response: response,
-	})
+	delete(a.contexts, clientID)
+	log.Printf("[%s] Context cleared.", clientID)
 }
 
 func (a *Assistant) Ask(ctx context.Context, prompt string, clientID string, useMemory bool) (string, error) {
@@ -186,10 +175,9 @@ func (a *Assistant) Ask(ctx context.Context, prompt string, clientID string, use
 	fullPrompt := prompt
 
 	if useMemory {
-		a.summarizeMemory(ctx, clientID)
-		contextStr := a.formatMemory(clientID)
+		contextStr := a.formatContext(clientID)
 		if contextStr != "" {
-			fullPrompt = fmt.Sprintf("%s \n\n\n %s", contextStr, prompt)
+			fullPrompt = fmt.Sprintf("%s\n\n%s", contextStr, prompt)
 		}
 	}
 
@@ -208,8 +196,22 @@ func (a *Assistant) Ask(ctx context.Context, prompt string, clientID string, use
 	}
 
 	if useMemory {
-		a.appendMemory(clientID, prompt, response)
+		// Incrementally extract key info from this exchange and append to context.
+		// This is O(1) per call — no bulk compression, no threshold, no loss.
+		extraction := a.extractKeyInfo(ctx, prompt, response)
+		if extraction != "" {
+			a.updateContext(clientID, extraction)
+			log.Printf("[%s] Context updated (+%d chars, total: %d chars)",
+				clientID, len(extraction), len(a.getContext(clientID)))
+		}
 	}
 
 	return response, nil
+}
+
+func truncateText(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	return s[:max] + "..."
 }
