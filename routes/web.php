@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\SitemapController;
+
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\CahierController;
 use App\Http\Controllers\CerWebController;
@@ -21,6 +23,8 @@ use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
+
+Route::get('/sitemap.xml', [SitemapController::class, 'index']);
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -152,8 +156,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('exams/{exam}', [PbaWebController::class, 'showExam'])->name('exams.show');
 
     Route::get('/ai/status', [AiController::class, 'status'])->name('ai.status');
-        Route::post('/ai/chat', [AiController::class, 'chat'])->name('ai.chat');
-        Route::get('ai-chat', [AiController::class, 'chat'])->name('ai.chat.simple');
+    Route::post('/ai/chat', [AiController::class, 'chat'])->name('ai.chat');
 
     // Job Status Routes
     Route::get('/jobs/prosit/{jobId}/status', [JobStatusController::class, 'prositStatus'])->name('jobs.prosit.status');

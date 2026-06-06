@@ -4,59 +4,82 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\Seo\SeoMeta;
 
 class SetSeoMeta
 {
-    /**
-     * Handle an incoming request.
-     */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next): mixed
     {
-        // Get the page path for SEO purposes
         $path = $this->getCleanPath($request->path());
 
-        if (!empty($path)) {
-            // Try to get SEO meta from database
-            $seoMeta = SeoMeta::getByPage($path);
+        if (!empty($path) && $request->isMethod('GET')) {
+            try {
+                $seoMetaModel = new SeoMeta();
+                $seoMeta = $seoMetaModel->getByPage($path);
 
-            // If found, set the meta tags
-            if ($seoMeta) {
-                view()->share('seo_meta', [
-                    'title' => $seoMeta['title'] ?? $this->getDefaultTitle(),
-                    'description' => $seoMeta['description'] ?? config('app.description', ''),
-                    'keywords' => $seoMeta['keywords'] ?? '',
-                    'canonical_url' => $seoMeta['canonical_url'] ?? request()->url(),
-                    'og_title' => $seoMeta['og_title'],
-                    'og_description' => $seoMeta['og_description'],
-                    'og_image' => $seoMeta['og_image'],
-                    'twitter_card' => 'summary',
-                    'twitter_title' => $seoMeta['twitter_title'] ?? config('app.name'),
-                    'twitter_description' => $seoMeta['twitter_description'] ?? '',
-                    'twitter_image' => $seoMeta['twitter_image'],
+                $metaData = $seoMeta ?: [
+                    'title' => null,
+                    'description' => null,
+                    'keywords' => null,
+                    'canonical_url' => null,
+                    'og_title' => null,
+                    'og_description' => null,
+                    'og_image' => null,
+                    'twitter_title' => null,
+                    'twitter_description' => null,
+                    'twitter_image' => null,
+                ];
+
+                view()->share('meta', [
+                    'title' => $metaData['title'] ?? $this->getDefaultTitle(),
+                    'description' => $metaData['description'] ?? config('app.description', ''),
+                    'keywords' => $metaData['keywords'] ?? '',
+                    'canonical_url' => $metaData['canonical_url'] ?? $request->url(),
+                    'og_title' => $metaData['og_title'] ?? $this->getDefaultTitle(),
+                    'og_description' => $metaData['og_description'] ?? config('app.description', ''),
+                    'og_image' => $metaData['og_image'] ?? '/storage/brand/social-preview.jpg',
+                    'twitter_card' => 'summary_large_image',
+                    'twitter_title' => $metaData['twitter_title'] ?? $this->getDefaultTitle(),
+                    'twitter_description' => $metaData['twitter_description'] ?? config('app.description', ''),
+                    'twitter_image' => $metaData['twitter_image'] ?? '/storage/brand/social-preview.jpg',
+                    'robots' => $metaData['robots'] ?? 'index, follow',
                 ]);
+            } catch (\Exception $e) {
+                view()->share('meta', $this->getDefaultMeta($request));
             }
         }
 
         return $next($request);
     }
 
-    /**
-     * Get clean path for database lookup (kebab-case)
-     */
+    protected function getDefaultMeta(Request $request): array
+    {
+        $ogImage = '/storage/brand/social-preview.jpg';
+        return [
+            'title' => $this->getDefaultTitle(),
+            'description' => config('app.description', ''),
+            'keywords' => '',
+            'canonical_url' => $request->url(),
+            'og_title' => $this->getDefaultTitle(),
+            'og_description' => config('app.description', ''),
+            'og_image' => $ogImage,
+            'twitter_card' => 'summary_large_image',
+            'twitter_title' => $this->getDefaultTitle(),
+            'twitter_description' => config('app.description', ''),
+            'twitter_image' => $ogImage,
+            'robots' => 'index, follow',
+        ];
+    }
+
     protected function getCleanPath(string $path): string
     {
-        // Remove file extensions
-        $path = preg_replace('/\.[^./]+$/', '', $path);
-
+        $path = preg_replace('#\.[^./]+$#', '', $path);
         return $path;
     }
 
-    /**
-     * Get default title if no SEO meta found
-     */
     protected function getDefaultTitle(): string
     {
-        return config('app.name') . ' | IntelliX Business Intelligence';
+        $name = config('app.name', 'IntelliX');
+        return $name . ' - AI-Powered Learning Platform for Deep Work & Academic Excellence';
     }
 }

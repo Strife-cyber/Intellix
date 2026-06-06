@@ -27,15 +27,6 @@ class SeoMeta extends Model
         'robots',
     ];
 
-    public function increment($column = null)
-    {
-        if (is_null($column)) {
-            return parent::increment($this->getKeyName());
-        }
-
-        return $this->increment($column);
-    }
-
     /**
      * Get SEO meta for a specific page
      */

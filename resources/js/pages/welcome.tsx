@@ -1,5 +1,16 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { BookOpen, Rocket, Zap, ArrowRight } from 'lucide-react';
+import {
+    BookOpen,
+    Rocket,
+    Zap,
+    ArrowRight,
+    FileText,
+    Brain,
+    MessageSquare,
+    Calendar,
+    StickyNote,
+    ScrollText,
+} from 'lucide-react';
 import React, { useState } from 'react';
 import AppLogo from '@/components/app-logo';
 import DarkVeil from '@/components/dark-veil';
@@ -370,6 +381,104 @@ export default function Welcome({
                                 <span>Stanton Research Labs</span>
                                 <span>Westbrook Academic Consortium</span>
                                 <span>Oakridge College of Science</span>
+                            </div>
+                        </div>
+
+                        <div
+                            id="about-intellix"
+                            className="mx-auto max-w-6xl px-8 py-24"
+                        >
+                            {/* Headline + short value prop */}
+                            <div className="mx-auto mb-16 max-w-3xl text-center">
+                                <h2 className="mb-4 text-4xl font-bold text-gray-900 md:text-5xl dark:text-white">
+                                    One OS for your
+                                    <span className="text-purple-600">
+                                        {' '}
+                                        learning
+                                    </span>
+                                </h2>
+                                <p className="text-lg text-gray-500 dark:text-gray-400">
+                                    Documents. Flashcards. Notes. AI Chat. All
+                                    in one place, designed for deep work.
+                                </p>
+                            </div>
+
+                            {/* Stats row — quick visual trust signals */}
+                            <div className="mx-auto mb-16 grid max-w-3xl grid-cols-3 gap-8">
+                                {[
+                                    {
+                                        value: '10+',
+                                        label: 'Formats supported',
+                                    },
+                                    {
+                                        value: 'FSRS',
+                                        label: 'Smart recall algo',
+                                    },
+                                    {
+                                        value: 'PBA',
+                                        label: 'Structured learning',
+                                    },
+                                ].map((stat, i) => (
+                                    <div key={i} className="text-center">
+                                        <div className="text-3xl font-extrabold text-gray-900 dark:text-white">
+                                            {stat.value}
+                                        </div>
+                                        <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                            {stat.label}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Feature mini-cards — just icon + title + one-liner */}
+                            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                                {[
+                                    {
+                                        icon: FileText,
+                                        title: 'Document AI',
+                                        desc: 'Upload any file — PDF, DOCX, EPUB. Instant analysis.',
+                                    },
+                                    {
+                                        icon: Brain,
+                                        title: 'Smart Flashcards',
+                                        desc: 'FSRS spaced repetition. Auto-generated from docs.',
+                                    },
+                                    {
+                                        icon: MessageSquare,
+                                        title: 'AI Chat',
+                                        desc: 'Chat with your entire knowledge base.',
+                                    },
+                                    {
+                                        icon: Calendar,
+                                        title: 'Study Planner',
+                                        desc: 'Plan reviews. Track streaks. Stay consistent.',
+                                    },
+                                    {
+                                        icon: StickyNote,
+                                        title: 'Versioned Notes',
+                                        desc: 'Notes that evolve. Linked to source materials.',
+                                    },
+                                    {
+                                        icon: ScrollText,
+                                        title: 'CER Reports',
+                                        desc: 'AI-generated academic reports from your work.',
+                                    },
+                                ].map((feature, i) => (
+                                    <div
+                                        key={i}
+                                        className="group rounded-lg border border-gray-200 bg-white p-5 transition hover:shadow-md dark:border-[#2A2A2A] dark:bg-[#121212]"
+                                    >
+                                        <div className="mb-3">
+                                            <feature.icon className="h-6 w-6 text-purple-600" />
+                                        </div>
+                                        <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">
+                                            {feature.title}
+                                        </h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                            {feature.desc}
+                                        </p>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 

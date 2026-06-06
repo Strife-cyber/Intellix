@@ -12,89 +12,94 @@ class SeoMetaSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seed SEO meta for all main pages
+        $ogImage = '/storage/brand/social-preview.svg';
+
         $seoData = [
             'home' => [
-                'title' => 'IntelliX - Intelligent Business Intelligence Platform',
-                'description' => 'Transform your data into actionable insights with IntelliX. Enterprise-grade business intelligence, analytics, and reporting solutions for modern organizations.',
-                'keywords' => 'business intelligence, analytics, dashboard, reporting, enterprise software, SaaS, data visualization, KPI tracking, business analytics, decision support',
+                'title' => 'IntelliX - AI-Powered Learning Platform for Deep Work & Academic Excellence',
+                'description' => 'IntelliX is an AI-native learning operating system. Upload documents, generate spaced repetition flashcards, chat with your knowledge base, and ace your exams with our intelligent study platform.',
+                'keywords' => 'AI learning platform, spaced repetition flashcards, study planner, document intelligence, PBA learning, academic tools, exam preparation, knowledge management',
                 'canonical_url' => config('app.url', '/'),
-                'og_title' => 'IntelliX - Business Intelligence Platform',
-                'og_description' => 'Transform your data into actionable insights with IntelliX. Enterprise-grade business intelligence and analytics solutions.',
-                'og_image' => '/storage/brand/social-preview.png',
-                'twitter_title' => 'IntelliX - Business Intelligence Platform',
-                'twitter_description' => 'Transform your data into actionable insights with IntelliX.',
-                'twitter_image' => '/storage/brand/social-preview.png',
+                'og_title' => 'IntelliX - The AI-Native Learning Operating System',
+                'og_description' => 'Upload documents. Generate smart flashcards with spaced repetition. Chat with your knowledge base. Ace your exams. The first AI-powered learning platform designed for deep work and academic rigor.',
+                'og_image' => $ogImage,
+                'twitter_title' => 'IntelliX - AI Learning Platform',
+                'twitter_description' => 'Upload documents, generate flashcards, chat with your knowledge base. The AI-native learning OS for deep work.',
+                'twitter_image' => $ogImage,
+                'robots' => 'index, follow',
             ],
-
-            // Dashboard
-            'dashboard-home' => [
-                'title' => 'Dashboard | IntelliX - Business Intelligence Platform',
-                'description' => 'Welcome to IntelliX. Your personal business intelligence assistant. Track metrics, review insights, and manage your analytics.',
-                'keywords' => 'dashboard, learning dashboard, study tracker, flashcards, analytics, metrics, KPI tracking',
-                'canonical_url' => config('app.url') . '/dashboard-home',
+            'dashboard' => [
+                'title' => 'Dashboard | IntelliX - AI Learning Platform',
+                'description' => 'Your personal AI learning dashboard. Track your progress, review flashcards, manage documents, and monitor your study streaks.',
+                'keywords' => 'learning dashboard, study tracker, AI study assistant, progress tracking',
+                'canonical_url' => config('app.url') . '/dashboard',
                 'og_title' => 'Dashboard - IntelliX',
-                'og_description' => 'Your personal business intelligence assistant. Track metrics and insights.',
-                'og_image' => '/storage/brand/social-preview.png',
+                'og_description' => 'Your personal AI learning dashboard. Track study progress and manage materials.',
+                'og_image' => $ogImage,
+                'robots' => 'noindex, nofollow', // Auth-protected page
             ],
-
-            // Reports
-            'reports-index' => [
-                'title' => 'Reports | IntelliX - Business Intelligence Platform',
-                'description' => 'View, manage, and generate comprehensive business reports from your analytics data. Create custom reports with customizable layouts and filters.',
-                'keywords' => 'reports, analytics reports, business reporting, data visualization, dashboards, metrics, insights',
-                'canonical_url' => config('app.url') . '/reports/index',
-                'og_title' => 'Reports - IntelliX',
-                'og_description' => 'View and manage your comprehensive business reports.',
-                'og_image' => '/storage/brand/social-preview.png',
+            'library' => [
+                'title' => 'Document Library | IntelliX - AI Learning Platform',
+                'description' => 'Browse and manage your uploaded documents. PDF, DOCX, EPUB, and web articles processed by AI for intelligent study.',
+                'keywords' => 'document library, file management, study materials, PDF processing',
+                'canonical_url' => config('app.url') . '/library',
+                'og_title' => 'Document Library - IntelliX',
+                'og_description' => 'Upload and manage documents for AI-powered study and flashcard generation.',
+                'og_image' => $ogImage,
+                'robots' => 'noindex, nofollow',
             ],
-
-            // Analytics
-            'analytics-index' => [
-                'title' => 'Analytics | IntelliX - Business Intelligence Platform',
-                'description' => 'Deep dive into your data with our advanced analytics tools. Discover patterns, trends, and insights that drive business decisions.',
-                'keywords' => 'analytics, data analysis, business intelligence, insights, trends, patterns, statistical analysis',
-                'canonical_url' => config('app.url') . '/analytics/index',
-                'og_title' => 'Analytics - IntelliX',
-                'og_description' => 'Deep dive into your data with advanced analytics tools.',
-                'og_image' => '/storage/brand/social-preview.png',
+            'flashcards-page' => [
+                'title' => 'Smart Flashcards | IntelliX - Spaced Repetition Learning',
+                'description' => 'Master any subject with AI-powered flashcards featuring FSRS spaced repetition algorithm. Generate flashcards automatically from your documents.',
+                'keywords' => 'flashcards, spaced repetition, FSRS algorithm, memory retention, active recall',
+                'canonical_url' => config('app.url') . '/flashcards-page',
+                'og_image' => $ogImage,
+                'robots' => 'noindex, nofollow',
             ],
-
-            // Insights
-            'insights-index' => [
-                'title' => 'Insights | IntelliX - Business Intelligence Platform',
-                'description' => 'AI-powered insights and recommendations based on your data. Get actionable intelligence to improve business outcomes.',
-                'keywords' => 'insights, AI insights, recommendations, predictive analytics, machine learning, data intelligence',
-                'canonical_url' => config('app.url') . '/insights/index',
-                'og_title' => 'Insights - IntelliX',
-                'og_description' => 'AI-powered insights and recommendations based on your data.',
-                'og_image' => '/storage/brand/social-preview.png',
+            'study-planner' => [
+                'title' => 'Study Planner | IntelliX - Plan Your Learning Journey',
+                'description' => 'Plan your study schedule with AI-powered recommendations. Track deadlines, manage flashcard reviews, and build consistent study habits.',
+                'keywords' => 'study planner, schedule, exam preparation, time management, study habits',
+                'canonical_url' => config('app.url') . '/study-planner',
+                'og_image' => $ogImage,
+                'robots' => 'noindex, nofollow',
             ],
-
-            // Library
-            'library-index' => [
-                'title' => 'Data Library | IntelliX - Business Intelligence Platform',
-                'description' => 'Browse and manage your uploaded datasets. Organize, annotate, and access your data from anywhere. Upload CSV, Excel, SQL dumps, and more.',
-                'keywords' => 'data library, file management, dataset management, data upload, CSV, Excel, database import',
-                'canonical_url' => config('app.url') . '/library/index',
-                'og_title' => 'Data Library - IntelliX',
-                'og_description' => 'Browse and manage your uploaded datasets.',
-                'og_image' => '/storage/brand/social-preview.png',
-            ],
-
-            // Upload
             'upload' => [
-                'title' => 'Upload Data | IntelliX - Business Intelligence Platform',
-                'description' => 'Upload any dataset for analysis - CSV, Excel, TXT, JSON, SQL dumps, and more. Our platform will process your data for intelligent insights.',
-                'keywords' => 'upload, data upload, file upload, CSV upload, Excel upload, data import, file processing',
+                'title' => 'Upload Documents | IntelliX - AI Document Processing',
+                'description' => 'Upload PDF, DOCX, EPUB, TXT files. Our AI processes your documents to generate flashcards, summaries, and interactive study materials.',
+                'keywords' => 'upload documents, PDF processing, AI document analysis, file upload',
                 'canonical_url' => config('app.url') . '/upload',
-                'og_title' => 'Upload Data - IntelliX',
-                'og_description' => 'Upload datasets for intelligent analysis and insights.',
-                'og_image' => '/storage/brand/social-preview.png',
+                'og_image' => $ogImage,
+                'robots' => 'noindex, nofollow',
+            ],
+            'courses' => [
+                'title' => 'PBA Learning Courses | IntelliX - Problem-Based Approach',
+                'description' => 'Problem-Based Approach learning platform. Create structured courses with chapters, competencies, and prosits for deep understanding.',
+                'keywords' => 'PBA learning, problem-based approach, courses, competency-based education',
+                'canonical_url' => config('app.url') . '/courses',
+                'og_image' => $ogImage,
+                'robots' => 'noindex, nofollow',
+            ],
+            'exams' => [
+                'title' => 'Exams & Assessments | IntelliX - AI-Powered Testing',
+                'description' => 'Generate and take practice exams from your study materials. AI-powered assessments to evaluate your knowledge.',
+                'keywords' => 'exams, assessments, practice tests, AI evaluation, exam preparation',
+                'canonical_url' => config('app.url') . '/exams',
+                'og_image' => $ogImage,
+                'robots' => 'noindex, nofollow',
+            ],
+            'cers' => [
+                'title' => 'CER Report Generation | IntelliX - Academic Documentation',
+                'description' => 'Generate professional CER (Compte Rendu) reports from your prosits and course materials with AI-powered document generation.',
+                'keywords' => 'CER, report generation, academic writing, documentation, prosits',
+                'canonical_url' => config('app.url') . '/cers',
+                'og_image' => $ogImage,
+                'robots' => 'noindex, nofollow',
             ],
         ];
 
         foreach ($seoData as $pageName => $data) {
+            $data['page_name'] = $pageName;
             SeoMeta::create($data);
         }
     }

@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'description' => env('APP_DESCRIPTION', 'IntelliX is an AI-native learning operating system designed for deep work and academic rigor. Upload documents, create flashcards with spaced repetition, build your knowledge base, and ace your exams.'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment
