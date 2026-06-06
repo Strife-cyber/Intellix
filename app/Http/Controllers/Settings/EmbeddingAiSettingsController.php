@@ -16,6 +16,11 @@ class EmbeddingAiSettingsController extends Controller
     {
         $setting = $request->user()->embeddingAiSetting;
 
+        $hasIndexedDocs = $request->user()
+            ->resources()
+            ->whereNotNull('metadata->ingested_at')
+            ->exists();
+
         return Inertia::render('settings/embedding-ai', [
             'setting' => $setting ? [
                 'provider_type' => $setting->provider_type,
@@ -26,6 +31,7 @@ class EmbeddingAiSettingsController extends Controller
             ] : null,
             'providerCatalog' => UserEmbeddingAiSetting::providerCatalog(),
             'status' => $request->session()->get('status'),
+            'hasIndexedDocs' => $hasIndexedDocs,
         ]);
     }
 
@@ -35,6 +41,10 @@ class EmbeddingAiSettingsController extends Controller
         $user = $request->user();
 
         $setting = $user->embeddingAiSetting ?? new UserEmbeddingAiSetting(['user_id' => $user->id]);
+
+        // Detect model change for reindex warning
+        $oldModel = $setting->exists ? $this->resolveModelString($setting) : null;
+        $newModel = $validated['model'] ?? $setting->model;
 
         $setting->fill([
             'provider_type' => $validated['provider_type'],
@@ -49,6 +59,32 @@ class EmbeddingAiSettingsController extends Controller
 
         $setting->save();
 
+        // Check if model changed and user has indexed documents
+        $hasIndexedDocs = $user->resources()->whereNotNull('metadata->ingested_at')->exists();
+        $modelChanged = $oldModel !== null && $oldModel !== $this->resolveModelString($setting);
+
+        if ($hasIndexedDocs && $modelChanged) {
+            return to_route('settings.ai.embedding.edit')
+                ->with('status', 'embedding-ai-settings-saved')
+                ->with('model_changed', true)
+                ->with('needs_reindex', true);
+        }
+
         return to_route('settings.ai.embedding.edit')->with('status', 'embedding-ai-settings-saved');
+    }
+
+    private function resolveModelString(UserEmbeddingAiSetting $setting): string
+    {
+        return $setting->model ?? match ($setting->provider_type) {
+            'ollama' => 'nomic-embed-text',
+            'openai' => 'text-embedding-3-small',
+            'openrouter' => 'openai/text-embedding-3-small',
+            'gemini' => 'text-embedding-004',
+            'cohere' => 'embed-english-v3.0',
+            'jina' => 'jina-embeddings-v3',
+            'voyage' => 'voyage-3',
+            'together' => 'BAAI/bge-large-en-v1.5',
+            default => '',
+        };
     }
 }

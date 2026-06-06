@@ -31,6 +31,13 @@ class ResourceIngestionService
             throw new RuntimeException('QDRANT_HOST is not configured in .env');
         }
 
+        $embeddingSetting = $this->embeddings->embeddingSetting($user);
+        if (! $embeddingSetting) {
+            throw new RuntimeException(
+                'No embedding provider configured. Open Settings → Embeddings AI and choose a provider.',
+            );
+        }
+
         $text = $this->extractor->extract($resource, $user);
         if (trim($text) === '') {
             throw new RuntimeException(
@@ -48,7 +55,8 @@ class ResourceIngestionService
         $allPoints = [];
         $dbRows = [];
 
-        $this->qdrant->deleteByResourceId($resource->id);
+        // Delete existing points from the per-user collection
+        $this->qdrant->deleteByResourceId($resource->id, $embeddingSetting);
         $resource->chunks()->delete();
 
         foreach (array_chunk($chunks, $batchSize) as $batchIndex => $batch) {
@@ -59,7 +67,7 @@ class ResourceIngestionService
                 if ($vectorSize < 1) {
                     throw new RuntimeException('Embedding model returned empty vectors.');
                 }
-                $this->qdrant->ensureCollection($vectorSize);
+                $this->qdrant->ensureCollection($vectorSize, $embeddingSetting);
             }
 
             foreach ($batch as $i => $content) {
@@ -97,21 +105,19 @@ class ResourceIngestionService
         }
 
         foreach (array_chunk($allPoints, 64) as $pointBatch) {
-            $this->qdrant->upsertPoints($pointBatch);
+            $this->qdrant->upsertPoints($pointBatch, $embeddingSetting);
         }
 
         if ($dbRows !== []) {
             ResourceChunk::insert($dbRows);
         }
 
-        $embeddingSetting = $this->embeddings->embeddingSetting($user);
         $resource->update([
             'metadata' => array_merge($resource->metadata ?? [], [
                 'ingested_at' => now()->toDateTimeString(),
                 'chunk_count' => count($chunks),
-                'embedding_model' => $embeddingSetting
-                    ? $this->embeddings->resolveEmbeddingModel($embeddingSetting)
-                    : null,
+                'embedding_model' => $this->embeddings->resolveEmbeddingModel($embeddingSetting),
+                'embedding_provider' => $embeddingSetting->provider_type,
                 'vector_size' => $vectorSize,
             ]),
         ]);
@@ -119,6 +125,7 @@ class ResourceIngestionService
         Log::info("Resource {$resource->id} ingested into Qdrant", [
             'chunks' => count($chunks),
             'vector_size' => $vectorSize,
+            'collection' => $this->qdrant->collectionName($embeddingSetting),
         ]);
 
         return count($chunks);

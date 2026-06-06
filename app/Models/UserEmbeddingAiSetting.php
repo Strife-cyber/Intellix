@@ -146,6 +146,82 @@ class UserEmbeddingAiSetting extends Model
                     'model' => 'e.g. text-embedding-3-small',
                 ],
             ],
+            [
+                'type' => AiProviders::COHERE,
+                'label' => 'Cohere',
+                'summary' => 'Cohere embedding API (embed-english-v3.0, etc.).',
+                'fields' => [
+                    'apiKey' => true,
+                    'apiKeyRequired' => true,
+                    'endpoint' => false,
+                    'model' => true,
+                ],
+                'placeholders' => [
+                    'model' => 'embed-english-v3.0',
+                    'apiKey' => '…',
+                ],
+                'hints' => [
+                    'model' => 'Embedding model name',
+                    'apiKey' => 'Required — from cohere.com',
+                ],
+            ],
+            [
+                'type' => AiProviders::JINA,
+                'label' => 'Jina AI',
+                'summary' => 'Jina AI embedding API (jina-embeddings-v3, etc.).',
+                'fields' => [
+                    'apiKey' => true,
+                    'apiKeyRequired' => true,
+                    'endpoint' => false,
+                    'model' => true,
+                ],
+                'placeholders' => [
+                    'model' => 'jina-embeddings-v3',
+                    'apiKey' => '…',
+                ],
+                'hints' => [
+                    'model' => 'Embedding model name',
+                    'apiKey' => 'Required — from jina.ai',
+                ],
+            ],
+            [
+                'type' => AiProviders::VOYAGE,
+                'label' => 'Voyage AI',
+                'summary' => 'Voyage AI embedding API (voyage-3, etc.).',
+                'fields' => [
+                    'apiKey' => true,
+                    'apiKeyRequired' => true,
+                    'endpoint' => false,
+                    'model' => true,
+                ],
+                'placeholders' => [
+                    'model' => 'voyage-3',
+                    'apiKey' => '…',
+                ],
+                'hints' => [
+                    'model' => 'Embedding model name',
+                    'apiKey' => 'Required — from voyageai.com',
+                ],
+            ],
+            [
+                'type' => AiProviders::TOGETHER,
+                'label' => 'Together AI',
+                'summary' => 'Together AI embedding API.',
+                'fields' => [
+                    'apiKey' => true,
+                    'apiKeyRequired' => true,
+                    'endpoint' => false,
+                    'model' => true,
+                ],
+                'placeholders' => [
+                    'model' => 'BAAI/bge-large-en-v1.5',
+                    'apiKey' => '…',
+                ],
+                'hints' => [
+                    'model' => 'Embedding model id',
+                    'apiKey' => 'Required — from together.ai',
+                ],
+            ],
         ];
     }
 }

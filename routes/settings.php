@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AiTestController;
 use App\Http\Controllers\Settings\ChatAiSettingsController;
 use App\Http\Controllers\Settings\EmbeddingAiSettingsController;
 use App\Http\Controllers\Settings\PasswordController;
@@ -41,4 +42,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('settings/ai/embeddings', [EmbeddingAiSettingsController::class, 'edit'])->name('settings.ai.embedding.edit');
     Route::put('settings/ai/embeddings', [EmbeddingAiSettingsController::class, 'update'])->name('settings.ai.embedding.update');
+
+    // AI provider test endpoint (used by both chat and embedding settings)
+    Route::post('settings/ai/test', [AiTestController::class, 'test'])->name('settings.ai.test');
 });

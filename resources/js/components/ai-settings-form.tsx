@@ -1,6 +1,7 @@
 import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
-import { useEffect, useMemo } from 'react';
+import { CheckCircle, LoaderCircle, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,13 @@ type SavedSetting = {
     has_api_key: boolean;
 };
 
+type TestResult = {
+    success: boolean;
+    vector_size?: number;
+    model?: string;
+    error?: string;
+};
+
 type AiSettingsFormProps = {
     setting: SavedSetting | null;
     providerCatalog: ProviderCatalogEntry[];
@@ -35,6 +43,8 @@ type AiSettingsFormProps = {
     status?: string;
     savedMessage: string;
     showTemperature?: boolean;
+    /** 'embedding' or 'chat' — used for the test endpoint */
+    type?: 'embedding' | 'chat';
 };
 
 export default function AiSettingsForm({
@@ -44,13 +54,15 @@ export default function AiSettingsForm({
     status,
     savedMessage,
     showTemperature = false,
+    type = 'embedding',
 }: AiSettingsFormProps) {
     const catalogMap = useMemo(
         () => catalogToMap(providerCatalog),
         [providerCatalog],
     );
 
-    const defaultType = setting?.provider_type ?? providerCatalog[0]?.type ?? '';
+    const defaultType =
+        setting?.provider_type ?? providerCatalog[0]?.type ?? '';
 
     const { data, setData, put, processing, errors, recentlySuccessful } =
         useForm({
@@ -60,6 +72,9 @@ export default function AiSettingsForm({
             api_key: '',
             temperature: String(setting?.temperature ?? 0.7),
         });
+
+    const [testResult, setTestResult] = useState<TestResult | null>(null);
+    const [testLoading, setTestLoading] = useState(false);
 
     useEffect(() => {
         if (setting) {
@@ -77,7 +92,42 @@ export default function AiSettingsForm({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setTestResult(null);
         put(submitUrl);
+    };
+
+    const handleTest = async () => {
+        setTestLoading(true);
+        setTestResult(null);
+
+        try {
+            const res = await fetch('/settings/ai/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({
+                    type,
+                    provider_type: data.provider_type,
+                    endpoint: data.endpoint || null,
+                    model: data.model || null,
+                    api_key: data.api_key || null,
+                }),
+                credentials: 'same-origin',
+            });
+
+            const result: TestResult = await res.json();
+            setTestResult(result);
+        } catch (e) {
+            setTestResult({
+                success: false,
+                error: e instanceof Error ? e.message : 'Network error',
+            });
+        } finally {
+            setTestLoading(false);
+        }
     };
 
     return (
@@ -86,9 +136,10 @@ export default function AiSettingsForm({
                 <Label htmlFor="provider_type">Provider</Label>
                 <Select
                     value={data.provider_type}
-                    onValueChange={(value) =>
-                        setData('provider_type', value)
-                    }
+                    onValueChange={(value) => {
+                        setData('provider_type', value);
+                        setTestResult(null);
+                    }}
                 >
                     <SelectTrigger id="provider_type">
                         <SelectValue placeholder="Choose provider" />
@@ -101,9 +152,7 @@ export default function AiSettingsForm({
                         ))}
                     </SelectContent>
                 </Select>
-                <p className="text-sm text-muted-foreground">
-                    {meta.summary}
-                </p>
+                <p className="text-sm text-muted-foreground">{meta.summary}</p>
                 <InputError message={errors.provider_type} />
             </div>
 
@@ -180,9 +229,7 @@ export default function AiSettingsForm({
                         max={2}
                         step={0.1}
                         value={data.temperature}
-                        onChange={(e) =>
-                            setData('temperature', e.target.value)
-                        }
+                        onChange={(e) => setData('temperature', e.target.value)}
                     />
                     <InputError message={errors.temperature} />
                 </div>
@@ -195,14 +242,71 @@ export default function AiSettingsForm({
                 </p>
             )}
 
-            <div className="flex items-center gap-4">
+            {testResult && (
+                <div
+                    className={`rounded-xl border p-4 text-sm ${
+                        testResult.success
+                            ? 'border-green-500/30 bg-green-500/5 text-green-600 dark:text-green-400'
+                            : 'border-destructive/30 bg-destructive/5 text-destructive'
+                    }`}
+                >
+                    {testResult.success ? (
+                        <div className="flex items-start gap-3">
+                            <CheckCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                            <div>
+                                <p className="font-medium">Connexion reussie</p>
+                                <p className="mt-1 text-xs opacity-80">
+                                    Modele : <strong>{testResult.model}</strong>
+                                    {testResult.vector_size != null && (
+                                        <>
+                                            {' '}
+                                            | Dimensions :{' '}
+                                            <strong>
+                                                {testResult.vector_size}
+                                            </strong>
+                                        </>
+                                    )}
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex items-start gap-3">
+                            <XCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                            <div>
+                                <p className="font-medium">
+                                    Echec de la connexion
+                                </p>
+                                <p className="mt-1 text-xs opacity-80">
+                                    {testResult.error}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-4">
                 <Button type="submit" disabled={processing}>
-                    Save
+                    {processing ? 'Saving...' : 'Save'}
                 </Button>
+
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleTest}
+                    disabled={testLoading}
+                    className="gap-2"
+                >
+                    {testLoading ? (
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                    ) : (
+                        <span className="text-lg leading-none">🧪</span>
+                    )}
+                    {testLoading ? 'Testing...' : 'Test connection'}
+                </Button>
+
                 <Transition
-                    show={
-                        recentlySuccessful || status === savedMessage
-                    }
+                    show={recentlySuccessful || status === savedMessage}
                     enter="transition ease-in-out"
                     enterFrom="opacity-0"
                     leave="transition ease-in-out"

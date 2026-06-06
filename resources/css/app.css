@@ -1,7 +1,6 @@
 @import 'tailwindcss';
-@import "@blocknote/core/style.css";
-@import "@blocknote/mantine/style.css";
-
+@import '@blocknote/core/style.css';
+@import '@blocknote/mantine/style.css';
 
 @import 'tw-animate-css';
 
@@ -167,5 +166,29 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+
+    /* Mobile-friendly minimum touch targets */
+    button,
+    a,
+    [role='button'],
+    input,
+    select,
+    textarea {
+        @apply cursor-pointer;
+    }
+
+    @media (max-width: 767px) {
+        button,
+        [role='button'],
+        .btn {
+            min-height: 44px;
+        }
+
+        input,
+        select,
+        textarea {
+            font-size: 16px; /* Prevents iOS zoom on focus */
+        }
     }
 }

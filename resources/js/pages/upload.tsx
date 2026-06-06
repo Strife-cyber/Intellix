@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
-import { PackageOpen, Plus, FileUp } from 'lucide-react';
-import React, { useState } from 'react';
+import { PackageOpen, Plus, FileUp, X, Check, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,6 +12,46 @@ import { useUploader } from '@/hooks/use-uploader';
 import AppLayout from '@/layouts/app-layout';
 import { upload } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
+import { toast } from '@/components/ui/use-toast';
+
+interface UploadProgressToastProps {
+    file: File;
+    progress: number;
+    onCancel: () => void;
+    onView: () => void;
+}
+
+const UploadProgressToast: React.FC<UploadProgressToastProps> = ({
+    file,
+    progress,
+    onCancel,
+    onView,
+}) => (
+    <div className="flex items-center gap-4">
+        <div className="flex-1">
+            <div className="flex justify-between">
+                <span className="font-medium">{file.name}</span>
+                <span className="text-sm text-muted-foreground">
+                    {progress}% complete
+                </span>
+            </div>
+            <div className="mt-2 h-2 w-full rounded-full bg-secondary">
+                <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${progress}%` }}
+                />
+            </div>
+        </div>
+        <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={onView}>
+                <FileUp className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onCancel}>
+                <X className="h-4 w-4" />
+            </Button>
+        </div>
+    </div>
+);
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Upload', href: upload().url }];
 

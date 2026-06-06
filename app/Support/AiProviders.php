@@ -14,6 +14,14 @@ final class AiProviders
 
     public const OPENAI = 'openai';
 
+    public const COHERE = 'cohere';
+
+    public const JINA = 'jina';
+
+    public const VOYAGE = 'voyage';
+
+    public const TOGETHER = 'together';
+
     /** @var list<string> */
     public const CHAT_TYPES = [
         self::GEMINI,
@@ -30,5 +38,9 @@ final class AiProviders
         self::OLLAMA,
         self::LMSTUDIO,
         self::OPENAI,
+        self::COHERE,
+        self::JINA,
+        self::VOYAGE,
+        self::TOGETHER,
     ];
 }

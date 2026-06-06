@@ -6,6 +6,8 @@ import {
     Trash2,
     MoreVertical,
     LayoutGrid,
+    FolderOpen,
+    Upload,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -41,15 +43,18 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, Chapter, Prosit } from '@/types';
 
 export default function PrositsIndex({
     prosits,
     chapters,
+    unallocatedProsits,
 }: {
     prosits: Prosit[];
     chapters: Chapter[];
+    unallocatedProsits: Prosit[];
 }) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Prosits', href: '/prosits' },
@@ -57,6 +62,10 @@ export default function PrositsIndex({
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isAllocateOpen, setIsAllocateOpen] = useState(false);
+    const [allocatingProsit, setAllocatingProsit] = useState<Prosit | null>(
+        null,
+    );
     const [editingProsit, setEditingProsit] = useState<Prosit | null>(null);
 
     const {
@@ -98,6 +107,19 @@ export default function PrositsIndex({
         texte: '',
     });
 
+    const {
+        data: allocateData,
+        setData: setAllocateData,
+        put: allocatePut,
+        processing: allocateProcessing,
+        reset: allocateReset,
+        errors: allocateErrors,
+    } = useForm({
+        chapter_id: '',
+        problematique: '',
+        generalisation: '',
+    });
+
     const handleCreate = (e: React.FormEvent) => {
         e.preventDefault();
         createPost('/prosits', {
@@ -111,7 +133,7 @@ export default function PrositsIndex({
     const openEdit = (prosit: Prosit) => {
         setEditingProsit(prosit);
         setEditData({
-            chapter_id: prosit.chapter_id,
+            chapter_id: prosit.chapter_id || '',
             mots_cles: prosit.mots_cles || '',
             contexte: prosit.contexte || '',
             besoin: prosit.besoin || '',
@@ -124,6 +146,16 @@ export default function PrositsIndex({
         setIsEditOpen(true);
     };
 
+    const openAllocate = (prosit: Prosit) => {
+        setAllocatingProsit(prosit);
+        setAllocateData({
+            chapter_id: '',
+            problematique: prosit.problematique || '',
+            generalisation: prosit.generalisation || '',
+        });
+        setIsAllocateOpen(true);
+    };
+
     const handleEdit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingProsit) return;
@@ -131,6 +163,18 @@ export default function PrositsIndex({
             onSuccess: () => {
                 setIsEditOpen(false);
                 setEditingProsit(null);
+            },
+        });
+    };
+
+    const handleAllocate = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!allocatingProsit) return;
+        allocatePut(`/prosits/${allocatingProsit.id}`, {
+            onSuccess: () => {
+                setIsAllocateOpen(false);
+                setAllocatingProsit(null);
+                allocateReset();
             },
         });
     };
@@ -153,6 +197,123 @@ export default function PrositsIndex({
         }
         return groups;
     }, [chapters]);
+
+    const sourceBadge = (prosit: Prosit) => {
+        switch (prosit.source) {
+            case 'uploaded':
+                return (
+                    <Badge
+                        variant="secondary"
+                        className="border-blue-500/20 bg-blue-500/10 text-[10px] text-blue-500"
+                    >
+                        Importé (CER)
+                    </Badge>
+                );
+            case 'generated':
+                return (
+                    <Badge
+                        variant="secondary"
+                        className="border-purple-500/20 bg-purple-500/10 text-[10px] text-purple-500"
+                    >
+                        CER Généré
+                    </Badge>
+                );
+            default:
+                return (
+                    <Badge variant="secondary" className="text-xs">
+                        Prosit
+                    </Badge>
+                );
+        }
+    };
+
+    const renderPrositCard = (prosit: Prosit) => (
+        <Card
+            key={prosit.id}
+            className="group relative overflow-hidden border-2 border-white/5 bg-card/30 backdrop-blur-md transition-all hover:border-primary/40"
+        >
+            <div className="absolute top-4 right-4 z-10 opacity-0 transition-opacity group-hover:opacity-100">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-white/10"
+                        >
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEdit(prosit)}>
+                            <Edit2 className="mr-2 h-4 w-4" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            className="text-red-500 hover:text-red-600 focus:bg-red-500/10 focus:text-red-600"
+                            onClick={() => handleDelete(prosit.id)}
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+
+            <CardHeader>
+                <div className="mb-2 flex items-start justify-between">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-sm">
+                        <FileText className="h-5 w-5" />
+                    </div>
+                </div>
+                <CardTitle
+                    className="line-clamp-2 cursor-pointer pr-6 text-lg transition-colors hover:text-primary"
+                    onClick={() =>
+                        prosit.chapter
+                            ? router.visit(
+                                  `/courses/${prosit.chapter.course.id}/prosits/${prosit.id}`,
+                              )
+                            : openAllocate(prosit)
+                    }
+                >
+                    {prosit.generalisation || 'Prosit sans titre'}
+                </CardTitle>
+                <CardDescription className="mt-1 flex items-center gap-1 text-xs">
+                    {prosit.chapter ? (
+                        <>
+                            <LayoutGrid className="h-3 w-3" />{' '}
+                            {prosit.chapter.course.title} &gt;{' '}
+                            {prosit.chapter.title}
+                        </>
+                    ) : (
+                        <span className="text-amber-500">
+                            <FolderOpen className="mr-1 inline h-3 w-3" />
+                            Non alloué — cliquer pour assigner
+                        </span>
+                    )}
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="mb-4 flex items-center gap-2">
+                    {sourceBadge(prosit)}
+                </div>
+                {prosit.chapter ? (
+                    <Link
+                        href={`/courses/${prosit.chapter.course.id}/prosits/${prosit.id}`}
+                    >
+                        <Button variant="outline" className="w-full">
+                            View Details
+                        </Button>
+                    </Link>
+                ) : (
+                    <Button
+                        variant="outline"
+                        className="w-full border-amber-500/30 text-amber-500 hover:text-amber-400"
+                        onClick={() => openAllocate(prosit)}
+                    >
+                        <Upload className="mr-2 h-4 w-4" /> Assigner au cours
+                    </Button>
+                )}
+            </CardContent>
+        </Card>
+    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -232,65 +393,191 @@ export default function PrositsIndex({
                                     <Checkbox
                                         id="generate_with_ai"
                                         checked={createData.generate_with_ai}
-                                        onCheckedChange={(checked) => setCreateData('generate_with_ai', !!checked)}
+                                        onCheckedChange={(checked) =>
+                                            setCreateData(
+                                                'generate_with_ai',
+                                                !!checked,
+                                            )
+                                        }
                                     />
                                     <div className="grid gap-1.5 leading-none">
                                         <label
                                             htmlFor="generate_with_ai"
-                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                         >
                                             Generate with AI
                                         </label>
-                                        <p className="text-muted-foreground text-xs">
-                                            The AI will automatically structure the Prosit from your original text.
+                                        <p className="text-xs text-muted-foreground">
+                                            The AI will automatically structure
+                                            the Prosit from your original text.
                                         </p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium">Original Prosit Text</label>
-                                    <p className="text-muted-foreground text-xs italic">
-                                        Paste the raw text of the problem or situation here.
+                                    <label className="text-sm font-medium">
+                                        Original Prosit Text
+                                    </label>
+                                    <p className="text-xs text-muted-foreground italic">
+                                        Paste the raw text of the problem or
+                                        situation here.
                                     </p>
-                                    <Textarea value={createData.texte} onChange={e => setCreateData('texte', e.target.value)} rows={6} required />
+                                    <Textarea
+                                        value={createData.texte}
+                                        onChange={(e) =>
+                                            setCreateData(
+                                                'texte',
+                                                e.target.value,
+                                            )
+                                        }
+                                        rows={6}
+                                        required
+                                    />
                                 </div>
 
                                 {!createData.generate_with_ai && (
                                     <>
                                         <div className="space-y-2 border-t pt-4">
-                                            <label className="text-sm font-medium text-primary">Mots Clés (Keywords)</label>
-                                            <p className="text-muted-foreground text-xs">Comma-separated key technical terms.</p>
-                                            <Input value={createData.mots_cles} onChange={e => setCreateData('mots_cles', e.target.value)} placeholder="e.g. React, APIs, Authentication" />
+                                            <label className="text-sm font-medium text-primary">
+                                                Mots Clés (Keywords)
+                                            </label>
+                                            <p className="text-xs text-muted-foreground">
+                                                Comma-separated key technical
+                                                terms.
+                                            </p>
+                                            <Input
+                                                value={createData.mots_cles}
+                                                onChange={(e) =>
+                                                    setCreateData(
+                                                        'mots_cles',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="e.g. React, APIs, Authentication"
+                                            />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-primary">Contexte</label>
-                                            <p className="text-muted-foreground text-xs">Short narrative setting the scene for the student.</p>
-                                            <Textarea value={createData.contexte} onChange={e => setCreateData('contexte', e.target.value)} rows={2} placeholder="Dans le cadre de votre stage chez..." />
+                                            <label className="text-sm font-medium text-primary">
+                                                Contexte
+                                            </label>
+                                            <p className="text-xs text-muted-foreground">
+                                                Short narrative setting the
+                                                scene for the student.
+                                            </p>
+                                            <Textarea
+                                                value={createData.contexte}
+                                                onChange={(e) =>
+                                                    setCreateData(
+                                                        'contexte',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                rows={2}
+                                                placeholder="Dans le cadre de votre stage chez..."
+                                            />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-primary">Besoin</label>
-                                            <p className="text-muted-foreground text-xs">Precisely what the main character needs to achieve.</p>
-                                            <Textarea value={createData.besoin} onChange={e => setCreateData('besoin', e.target.value)} rows={2} placeholder="Le client a besoin d'une interface robuste pour..." />
+                                            <label className="text-sm font-medium text-primary">
+                                                Besoin
+                                            </label>
+                                            <p className="text-xs text-muted-foreground">
+                                                Precisely what the main
+                                                character needs to achieve.
+                                            </p>
+                                            <Textarea
+                                                value={createData.besoin}
+                                                onChange={(e) =>
+                                                    setCreateData(
+                                                        'besoin',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                rows={2}
+                                                placeholder="Le client a besoin d'une interface robuste pour..."
+                                            />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-primary">Problématique (Burning Question)</label>
-                                            <p className="text-muted-foreground text-xs">The core question that drives the learning.</p>
-                                            <Textarea value={createData.problematique} onChange={e => setCreateData('problematique', e.target.value)} rows={2} required placeholder="Comment pouvons-nous optimiser le chargement des..." />
+                                            <label className="text-sm font-medium text-primary">
+                                                Problématique (Burning Question)
+                                            </label>
+                                            <p className="text-xs text-muted-foreground">
+                                                The core question that drives
+                                                the learning.
+                                            </p>
+                                            <Textarea
+                                                value={createData.problematique}
+                                                onChange={(e) =>
+                                                    setCreateData(
+                                                        'problematique',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                rows={2}
+                                                required
+                                                placeholder="Comment pouvons-nous optimiser le chargement des..."
+                                            />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-primary">Généralisation (Short Title)</label>
-                                            <p className="text-muted-foreground text-xs">A punchy name for the module.</p>
-                                            <Input value={createData.generalisation} onChange={e => setCreateData('generalisation', e.target.value)} placeholder="e.g. Performance Optimization" />
+                                            <label className="text-sm font-medium text-primary">
+                                                Généralisation (Short Title)
+                                            </label>
+                                            <p className="text-xs text-muted-foreground">
+                                                A punchy name for the module.
+                                            </p>
+                                            <Input
+                                                value={
+                                                    createData.generalisation
+                                                }
+                                                onChange={(e) =>
+                                                    setCreateData(
+                                                        'generalisation',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="e.g. Performance Optimization"
+                                            />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-primary">Piste de solution</label>
-                                            <p className="text-muted-foreground text-xs">Guiding questions or hints for research.</p>
-                                            <Textarea value={createData.piste_de_solution} onChange={e => setCreateData('piste_de_solution', e.target.value)} rows={2} placeholder="- Qu'est-ce qu'un Service Worker?\n- Comment fonctionne le cache?" />
+                                            <label className="text-sm font-medium text-primary">
+                                                Piste de solution
+                                            </label>
+                                            <p className="text-xs text-muted-foreground">
+                                                Guiding questions or hints for
+                                                research.
+                                            </p>
+                                            <Textarea
+                                                value={
+                                                    createData.piste_de_solution
+                                                }
+                                                onChange={(e) =>
+                                                    setCreateData(
+                                                        'piste_de_solution',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                rows={2}
+                                                placeholder="- Qu'est-ce qu'un Service Worker?\n- Comment fonctionne le cache?"
+                                            />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-primary">Plan d'action</label>
-                                            <p className="text-muted-foreground text-xs">High-level steps to solve the problem.</p>
-                                            <Textarea value={createData.plan_d_action} onChange={e => setCreateData('plan_d_action', e.target.value)} rows={3} placeholder="1. Analyser les besoins\n2. Rechercher des solutions technologiques..." />
+                                            <label className="text-sm font-medium text-primary">
+                                                Plan d'action
+                                            </label>
+                                            <p className="text-xs text-muted-foreground">
+                                                High-level steps to solve the
+                                                problem.
+                                            </p>
+                                            <Textarea
+                                                value={createData.plan_d_action}
+                                                onChange={(e) =>
+                                                    setCreateData(
+                                                        'plan_d_action',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                rows={3}
+                                                placeholder="1. Analyser les besoins\n2. Rechercher des solutions technologiques..."
+                                            />
                                         </div>
                                     </>
                                 )}
@@ -304,10 +591,7 @@ export default function PrositsIndex({
                                     </Button>
                                     <Button
                                         type="submit"
-                                        disabled={
-                                            createProcessing ||
-                                            !createData.chapter_id
-                                        }
+                                        disabled={createProcessing}
                                     >
                                         Create
                                     </Button>
@@ -317,99 +601,57 @@ export default function PrositsIndex({
                     </Dialog>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {prosits.map((prosit) => (
-                        <Card
-                            key={prosit.id}
-                            className="group relative overflow-hidden border-2 border-white/5 bg-card/30 backdrop-blur-md transition-all hover:border-primary/40"
-                        >
-                            <div className="absolute top-4 right-4 z-10 opacity-0 transition-opacity group-hover:opacity-100">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 hover:bg-white/10"
-                                        >
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem
-                                            onClick={() => openEdit(prosit)}
-                                        >
-                                            <Edit2 className="mr-2 h-4 w-4" />{' '}
-                                            Edit
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            className="text-red-500 hover:text-red-600 focus:bg-red-500/10 focus:text-red-600"
-                                            onClick={() =>
-                                                handleDelete(prosit.id)
-                                            }
-                                        >
-                                            <Trash2 className="mr-2 h-4 w-4" />{' '}
-                                            Delete
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
+                <Tabs defaultValue="allocated">
+                    <TabsList>
+                        <TabsTrigger value="allocated" className="gap-2">
+                            <LayoutGrid className="h-4 w-4" />
+                            Alloués ({prosits.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="unallocated" className="gap-2">
+                            <FolderOpen className="h-4 w-4" />
+                            Non alloués ({unallocatedProsits.length})
+                        </TabsTrigger>
+                    </TabsList>
 
-                            <CardHeader>
-                                <div className="mb-2 flex items-start justify-between">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-sm">
-                                        <FileText className="h-5 w-5" />
-                                    </div>
+                    <TabsContent value="allocated" className="mt-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {prosits.map(renderPrositCard)}
+                            {prosits.length === 0 && (
+                                <div className="col-span-full flex flex-col items-center justify-center py-12 text-center opacity-70">
+                                    <FileText className="mb-4 h-12 w-12 text-muted-foreground" />
+                                    <h3 className="text-lg font-bold">
+                                        No Allocated Prosits
+                                    </h3>
+                                    <p className="text-sm">
+                                        Create a prosit or import one from the
+                                        CER library.
+                                    </p>
                                 </div>
-                                <CardTitle
-                                    className="line-clamp-2 cursor-pointer pr-6 text-lg transition-colors hover:text-primary"
-                                    onClick={() =>
-                                        router.visit(
-                                            `/courses/${prosit.chapter.course.id}/prosits/${prosit.id}`,
-                                        )
-                                    }
-                                >
-                                    {prosit.generalisation || 'Prosit sans titre'}
-                                </CardTitle>
-                                <CardDescription className="mt-1 flex items-center gap-1 text-xs">
-                                    <LayoutGrid className="h-3 w-3" />{' '}
-                                    {prosit.chapter?.course?.title} &gt;{' '}
-                                    {prosit.chapter?.title}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="mb-4 flex items-center gap-2">
-                                    <Badge variant="secondary" className="text-xs">
-                                        Prosit
-                                    </Badge>
-                                </div>
-                                <Link
-                                    href={`/courses/${prosit.chapter?.course?.id}/prosits/${prosit.id}`}
-                                >
-                                    <Button
-                                        variant="outline"
-                                        className="w-full"
-                                    >
-                                        View Details
-                                    </Button>
-                                </Link>
-                            </CardContent>
-                        </Card>
-                    ))}
-
-                    {prosits.length === 0 && (
-                        <div className="col-span-full flex flex-col items-center justify-center py-12 text-center opacity-70">
-                            <FileText className="mb-4 h-12 w-12 text-muted-foreground" />
-                            <h3 className="text-lg font-bold">
-                                No Prosits Found
-                            </h3>
-                            <p className="text-sm">
-                                Create a prosit and link it to a chapter.
-                            </p>
+                            )}
                         </div>
-                    )}
-                </div>
+                    </TabsContent>
+
+                    <TabsContent value="unallocated" className="mt-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {unallocatedProsits.map(renderPrositCard)}
+                            {unallocatedProsits.length === 0 && (
+                                <div className="col-span-full flex flex-col items-center justify-center py-12 text-center opacity-70">
+                                    <FolderOpen className="mb-4 h-12 w-12 text-muted-foreground" />
+                                    <h3 className="text-lg font-bold">
+                                        No Unallocated Prosits
+                                    </h3>
+                                    <p className="text-sm">
+                                        Import a prosit from the CER library and
+                                        it will appear here.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </TabsContent>
+                </Tabs>
             </div>
 
+            {/* Edit dialog */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
@@ -458,36 +700,105 @@ export default function PrositsIndex({
                             )}
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Texte (Original Text)</label>
-                            <Textarea value={editData.texte} onChange={e => setEditData('texte', e.target.value)} rows={4} />
+                            <label className="text-sm font-medium">
+                                Texte (Original Text)
+                            </label>
+                            <Textarea
+                                value={editData.texte}
+                                onChange={(e) =>
+                                    setEditData('texte', e.target.value)
+                                }
+                                rows={4}
+                            />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Mots Clés (Keywords)</label>
-                            <Input value={editData.mots_cles} onChange={e => setEditData('mots_cles', e.target.value)} />
+                            <label className="text-sm font-medium">
+                                Mots Clés (Keywords)
+                            </label>
+                            <Input
+                                value={editData.mots_cles}
+                                onChange={(e) =>
+                                    setEditData('mots_cles', e.target.value)
+                                }
+                            />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Contexte</label>
-                            <Textarea value={editData.contexte} onChange={e => setEditData('contexte', e.target.value)} rows={2} />
+                            <label className="text-sm font-medium">
+                                Contexte
+                            </label>
+                            <Textarea
+                                value={editData.contexte}
+                                onChange={(e) =>
+                                    setEditData('contexte', e.target.value)
+                                }
+                                rows={2}
+                            />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Besoin</label>
-                            <Textarea value={editData.besoin} onChange={e => setEditData('besoin', e.target.value)} rows={2} />
+                            <label className="text-sm font-medium">
+                                Besoin
+                            </label>
+                            <Textarea
+                                value={editData.besoin}
+                                onChange={(e) =>
+                                    setEditData('besoin', e.target.value)
+                                }
+                                rows={2}
+                            />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Problématique (Question(s))</label>
-                            <Textarea value={editData.problematique} onChange={e => setEditData('problematique', e.target.value)} rows={2} required />
+                            <label className="text-sm font-medium">
+                                Problématique (Question(s))
+                            </label>
+                            <Textarea
+                                value={editData.problematique}
+                                onChange={(e) =>
+                                    setEditData('problematique', e.target.value)
+                                }
+                                rows={2}
+                                required
+                            />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Généralisation</label>
-                            <Input value={editData.generalisation} onChange={e => setEditData('generalisation', e.target.value)} />
+                            <label className="text-sm font-medium">
+                                Généralisation
+                            </label>
+                            <Input
+                                value={editData.generalisation}
+                                onChange={(e) =>
+                                    setEditData(
+                                        'generalisation',
+                                        e.target.value,
+                                    )
+                                }
+                            />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Piste de solution</label>
-                            <Textarea value={editData.piste_de_solution} onChange={e => setEditData('piste_de_solution', e.target.value)} rows={2} />
+                            <label className="text-sm font-medium">
+                                Piste de solution
+                            </label>
+                            <Textarea
+                                value={editData.piste_de_solution}
+                                onChange={(e) =>
+                                    setEditData(
+                                        'piste_de_solution',
+                                        e.target.value,
+                                    )
+                                }
+                                rows={2}
+                            />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Plan d'action</label>
-                            <Textarea value={editData.plan_d_action} onChange={e => setEditData('plan_d_action', e.target.value)} rows={3} />
+                            <label className="text-sm font-medium">
+                                Plan d'action
+                            </label>
+                            <Textarea
+                                value={editData.plan_d_action}
+                                onChange={(e) =>
+                                    setEditData('plan_d_action', e.target.value)
+                                }
+                                rows={3}
+                            />
                         </div>
                         <DialogFooter>
                             <Button
@@ -499,6 +810,113 @@ export default function PrositsIndex({
                             </Button>
                             <Button type="submit" disabled={editProcessing}>
                                 Save changes
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Allocate dialog (for unallocated prosits) */}
+            <Dialog open={isAllocateOpen} onOpenChange={setIsAllocateOpen}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Assigner au cours</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleAllocate} className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">
+                                Chapitre
+                            </label>
+                            <Select
+                                value={allocateData.chapter_id}
+                                onValueChange={(v) =>
+                                    setAllocateData('chapter_id', v)
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Sélectionnez un chapitre..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {Object.entries(groupedChapters).map(
+                                        ([courseTitle, courseChapters]) => (
+                                            <optgroup
+                                                key={courseTitle}
+                                                label={courseTitle}
+                                                className="p-1 font-semibold text-primary"
+                                            >
+                                                {courseChapters.map((c) => (
+                                                    <SelectItem
+                                                        key={c.id}
+                                                        value={c.id}
+                                                        className="ml-2 font-normal text-foreground"
+                                                    >
+                                                        {c.title}
+                                                    </SelectItem>
+                                                ))}
+                                            </optgroup>
+                                        ),
+                                    )}
+                                </SelectContent>
+                            </Select>
+                            {allocateErrors.chapter_id && (
+                                <p className="text-xs text-red-500">
+                                    {allocateErrors.chapter_id}
+                                </p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                                Le prosit sera lié à ce chapitre et deviendra
+                                visible dans le cours.
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">
+                                Problématique
+                            </label>
+                            <Textarea
+                                value={allocateData.problematique}
+                                onChange={(e) =>
+                                    setAllocateData(
+                                        'problematique',
+                                        e.target.value,
+                                    )
+                                }
+                                rows={3}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">
+                                Généralisation (titre court)
+                            </label>
+                            <Input
+                                value={allocateData.generalisation}
+                                onChange={(e) =>
+                                    setAllocateData(
+                                        'generalisation',
+                                        e.target.value,
+                                    )
+                                }
+                                placeholder="e.g. Performance Optimization"
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsAllocateOpen(false)}
+                            >
+                                Annuler
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={
+                                    allocateProcessing ||
+                                    !allocateData.chapter_id
+                                }
+                            >
+                                {allocateProcessing
+                                    ? 'Assignation...'
+                                    : 'Assigner au chapitre'}
                             </Button>
                         </DialogFooter>
                     </form>

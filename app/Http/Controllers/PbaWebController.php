@@ -8,12 +8,18 @@ use App\Models\Course;
 use App\Models\Exam;
 use App\Models\Prosit;
 use App\Models\Resource;
+use App\Services\CerMicroserviceClient;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Exception;
+use RuntimeException;
 
 class PbaWebController extends Controller
 {
+    public function __construct(
+        private CerMicroserviceClient $cerClient,
+    ) {}
+
     public function indexCourses()
     {
         $courses = Course::with('chapters.prosits')->latest()->get();
@@ -108,17 +114,19 @@ class PbaWebController extends Controller
     {
         $prosits = Prosit::with(['chapter.course'])->latest()->get();
         $chapters = Chapter::with('course')->get();
+        $unallocatedProsits = Prosit::unallocated()->latest()->get();
 
         return Inertia::render('prosits/index', [
             'prosits' => $prosits,
             'chapters' => $chapters,
+            'unallocatedProsits' => $unallocatedProsits,
         ]);
     }
 
     public function storeProsit(Request $request)
     {
         $rules = [
-            'chapter_id' => 'required|exists:chapters,id',
+            'chapter_id' => 'nullable|exists:chapters,id',
             'texte' => 'required|string',
             'generate_with_ai' => 'boolean',
         ];
@@ -138,6 +146,8 @@ class PbaWebController extends Controller
         ]);
 
         $validated = $request->validate($rules);
+
+        $validated['source'] = \App\Enums\PrositSource::MANUAL->value;
 
         $prosit = Prosit::create($validated);
 
@@ -163,7 +173,7 @@ class PbaWebController extends Controller
     public function updateProsit(Request $request, Prosit $prosit)
     {
         $validated = $request->validate([
-            'chapter_id' => 'required|exists:chapters,id',
+            'chapter_id' => 'nullable|exists:chapters,id',
             'mots_cles' => 'nullable|string',
             'contexte' => 'nullable|string',
             'besoin' => 'nullable|string',
@@ -180,9 +190,19 @@ class PbaWebController extends Controller
 
     public function destroyProsit(Prosit $prosit)
     {
+        // Also delete the linked prosit in the CER microservice if it was uploaded from there
+        if ($prosit->cer_microservice_id) {
+            try {
+                $this->cerClient->deleteProsit(auth()->user(), $prosit->cer_microservice_id);
+            } catch (RuntimeException $e) {
+                // Microservice may be unreachable — log and continue
+                report($e);
+            }
+        }
+
         $prosit->delete();
 
-        return back()->with('success', 'Prosit deleted');
+        return redirect()->route('prosits.index')->with('success', 'Prosit deleted');
     }
 
     public function storeCompetence(Request $request, Prosit $prosit)

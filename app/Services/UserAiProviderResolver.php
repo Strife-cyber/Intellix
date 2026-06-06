@@ -117,6 +117,10 @@ class UserAiProviderResolver
             AiProviders::OPENROUTER => 'openai/gpt-4o-mini',
             AiProviders::OPENAI => 'gpt-4o-mini',
             AiProviders::GEMINI => 'gemini-2.0-flash',
+            AiProviders::COHERE => 'command-r',
+            AiProviders::JINA => 'jina-reranker-v1-base',
+            AiProviders::VOYAGE => 'voyage-3',
+            AiProviders::TOGETHER => 'mistralai/Mistral-7B-Instruct-v0.3',
             default => null,
         };
     }

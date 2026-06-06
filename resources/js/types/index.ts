@@ -1,6 +1,5 @@
 import type { BreadcrumbItem } from '@/types/navigation';
 
-
 export type * from './auth';
 export type * from './navigation';
 export type * from './ui';
@@ -29,7 +28,9 @@ export type Resource = {
 
 export type Prosit = {
     id: string;
-    chapter_id: string;
+    chapter_id: string | null;
+    source: 'manual' | 'uploaded' | 'generated';
+    cer_microservice_id: string | null;
     mots_cles: string | null;
     contexte: string | null;
     besoin: string | null;
@@ -42,14 +43,14 @@ export type Prosit = {
         id: string;
         title: string;
         course: { id: string; title: string };
-    };
+    } | null;
 };
 
 export type Chapter = {
     id: string;
     title: string;
     course: { id: string; title: string };
-}
+};
 
 export type Question = {
     id: string;
@@ -63,7 +64,7 @@ export type Question = {
     correct_boolean: boolean | null;
     expected_answer: string | null;
     competence: { title: string; taxonomy_level: string } | null;
-}
+};
 
 export type Exam = {
     id: string;
@@ -72,7 +73,7 @@ export type Exam = {
     total_marks: number;
     questions: Question[];
     prosit: Prosit;
-}
+};
 
 export type Course = {
     id: string;
@@ -80,12 +81,12 @@ export type Course = {
     description: string;
     cover_image: string | null;
     chapters: Chapter[];
-}
+};
 
 export type CerSection = {
     title: string;
     content: string;
-}
+};
 
 export type Cer = {
     id: number;
@@ -99,4 +100,4 @@ export type Cer = {
     difficultes: string[];
     perspectives: string[];
     [key: string]: unknown;
-}
+};

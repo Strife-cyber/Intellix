@@ -305,6 +305,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('cers/jobs');
     })->name('cers.jobs');
 
+    Route::post('cers/jobs/{id}/save-resource', [CerWebController::class, 'saveGeneratedResource'])
+        ->name('cers.jobs.save-resource');
+
     Route::resource('cers', CahierController::class);
 });
 

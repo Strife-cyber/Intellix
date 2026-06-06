@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Download, LoaderCircle, RefreshCcw } from 'lucide-react';
+import { CheckCircle, Download, LoaderCircle, RefreshCcw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,14 +27,48 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Travaux en cours', href: '/cers/jobs' },
 ];
 
+/**
+ * Save a completed CER job's PDF as a Resource linked to the local prosit.
+ */
+async function saveCerResource(
+    jobId: string,
+    prositId: string,
+): Promise<boolean> {
+    try {
+        const res = await fetch(
+            `/cers/jobs/${encodeURIComponent(jobId)}/save-resource`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({ prosit_id: prositId }),
+                credentials: 'same-origin',
+            },
+        );
+        if (!res.ok) {
+            console.warn('Failed to save CER resource:', await res.text());
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.warn('Failed to save CER resource:', e);
+        return false;
+    }
+}
+
 export default function JobsPage() {
     const [jobId, setJobId] = useState('');
     const [job, setJob] = useState<CerJob | null>(null);
-    const [status, setStatus] = useState<'idle' | 'loading' | 'failed' | 'polling'>(
-        'idle',
-    );
+    const [status, setStatus] = useState<
+        'idle' | 'loading' | 'failed' | 'polling'
+    >('idle');
     const [error, setError] = useState<string | null>(null);
+    const [resourceSaved, setResourceSaved] = useState(false);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const prositIdRef = useRef<string | null>(null);
 
     const stopPolling = useCallback(() => {
         if (pollRef.current) {
@@ -80,6 +114,19 @@ export default function JobsPage() {
                             ) {
                                 stopPolling();
                                 setStatus('idle');
+
+                                // Auto-save the PDF as a Resource when completed
+                                if (
+                                    polled.status === 'completed' &&
+                                    prositIdRef.current &&
+                                    polled.result?.pdf_ready
+                                ) {
+                                    const saved = await saveCerResource(
+                                        trimmed,
+                                        prositIdRef.current,
+                                    );
+                                    setResourceSaved(saved);
+                                }
                             }
                         } catch {
                             stopPolling();
@@ -88,6 +135,19 @@ export default function JobsPage() {
                     }, 2000);
                 } else {
                     setStatus('idle');
+
+                    // If the job was already completed when loaded, try to save the resource
+                    if (
+                        data.status === 'completed' &&
+                        prositIdRef.current &&
+                        data.result?.pdf_ready
+                    ) {
+                        const saved = await saveCerResource(
+                            trimmed,
+                            prositIdRef.current,
+                        );
+                        setResourceSaved(saved);
+                    }
                 }
             } catch (e) {
                 setStatus('failed');
@@ -105,6 +165,9 @@ export default function JobsPage() {
         const url = new URL(window.location.href);
         const fromQuery = url.searchParams.get('jobId');
         const fromStorage = readLastJobId();
+        const prositId = url.searchParams.get('prositId');
+        prositIdRef.current = prositId;
+
         const initial = fromQuery || fromStorage || '';
 
         if (initial) {
@@ -116,7 +179,9 @@ export default function JobsPage() {
     }, [fetchJob, stopPolling]);
 
     const isActive =
-        job?.status === 'queued' || job?.status === 'running' || status === 'polling';
+        job?.status === 'queued' ||
+        job?.status === 'running' ||
+        status === 'polling';
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -134,9 +199,7 @@ export default function JobsPage() {
                         </p>
                     </div>
                     <Button variant="outline" className="rounded-2xl" asChild>
-                        <Link href={cers.index().url}>
-                            Bibliothèque PROSIT
-                        </Link>
+                        <Link href={cers.index().url}>Bibliothèque PROSIT</Link>
                     </Button>
                 </div>
 
@@ -144,8 +207,9 @@ export default function JobsPage() {
                     <CardHeader>
                         <CardTitle>Job CER</CardTitle>
                         <CardDescription>
-                            Collez un identifiant ou lancez une génération depuis un
-                            cahier — vous serez redirigé ici automatiquement.
+                            Collez un identifiant ou lancez une génération
+                            depuis un cahier — vous serez redirigé ici
+                            automatiquement.
                         </CardDescription>
                     </CardHeader>
 
@@ -184,9 +248,17 @@ export default function JobsPage() {
                             </div>
                         )}
 
+                        {resourceSaved && (
+                            <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-4 text-sm text-green-600 dark:text-green-400">
+                                <CheckCircle className="mr-2 inline h-4 w-4" />
+                                PDF enregistré dans les ressources du Prosit.
+                            </div>
+                        )}
+
                         {!job && status === 'idle' && !error && (
                             <p className="text-sm text-muted-foreground">
-                                Aucun travail actif. Lancez une génération depuis{' '}
+                                Aucun travail actif. Lancez une génération
+                                depuis{' '}
                                 <Link
                                     href="/cers/generate"
                                     className="font-medium text-primary underline"
@@ -236,8 +308,8 @@ export default function JobsPage() {
                                     <div className="space-y-3">
                                         {!job.result?.pdf_ready && (
                                             <p className="text-sm text-amber-700 dark:text-amber-400">
-                                                PDF non disponible — utilisez LaTeX ou
-                                                ZIP.
+                                                PDF non disponible — utilisez
+                                                LaTeX ou ZIP.
                                             </p>
                                         )}
                                         <div className="flex flex-wrap gap-3">
@@ -245,7 +317,9 @@ export default function JobsPage() {
                                                 asChild
                                                 variant="outline"
                                                 className="rounded-2xl"
-                                                disabled={!job.result?.pdf_ready}
+                                                disabled={
+                                                    !job.result?.pdf_ready
+                                                }
                                             >
                                                 <a
                                                     href={jobDownloadUrl(

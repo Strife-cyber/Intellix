@@ -1,6 +1,12 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -31,7 +37,7 @@ import {
     Plus,
     X,
     Paperclip,
-    Trash2
+    Trash2,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -42,6 +48,8 @@ interface Resource {
     id: string;
     original_name: string;
     type: string | null;
+    mime_type: string;
+    s3_key: string;
 }
 
 interface Competence {
@@ -93,16 +101,32 @@ export default function PrositShow({
         },
     ];
 
-    const { data: compData, setData: setCompData, post: compPost, processing: compProcessing, reset: compReset } = useForm({
+    const {
+        data: compData,
+        setData: setCompData,
+        post: compPost,
+        processing: compProcessing,
+        reset: compReset,
+    } = useForm({
         competences: [
-            { title: '', description: '', taxonomy_level: 'Connaissance', weight: 1 }
-        ]
+            {
+                title: '',
+                description: '',
+                taxonomy_level: 'Connaissance',
+                weight: 1,
+            },
+        ],
     });
 
     const addCompRow = () => {
         setCompData('competences', [
             ...compData.competences,
-            { title: '', description: '', taxonomy_level: 'Connaissance', weight: 1 }
+            {
+                title: '',
+                description: '',
+                taxonomy_level: 'Connaissance',
+                weight: 1,
+            },
         ]);
     };
 
@@ -120,7 +144,12 @@ export default function PrositShow({
         setCompData('competences', newComps);
     };
 
-    const { data: resData, setData: setResData, post: resPost, processing: resProcessing } = useForm({
+    const {
+        data: resData,
+        setData: setResData,
+        post: resPost,
+        processing: resProcessing,
+    } = useForm({
         resource_ids: [] as string[],
     });
 
@@ -128,20 +157,22 @@ export default function PrositShow({
         setIsGenerating(true);
         setGenerationProgress(0);
         setGenerationStatus('Dispatching generation job...');
-        
+
         try {
             // Dispatch the job
-            const response = await window.axios.post(`/prosits/${prosit.id}/generate-exam`, {
-                total_questions: count,
-            });
+            const response = await window.axios.post(
+                `/prosits/${prosit.id}/generate-exam`,
+                {
+                    total_questions: count,
+                },
+            );
 
             const jobId = response.data.job_id;
             setCurrentJobIds([jobId]);
-            
+
             // Start polling for status
             setGenerationStatus('Generating exam questions...');
             pollJobStatus(jobId, count);
-            
         } catch (error: any) {
             console.error('Failed to start exam generation:', error);
             setGenerationStatus('Failed to start generation');
@@ -152,30 +183,30 @@ export default function PrositShow({
     const pollJobStatus = async (jobId: string, totalQuestions: number) => {
         const pollInterval = setInterval(async () => {
             try {
-                const response = await window.axios.get(`/jobs/exam/${jobId}/status`);
+                const response = await window.axios.get(
+                    `/jobs/exam/${jobId}/status`,
+                );
                 const status = response.data.data;
-                
+
                 setGenerationProgress(status.progress || 0);
                 setGenerationStatus(status.message || 'Processing...');
-                
+
                 if (status.status === 'completed') {
                     clearInterval(pollInterval);
                     setGenerationProgress(100);
                     setGenerationStatus('Exam generation completed!');
                     setIsGenerating(false);
                     setIsGenerateDialogOpen(false);
-                    
+
                     // Redirect to exams page after a short delay
                     setTimeout(() => {
                         router.visit('/exams');
                     }, 2000);
-                    
                 } else if (status.status === 'failed') {
                     clearInterval(pollInterval);
                     setGenerationStatus('Exam generation failed');
                     setIsGenerating(false);
                 }
-                
             } catch (error) {
                 console.error('Failed to poll job status:', error);
                 clearInterval(pollInterval);
@@ -183,15 +214,18 @@ export default function PrositShow({
                 setIsGenerating(false);
             }
         }, 2000); // Poll every 2 seconds
-        
+
         // Stop polling after 15 minutes max
-        setTimeout(() => {
-            clearInterval(pollInterval);
-            if (isGenerating) {
-                setGenerationStatus('Generation timeout');
-                setIsGenerating(false);
-            }
-        }, 15 * 60 * 1000);
+        setTimeout(
+            () => {
+                clearInterval(pollInterval);
+                if (isGenerating) {
+                    setGenerationStatus('Generation timeout');
+                    setIsGenerating(false);
+                }
+            },
+            15 * 60 * 1000,
+        );
     };
 
     const handleAddCompetence = (e: React.FormEvent) => {
@@ -200,7 +234,7 @@ export default function PrositShow({
             onSuccess: () => {
                 setIsCompDialogOpen(false);
                 compReset();
-            }
+            },
         });
     };
 
@@ -216,7 +250,7 @@ export default function PrositShow({
             onSuccess: () => {
                 setIsResDialogOpen(false);
                 setResData('resource_ids', []);
-            }
+            },
         });
     };
 
@@ -240,36 +274,44 @@ export default function PrositShow({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Prosit: ${prosit.generalisation || 'Sans titre'}`} />
-            <div className="space-y-6 mx-auto p-6 max-w-6xl">
-                <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-6 bg-card shadow-lg p-6 border border-white/5 rounded-2xl">
+            <div className="mx-auto max-w-6xl space-y-6 p-6">
+                <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-white/5 bg-card p-6 shadow-lg md:flex-row md:items-center">
                     <div>
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="mb-2 flex items-center gap-3">
                             <Badge
                                 variant="outline"
-                                className="border-primary/50 text-[10px] text-primary uppercase tracking-widest"
+                                className="border-primary/50 text-[10px] tracking-widest text-primary uppercase"
                             >
                                 Problem-Based Approach
                             </Badge>
                         </div>
-                        <h1 className="flex items-center gap-3 font-bold text-black dark:text-white text-3xl tracking-tight">
-                            <FileText className="w-8 h-8 text-primary" />
+                        <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight text-black dark:text-white">
+                            <FileText className="h-8 w-8 text-primary" />
                             {prosit.generalisation || 'Prosit sans titre'}
                         </h1>
                     </div>
-                    <Dialog open={isGenerateDialogOpen} onOpenChange={setIsGenerateDialogOpen}>
+                    <Dialog
+                        open={isGenerateDialogOpen}
+                        onOpenChange={setIsGenerateDialogOpen}
+                    >
                         <DialogTrigger asChild>
                             <Button
                                 size="lg"
-                                disabled={isGenerating || prosit.competences.length === 0}
-                                className="gap-2 bg-gradient-to-r from-primary hover:from-primary/90 to-purple-600 hover:to-purple-600/90 shadow-primary/20 shadow-xl px-8 rounded-full shrink-0"
+                                disabled={
+                                    isGenerating ||
+                                    prosit.competences.length === 0
+                                }
+                                className="shrink-0 gap-2 rounded-full bg-gradient-to-r from-primary to-purple-600 px-8 shadow-xl shadow-primary/20 hover:from-primary/90 hover:to-purple-600/90"
                             >
                                 {isGenerating ? (
                                     <>
-                                        <Sparkles className="w-5 h-5 animate-pulse" /> Generating...
+                                        <Sparkles className="h-5 w-5 animate-pulse" />{' '}
+                                        Generating...
                                     </>
                                 ) : (
                                     <>
-                                        <BrainCircuit className="w-5 h-5" /> Generate AI Exam
+                                        <BrainCircuit className="h-5 w-5" />{' '}
+                                        Generate AI Exam
                                     </>
                                 )}
                             </Button>
@@ -277,37 +319,52 @@ export default function PrositShow({
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>
-                                    {isGenerating ? 'Generating AI Exam...' : 'Generate AI Exam'}
+                                    {isGenerating
+                                        ? 'Generating AI Exam...'
+                                        : 'Generate AI Exam'}
                                 </DialogTitle>
                                 <DialogDescription>
-                                    {isGenerating 
+                                    {isGenerating
                                         ? 'Your exam is being generated in the background. This may take a few minutes.'
-                                        : 'How many questions should the AI generate for this exam? Higher counts will be processed in batches to ensure quality.'
-                                    }
+                                        : 'How many questions should the AI generate for this exam? Higher counts will be processed in batches to ensure quality.'}
                                 </DialogDescription>
                             </DialogHeader>
-                            
+
                             {!isGenerating && (
                                 <div className="py-4">
-                                    <label className="block mb-2 font-medium text-sm">Number of Questions</label>
+                                    <label className="mb-2 block text-sm font-medium">
+                                        Number of Questions
+                                    </label>
                                     <Select
                                         value={questionCount.toString()}
-                                        onValueChange={v => setQuestionCount(parseInt(v))}
+                                        onValueChange={(v) =>
+                                            setQuestionCount(parseInt(v))
+                                        }
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select quantity" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="10">10 Questions</SelectItem>
-                                            <SelectItem value="20">20 Questions (2 batches)</SelectItem>
-                                            <SelectItem value="30">30 Questions (3 batches)</SelectItem>
-                                            <SelectItem value="40">40 Questions (4 batches)</SelectItem>
-                                            <SelectItem value="50">50 Questions (5 batches)</SelectItem>
+                                            <SelectItem value="10">
+                                                10 Questions
+                                            </SelectItem>
+                                            <SelectItem value="20">
+                                                20 Questions (2 batches)
+                                            </SelectItem>
+                                            <SelectItem value="30">
+                                                30 Questions (3 batches)
+                                            </SelectItem>
+                                            <SelectItem value="40">
+                                                40 Questions (4 batches)
+                                            </SelectItem>
+                                            <SelectItem value="50">
+                                                50 Questions (5 batches)
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                             )}
-                            
+
                             {isGenerating && (
                                 <div className="space-y-4 py-4">
                                     <div className="space-y-2">
@@ -315,35 +372,39 @@ export default function PrositShow({
                                             <span>Progress</span>
                                             <span>{generationProgress}%</span>
                                         </div>
-                                        <div className="bg-gray-200 rounded-full w-full h-2">
-                                            <div 
-                                                className="bg-primary rounded-full h-2 transition-all duration-500"
-                                                style={{ width: `${generationProgress}%` }}
+                                        <div className="h-2 w-full rounded-full bg-gray-200">
+                                            <div
+                                                className="h-2 rounded-full bg-primary transition-all duration-500"
+                                                style={{
+                                                    width: `${generationProgress}%`,
+                                                }}
                                             />
                                         </div>
                                     </div>
-                                    <div className="text-muted-foreground text-sm">
+                                    <div className="text-sm text-muted-foreground">
                                         {generationStatus}
                                     </div>
                                 </div>
                             )}
-                            
+
                             <DialogFooter>
                                 {!isGenerating ? (
                                     <Button
-                                        onClick={() => handleGenerateExam(questionCount)}
+                                        onClick={() =>
+                                            handleGenerateExam(questionCount)
+                                        }
                                         disabled={isGenerating}
-                                        className="bg-gradient-to-r from-primary to-purple-600 w-full"
+                                        className="w-full bg-gradient-to-r from-primary to-purple-600"
                                     >
                                         Start Generation
                                     </Button>
                                 ) : (
                                     <Button
                                         disabled
-                                        className="bg-gradient-to-r from-primary to-purple-600 w-full"
+                                        className="w-full bg-gradient-to-r from-primary to-purple-600"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <div className="border-2 border-white border-t-transparent rounded-full w-4 h-4 animate-spin" />
+                                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                                             Generating...
                                         </div>
                                     </Button>
@@ -354,22 +415,23 @@ export default function PrositShow({
                 </div>
 
                 {prosit.competences.length === 0 && (
-                    <div className="bg-red-500/10 p-4 border border-red-500/20 rounded-xl text-red-500 text-sm">
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-500">
                         Cannot generate an AI exam: This prosit has no mapped
-                        competences. Please add competences using the button below.
+                        competences. Please add competences using the button
+                        below.
                     </div>
                 )}
 
-                <div className="gap-6 grid grid-cols-1 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     {/* Main Problem statement column */}
                     <div className="space-y-6 lg:col-span-2">
-                        <Card className="bg-card shadow-lg border-border">
-                            <CardHeader className="border-border border-b">
+                        <Card className="border-border bg-card shadow-lg">
+                            <CardHeader className="border-b border-border">
                                 <CardTitle className="text-lg">
                                     Problématique
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="p-6 max-w-none text-sm leading-relaxed prose prose-gray">
+                            <CardContent className="prose prose-gray max-w-none p-6 text-sm leading-relaxed">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                     {prosit.problematique}
                                 </ReactMarkdown>
@@ -377,8 +439,12 @@ export default function PrositShow({
                                 {prosit.texte && (
                                     <>
                                         <hr className="my-6 border-border" />
-                                        <h4 className="mb-2 font-semibold">Texte</h4>
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        <h4 className="mb-2 font-semibold">
+                                            Texte
+                                        </h4>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                        >
                                             {prosit.texte}
                                         </ReactMarkdown>
                                     </>
@@ -387,8 +453,12 @@ export default function PrositShow({
                                 {prosit.contexte && (
                                     <>
                                         <hr className="my-6 border-border" />
-                                        <h4 className="mb-2 font-semibold">Contexte</h4>
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        <h4 className="mb-2 font-semibold">
+                                            Contexte
+                                        </h4>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                        >
                                             {prosit.contexte}
                                         </ReactMarkdown>
                                     </>
@@ -397,8 +467,12 @@ export default function PrositShow({
                                 {prosit.besoin && (
                                     <>
                                         <hr className="my-6 border-border" />
-                                        <h4 className="mb-2 font-semibold">Besoin</h4>
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        <h4 className="mb-2 font-semibold">
+                                            Besoin
+                                        </h4>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                        >
                                             {prosit.besoin}
                                         </ReactMarkdown>
                                     </>
@@ -407,8 +481,12 @@ export default function PrositShow({
                                 {prosit.generalisation && (
                                     <>
                                         <hr className="my-6 border-border" />
-                                        <h4 className="mb-2 font-semibold">Généralisation</h4>
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        <h4 className="mb-2 font-semibold">
+                                            Généralisation
+                                        </h4>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                        >
                                             {prosit.generalisation}
                                         </ReactMarkdown>
                                     </>
@@ -417,8 +495,12 @@ export default function PrositShow({
                                 {prosit.piste_de_solution && (
                                     <>
                                         <hr className="my-6 border-border" />
-                                        <h4 className="mb-2 font-semibold">Piste de solution</h4>
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        <h4 className="mb-2 font-semibold">
+                                            Piste de solution
+                                        </h4>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                        >
                                             {prosit.piste_de_solution}
                                         </ReactMarkdown>
                                     </>
@@ -427,8 +509,12 @@ export default function PrositShow({
                                 {prosit.plan_d_action && (
                                     <>
                                         <hr className="my-6 border-border" />
-                                        <h4 className="mb-2 font-semibold">Plan d'action</h4>
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        <h4 className="mb-2 font-semibold">
+                                            Plan d'action
+                                        </h4>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                        >
                                             {prosit.plan_d_action}
                                         </ReactMarkdown>
                                     </>
@@ -437,7 +523,9 @@ export default function PrositShow({
                                 {prosit.mots_cles && (
                                     <>
                                         <hr className="my-6 border-border" />
-                                        <h4 className="mb-2 font-semibold">Mots Clés</h4>
+                                        <h4 className="mb-2 font-semibold">
+                                            Mots Clés
+                                        </h4>
                                         <p>{prosit.mots_cles}</p>
                                     </>
                                 )}
@@ -447,103 +535,195 @@ export default function PrositShow({
 
                     {/* Meta column */}
                     <div className="space-y-6">
-                        <Card className="bg-card shadow-lg border-border">
-                            <CardHeader className="flex flex-row justify-between items-center pb-3">
-                                <CardTitle className="flex items-center gap-2 font-bold text-muted-foreground text-sm uppercase tracking-wider">
-                                    <Target className="w-4 h-4 text-primary" />
+                        <Card className="border-border bg-card shadow-lg">
+                            <CardHeader className="flex flex-row items-center justify-between pb-3">
+                                <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-wider text-muted-foreground uppercase">
+                                    <Target className="h-4 w-4 text-primary" />
                                     Competences
                                 </CardTitle>
-                                <Dialog open={isCompDialogOpen} onOpenChange={setIsCompDialogOpen}>
+                                <Dialog
+                                    open={isCompDialogOpen}
+                                    onOpenChange={setIsCompDialogOpen}
+                                >
                                     <DialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="hover:bg-white/5 border border-white/10 rounded-full w-8 h-8">
-                                            <Plus className="w-4 h-4" />
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 rounded-full border border-white/10 hover:bg-white/5"
+                                        >
+                                            <Plus className="h-4 w-4" />
                                         </Button>
                                     </DialogTrigger>
                                     <DialogContent className="sm:max-w-[700px]">
-                                        <form onSubmit={handleAddCompetence} className="space-y-4">
+                                        <form
+                                            onSubmit={handleAddCompetence}
+                                            className="space-y-4"
+                                        >
                                             <DialogHeader>
-                                                <DialogTitle>Add Competences</DialogTitle>
+                                                <DialogTitle>
+                                                    Add Competences
+                                                </DialogTitle>
                                                 <DialogDescription>
-                                                    Define what students should master through this Prosit.
+                                                    Define what students should
+                                                    master through this Prosit.
                                                 </DialogDescription>
                                             </DialogHeader>
-                                            <div className="space-y-6 px-1 py-4 max-h-[60vh] overflow-y-auto">
-                                                {compData.competences.map((comp, index) => (
-                                                    <div key={index} className="relative space-y-4 bg-muted hover:bg-muted/80 p-4 border rounded-xl transition-all">
-                                                        {compData.competences.length > 1 && (
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                onClick={() => removeCompRow(index)}
-                                                                className="-top-2 -right-2 absolute bg-red-500/20 hover:bg-red-500 rounded-full w-6 h-6 text-red-500 hover:text-white"
-                                                            >
-                                                                <X className="w-3 h-3" />
-                                                            </Button>
-                                                        )}
-                                                        <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
-                                                            <div className="space-y-2">
-                                                                <label className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">Title</label>
-                                                                <Input
-                                                                    value={comp.title}
-                                                                    onChange={e => updateCompRow(index, 'title', e.target.value)}
-                                                                    placeholder="e.g., Master UML Modeling"
-                                                                    className="bg-background"
-                                                                    required
-                                                                />
-                                                            </div>
-                                                            <div className="space-y-2">
-                                                                <label className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">Taxonomy Level</label>
-                                                                <Select
-                                                                    value={comp.taxonomy_level}
-                                                                    onValueChange={v => updateCompRow(index, 'taxonomy_level', v)}
+                                            <div className="max-h-[60vh] space-y-6 overflow-y-auto px-1 py-4">
+                                                {compData.competences.map(
+                                                    (comp, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className="relative space-y-4 rounded-xl border bg-muted p-4 transition-all hover:bg-muted/80"
+                                                        >
+                                                            {compData
+                                                                .competences
+                                                                .length > 1 && (
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        removeCompRow(
+                                                                            index,
+                                                                        )
+                                                                    }
+                                                                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white"
                                                                 >
-                                                                    <SelectTrigger className="bg-background">
-                                                                        <SelectValue placeholder="Select level" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        <SelectItem value="Connaissance">Connaissance</SelectItem>
-                                                                        <SelectItem value="Application">Application</SelectItem>
-                                                                    </SelectContent>
-                                                                </Select>
+                                                                    <X className="h-3 w-3" />
+                                                                </Button>
+                                                            )}
+                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                                <div className="space-y-2">
+                                                                    <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                                                        Title
+                                                                    </label>
+                                                                    <Input
+                                                                        value={
+                                                                            comp.title
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) =>
+                                                                            updateCompRow(
+                                                                                index,
+                                                                                'title',
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            )
+                                                                        }
+                                                                        placeholder="e.g., Master UML Modeling"
+                                                                        className="bg-background"
+                                                                        required
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-2">
+                                                                    <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                                                        Taxonomy
+                                                                        Level
+                                                                    </label>
+                                                                    <Select
+                                                                        value={
+                                                                            comp.taxonomy_level
+                                                                        }
+                                                                        onValueChange={(
+                                                                            v,
+                                                                        ) =>
+                                                                            updateCompRow(
+                                                                                index,
+                                                                                'taxonomy_level',
+                                                                                v,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <SelectTrigger className="bg-background">
+                                                                            <SelectValue placeholder="Select level" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            <SelectItem value="Connaissance">
+                                                                                Connaissance
+                                                                            </SelectItem>
+                                                                            <SelectItem value="Application">
+                                                                                Application
+                                                                            </SelectItem>
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                </div>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                                                                <div className="space-y-2">
+                                                                    <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                                                        Weight
+                                                                    </label>
+                                                                    <Input
+                                                                        type="number"
+                                                                        value={
+                                                                            comp.weight
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) =>
+                                                                            updateCompRow(
+                                                                                index,
+                                                                                'weight',
+                                                                                parseInt(
+                                                                                    e
+                                                                                        .target
+                                                                                        .value,
+                                                                                ),
+                                                                            )
+                                                                        }
+                                                                        min="1"
+                                                                        className="bg-background"
+                                                                        required
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-2 md:col-span-3">
+                                                                    <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                                                        Description
+                                                                    </label>
+                                                                    <Input
+                                                                        value={
+                                                                            comp.description
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) =>
+                                                                            updateCompRow(
+                                                                                index,
+                                                                                'description',
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            )
+                                                                        }
+                                                                        placeholder="Detailed goal..."
+                                                                        className="bg-background"
+                                                                    />
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div className="gap-4 grid grid-cols-1 md:grid-cols-4">
-                                                            <div className="space-y-2">
-                                                                <label className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">Weight</label>
-                                                                <Input
-                                                                    type="number"
-                                                                    value={comp.weight}
-                                                                    onChange={e => updateCompRow(index, 'weight', parseInt(e.target.value))}
-                                                                    min="1"
-                                                                    className="bg-background"
-                                                                    required
-                                                                />
-                                                            </div>
-                                                            <div className="space-y-2 md:col-span-3">
-                                                                <label className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">Description</label>
-                                                                <Input
-                                                                    value={comp.description}
-                                                                    onChange={e => updateCompRow(index, 'description', e.target.value)}
-                                                                    placeholder="Detailed goal..."
-                                                                    className="bg-background"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                    ),
+                                                )}
                                                 <Button
                                                     type="button"
                                                     variant="outline"
                                                     onClick={addCompRow}
-                                                    className="hover:bg-primary/5 py-6 hover:border-primary/50 border-dashed w-full"
+                                                    className="w-full border-dashed py-6 hover:border-primary/50 hover:bg-primary/5"
                                                 >
-                                                    <Plus className="mr-2 w-4 h-4" /> Add Another Competence
+                                                    <Plus className="mr-2 h-4 w-4" />{' '}
+                                                    Add Another Competence
                                                 </Button>
                                             </div>
                                             <DialogFooter>
-                                                <Button type="submit" disabled={compProcessing} className="bg-gradient-to-r from-primary to-purple-600 w-full">
-                                                    {compProcessing ? 'Adding...' : `Add ${compData.competences.length} Competence${compData.competences.length > 1 ? 's' : ''}`}
+                                                <Button
+                                                    type="submit"
+                                                    disabled={compProcessing}
+                                                    className="w-full bg-gradient-to-r from-primary to-purple-600"
+                                                >
+                                                    {compProcessing
+                                                        ? 'Adding...'
+                                                        : `Add ${compData.competences.length} Competence${compData.competences.length > 1 ? 's' : ''}`}
                                                 </Button>
                                             </DialogFooter>
                                         </form>
@@ -552,13 +732,15 @@ export default function PrositShow({
                             </CardHeader>
                             <CardContent className="space-y-3 pt-0">
                                 {prosit.competences &&
-                                    prosit.competences.length > 0 ? (
+                                prosit.competences.length > 0 ? (
                                     prosit.competences.map((comp) => (
                                         <div
                                             key={comp.id}
-                                            className="group relative bg-white/5 p-3 border border-white/5 rounded-lg"
+                                            className="group relative rounded-lg border border-white/5 bg-white/5 p-3"
                                         >
-                                            <p className="mb-1 font-semibold text-sm leading-tight">{comp.title}</p>
+                                            <p className="mb-1 text-sm leading-tight font-semibold">
+                                                {comp.title}
+                                            </p>
                                             <div className="flex gap-2">
                                                 <Badge
                                                     variant="outline"
@@ -576,70 +758,110 @@ export default function PrositShow({
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => handleDeleteCompetence(comp.id)}
-                                                className="top-2 right-2 absolute hover:bg-red-500/20 opacity-0 group-hover:opacity-100 w-6 h-6 hover:text-red-500 transition-opacity"
+                                                onClick={() =>
+                                                    handleDeleteCompetence(
+                                                        comp.id,
+                                                    )
+                                                }
+                                                className="absolute top-2 right-2 h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-500"
                                             >
-                                                <Trash2 className="w-3 h-3" />
+                                                <Trash2 className="h-3 w-3" />
                                             </Button>
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-muted-foreground text-xs italic">
+                                    <p className="text-xs text-muted-foreground italic">
                                         No competences mapped.
                                     </p>
                                 )}
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-card shadow-lg border-border">
-                            <CardHeader className="flex flex-row justify-between items-center pb-3">
-                                <CardTitle className="flex items-center gap-2 font-bold text-muted-foreground text-sm uppercase tracking-wider">
-                                    <FileStack className="w-4 h-4 text-primary" />
+                        <Card className="border-border bg-card shadow-lg">
+                            <CardHeader className="flex flex-row items-center justify-between pb-3">
+                                <CardTitle className="flex items-center gap-2 text-sm font-bold tracking-wider text-muted-foreground uppercase">
+                                    <FileStack className="h-4 w-4 text-primary" />
                                     Attached Resources
                                 </CardTitle>
-                                <Dialog open={isResDialogOpen} onOpenChange={setIsResDialogOpen}>
+                                <Dialog
+                                    open={isResDialogOpen}
+                                    onOpenChange={setIsResDialogOpen}
+                                >
                                     <DialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="hover:bg-white/5 border border-white/10 rounded-full w-8 h-8">
-                                            <Paperclip className="w-4 h-4" />
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 rounded-full border border-white/10 hover:bg-white/5"
+                                        >
+                                            <Paperclip className="h-4 w-4" />
                                         </Button>
                                     </DialogTrigger>
                                     <DialogContent className="sm:max-w-[500px]">
-                                        <form onSubmit={handleAttachResource} className="space-y-4">
+                                        <form
+                                            onSubmit={handleAttachResource}
+                                            className="space-y-4"
+                                        >
                                             <DialogHeader>
-                                                <DialogTitle>Attach Resources</DialogTitle>
+                                                <DialogTitle>
+                                                    Attach Resources
+                                                </DialogTitle>
                                                 <DialogDescription>
-                                                    Select existing resources to link to this Prosit.
+                                                    Select existing resources to
+                                                    link to this Prosit.
                                                 </DialogDescription>
                                             </DialogHeader>
-                                            <div className="space-y-2 py-2 max-h-[50vh] overflow-y-auto">
+                                            <div className="max-h-[50vh] space-y-2 overflow-y-auto py-2">
                                                 {allResources.length > 0 ? (
-                                                    <div className="gap-2 grid">
-                                                        {allResources.map(res => (
-                                                            <div
-                                                                key={res.id}
-                                                                className="flex items-center space-x-3 bg-muted hover:bg-muted/80 p-3 border rounded-lg transition-colors"
-                                                            >
-                                                                <Checkbox
-                                                                    id={`res-${res.id}`}
-                                                                    checked={resData.resource_ids.includes(res.id)}
-                                                                    onCheckedChange={() => toggleResourceSelection(res.id)}
-                                                                />
-                                                                <label
-                                                                    htmlFor={`res-${res.id}`}
-                                                                    className="flex-1 font-medium text-sm leading-none cursor-pointer"
+                                                    <div className="grid gap-2">
+                                                        {allResources.map(
+                                                            (res) => (
+                                                                <div
+                                                                    key={res.id}
+                                                                    className="flex items-center space-x-3 rounded-lg border bg-muted p-3 transition-colors hover:bg-muted/80"
                                                                 >
-                                                                    {res.original_name}
-                                                                </label>
-                                                                <Badge variant="outline" className="text-[9px] uppercase">
-                                                                    {res.type || 'File'}
-                                                                </Badge>
-                                                            </div>
-                                                        ))}
+                                                                    <Checkbox
+                                                                        id={`res-${res.id}`}
+                                                                        checked={resData.resource_ids.includes(
+                                                                            res.id,
+                                                                        )}
+                                                                        onCheckedChange={() =>
+                                                                            toggleResourceSelection(
+                                                                                res.id,
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                    <label
+                                                                        htmlFor={`res-${res.id}`}
+                                                                        className="flex-1 cursor-pointer text-sm leading-none font-medium"
+                                                                    >
+                                                                        {
+                                                                            res.original_name
+                                                                        }
+                                                                    </label>
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className={`text-[9px] uppercase ${res.type === 'cer' ? 'border-purple-500/30 text-purple-500' : ''}`}
+                                                                    >
+                                                                        {res.type ===
+                                                                        'cer'
+                                                                            ? 'CER'
+                                                                            : res.type ||
+                                                                              'File'}
+                                                                    </Badge>
+                                                                </div>
+                                                            ),
+                                                        )}
                                                     </div>
                                                 ) : (
-                                                    <div className="bg-yellow-500/10 p-4 border border-yellow-500/20 rounded-lg text-center">
-                                                        <p className="font-medium text-yellow-500 text-sm">No unattached resources found.</p>
-                                                        <Link href="/resources/upload" className="text-muted-foreground hover:text-white text-xs underline">
+                                                    <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 text-center">
+                                                        <p className="text-sm font-medium text-yellow-500">
+                                                            No unattached
+                                                            resources found.
+                                                        </p>
+                                                        <Link
+                                                            href="/resources/upload"
+                                                            className="text-xs text-muted-foreground underline hover:text-white"
+                                                        >
                                                             Go to upload page
                                                         </Link>
                                                     </div>
@@ -648,10 +870,16 @@ export default function PrositShow({
                                             <DialogFooter className="gap-2 sm:gap-0">
                                                 <Button
                                                     type="submit"
-                                                    disabled={resProcessing || resData.resource_ids.length === 0}
-                                                    className="bg-gradient-to-r from-primary to-blue-600 w-full"
+                                                    disabled={
+                                                        resProcessing ||
+                                                        resData.resource_ids
+                                                            .length === 0
+                                                    }
+                                                    className="w-full bg-gradient-to-r from-primary to-blue-600"
                                                 >
-                                                    {resProcessing ? 'Attaching...' : `Attach ${resData.resource_ids.length} Resource${resData.resource_ids.length > 1 ? 's' : ''}`}
+                                                    {resProcessing
+                                                        ? 'Attaching...'
+                                                        : `Attach ${resData.resource_ids.length} Resource${resData.resource_ids.length > 1 ? 's' : ''}`}
                                                 </Button>
                                             </DialogFooter>
                                         </form>
@@ -660,33 +888,40 @@ export default function PrositShow({
                             </CardHeader>
                             <CardContent className="space-y-2 pt-0">
                                 {prosit.resources &&
-                                    prosit.resources.length > 0 ? (
+                                prosit.resources.length > 0 ? (
                                     prosit.resources.map((res) => (
                                         <div
                                             key={res.id}
-                                            className="group relative flex items-center gap-3 bg-muted hover:bg-muted/80 p-3 border rounded-lg transition-colors cursor-pointer"
+                                            className="group relative flex cursor-pointer items-center gap-3 rounded-lg border bg-muted p-3 transition-colors hover:bg-muted/80"
                                         >
-                                            <div className="flex justify-center items-center bg-primary/20 rounded w-8 h-8 text-primary">
-                                                <FileText className="w-4 h-4" />
+                                            <div className="flex h-8 w-8 items-center justify-center rounded bg-primary/20 text-primary">
+                                                <FileText className="h-4 w-4" />
                                             </div>
-                                            <div className="pr-8 overflow-hidden">
-                                                <p className="font-semibold text-sm truncate leading-none">{res.original_name}</p>
+                                            <div className="overflow-hidden pr-8">
+                                                <p className="truncate text-sm leading-none font-semibold">
+                                                    {res.original_name}
+                                                </p>
                                                 <p className="text-[10px] text-muted-foreground uppercase">
-                                                    {res.type || 'Document'}
+                                                    {res.type === 'cer'
+                                                        ? 'CER'
+                                                        : res.type ||
+                                                          'Document'}
                                                 </p>
                                             </div>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => handleDetachResource(res.id)}
-                                                className="top-1/2 right-2 absolute hover:bg-red-500/20 opacity-0 group-hover:opacity-100 w-8 h-8 hover:text-red-500 transition-opacity -translate-y-1/2"
+                                                onClick={() =>
+                                                    handleDetachResource(res.id)
+                                                }
+                                                className="absolute top-1/2 right-2 h-8 w-8 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-500"
                                             >
-                                                <Trash2 className="w-4 h-4" />
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-muted-foreground text-xs italic">
+                                    <p className="text-xs text-muted-foreground italic">
                                         No resources attached.
                                     </p>
                                 )}
@@ -698,4 +933,3 @@ export default function PrositShow({
         </AppLayout>
     );
 }
-

@@ -148,6 +148,90 @@ class UserChatAiSetting extends Model
                     'temperature' => 'Optional',
                 ],
             ],
+            [
+                'type' => AiProviders::COHERE,
+                'label' => 'Cohere',
+                'summary' => 'Cohere chat API (command-r, command-r-plus).',
+                'fields' => [
+                    'apiKey' => true,
+                    'apiKeyRequired' => true,
+                    'endpoint' => false,
+                    'model' => true,
+                    'temperature' => true,
+                ],
+                'placeholders' => [
+                    'model' => 'command-r',
+                    'apiKey' => '…',
+                ],
+                'hints' => [
+                    'model' => 'Chat model name',
+                    'apiKey' => 'Required — from cohere.com',
+                    'temperature' => 'Optional',
+                ],
+            ],
+            [
+                'type' => AiProviders::JINA,
+                'label' => 'Jina AI',
+                'summary' => 'Jina AI chat API (jina-reranker, etc.).',
+                'fields' => [
+                    'apiKey' => true,
+                    'apiKeyRequired' => true,
+                    'endpoint' => false,
+                    'model' => true,
+                    'temperature' => true,
+                ],
+                'placeholders' => [
+                    'model' => 'jina-reranker-v1-base',
+                    'apiKey' => '…',
+                ],
+                'hints' => [
+                    'model' => 'Chat model name',
+                    'apiKey' => 'Required — from jina.ai',
+                    'temperature' => 'Optional',
+                ],
+            ],
+            [
+                'type' => AiProviders::VOYAGE,
+                'label' => 'Voyage AI',
+                'summary' => 'Voyage AI chat API (voyage-3, etc.).',
+                'fields' => [
+                    'apiKey' => true,
+                    'apiKeyRequired' => true,
+                    'endpoint' => false,
+                    'model' => true,
+                    'temperature' => true,
+                ],
+                'placeholders' => [
+                    'model' => 'voyage-3',
+                    'apiKey' => '…',
+                ],
+                'hints' => [
+                    'model' => 'Chat model name',
+                    'apiKey' => 'Required — from voyageai.com',
+                    'temperature' => 'Optional',
+                ],
+            ],
+            [
+                'type' => AiProviders::TOGETHER,
+                'label' => 'Together AI',
+                'summary' => 'Together AI chat API.',
+                'fields' => [
+                    'apiKey' => true,
+                    'apiKeyRequired' => true,
+                    'endpoint' => false,
+                    'model' => true,
+                    'temperature' => true,
+                ],
+                'placeholders' => [
+                    'model' => 'mistralai/Mistral-7B-Instruct-v0.3',
+                    'apiKey' => '…',
+                ],
+                'hints' => [
+                    'model' => 'Chat model id',
+                    'apiKey' => 'Required — from together.ai',
+                    'temperature' => 'Optional',
+                ],
+            ],
         ];
     }
 

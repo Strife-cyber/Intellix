@@ -14,6 +14,8 @@ class Prosit extends Model
 
     protected $fillable = [
         'chapter_id',
+        'source',
+        'cer_microservice_id',
         'mots_cles',
         'contexte',
         'besoin',
@@ -23,6 +25,33 @@ class Prosit extends Model
         'plan_d_action',
         'texte',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'chapter_id' => 'string',
+        ];
+    }
+
+    // ── Scopes ──────────────────────────────────────────────────────────
+
+    /**
+     * Scope to only include prosits not yet allocated to a chapter.
+     */
+    public function scopeUnallocated($query)
+    {
+        return $query->whereNull('chapter_id');
+    }
+
+    /**
+     * Scope to only include prosits allocated to a chapter.
+     */
+    public function scopeAllocated($query)
+    {
+        return $query->whereNotNull('chapter_id');
+    }
+
+    // ── Relations ──────────────────────────────────────────────────────────
 
     public function chapter(): BelongsTo
     {
