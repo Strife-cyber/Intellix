@@ -1,6 +1,13 @@
 import { Transition } from '@headlessui/react';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Pencil, Plus, Star, Trash2 } from 'lucide-react';
+import {
+    Pencil,
+    Plus,
+    Star,
+    Trash2,
+    LoaderCircle,
+    AlertTriangle,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import Heading from '@/components/heading';
@@ -23,6 +30,13 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import {
@@ -89,7 +103,7 @@ function ProviderSummary({
                     {parts.join(' ┬╖ ')}
                 </span>
             ) : (
-                <span className="block text-xs italic text-muted-foreground">
+                <span className="block text-xs text-muted-foreground italic">
                     Default settings
                 </span>
             )}
@@ -123,18 +137,83 @@ export default function AiSettings({
         if (editing) {
             used.delete(editing.provider_type);
         }
-        return providerCatalog
-            .map((p) => p.type)
-            .filter((t) => !used.has(t));
+        return providerCatalog.map((p) => p.type).filter((t) => !used.has(t));
     }, [settings, providerCatalog, editing]);
 
     const form = useForm({
         ...emptyForm,
-        provider_type: availableProviderTypes[0] ?? providerCatalog[0]?.type ?? '',
+        provider_type:
+            availableProviderTypes[0] ?? providerCatalog[0]?.type ?? '',
     });
 
     const activeType = editing?.provider_type ?? form.data.provider_type;
     const activeMeta = getProviderMeta(activeType, catalogMap);
+
+    const [availableModels, setAvailableModels] = useState<string[]>([]);
+    const [loadingModels, setLoadingModels] = useState(false);
+    const [modelsError, setModelsError] = useState<string | null>(null);
+
+    // Fetch available models when provider/endpoint/api_key changes
+    useEffect(() => {
+        if (!form.data.provider_type || !activeMeta.fields.model) {
+            setAvailableModels([]);
+            return;
+        }
+
+        const fetchModels = async () => {
+            setLoadingModels(true);
+            setModelsError(null);
+
+            try {
+                const csrfToken = document.cookie
+                    .split('; ')
+                    .find((row) => row.startsWith('XSRF-TOKEN='))
+                    ?.split('=')[1];
+
+                const res = await fetch('/api/ai/list-models', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        Accept: 'application/json',
+                        ...(csrfToken
+                            ? { 'X-XSRF-TOKEN': decodeURIComponent(csrfToken) }
+                            : {}),
+                    },
+                    body: JSON.stringify({
+                        provider_type: form.data.provider_type,
+                        endpoint: form.data.endpoint || null,
+                        api_key: form.data.api_key || null,
+                    }),
+                    credentials: 'same-origin',
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => null);
+                    throw new Error(
+                        err?.error || `Failed to list models (${res.status})`,
+                    );
+                }
+
+                const result = await res.json();
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to list models');
+                }
+
+                setAvailableModels(result.models || []);
+            } catch (e) {
+                setModelsError(
+                    e instanceof Error ? e.message : 'Failed to fetch models',
+                );
+                setAvailableModels([]);
+            } finally {
+                setLoadingModels(false);
+            }
+        };
+
+        const timer = setTimeout(fetchModels, 500);
+        return () => clearTimeout(timer);
+    }, [form.data.provider_type, form.data.endpoint, form.data.api_key]);
 
     const openAddModal = () => {
         setEditingId(null);
@@ -220,7 +299,11 @@ export default function AiSettings({
     };
 
     const setDefault = (row: AiSettingRow) => {
-        router.post(`/settings/ai/chat/${row.id}/default`, {}, { preserveScroll: true });
+        router.post(
+            `/settings/ai/chat/${row.id}/default`,
+            {},
+            { preserveScroll: true },
+        );
     };
 
     const deleteProvider = (row: AiSettingRow) => {
@@ -295,7 +378,9 @@ export default function AiSettings({
                                             <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 pb-2">
                                                 <div className="min-w-0">
                                                     <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-                                                        <span>{meta.label}</span>
+                                                        <span>
+                                                            {meta.label}
+                                                        </span>
                                                         {row.is_default && (
                                                             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                                                                 <Star className="h-3 w-3 fill-current" />
@@ -350,16 +435,16 @@ export default function AiSettings({
                         </ul>
                     ) : (
                         <p className="text-sm text-muted-foreground">
-                            No providers yet. Use{' '}
-                            <strong>Add provider</strong> to get started.
+                            No providers yet. Use <strong>Add provider</strong>{' '}
+                            to get started.
                         </p>
                     )}
 
                     {availableProviderTypes.length === 0 &&
                         settings.length > 0 && (
                             <p className="text-sm text-muted-foreground">
-                                All provider types are configured. Edit or remove
-                                one to add another.
+                                All provider types are configured. Edit or
+                                remove one to add another.
                             </p>
                         )}
                 </div>
@@ -379,7 +464,9 @@ export default function AiSettings({
                                 ? `Edit ${activeMeta.label}`
                                 : 'Add provider'}
                         </DialogTitle>
-                        <DialogDescription>{activeMeta.summary}</DialogDescription>
+                        <DialogDescription>
+                            {activeMeta.summary}
+                        </DialogDescription>
                     </DialogHeader>
 
                     <form onSubmit={submitForm} className="space-y-4">
@@ -400,8 +487,10 @@ export default function AiSettings({
                                     {availableProviderTypes.map((type) => (
                                         <option key={type} value={type}>
                                             {
-                                                getProviderMeta(type, catalogMap)
-                                                    .label
+                                                getProviderMeta(
+                                                    type,
+                                                    catalogMap,
+                                                ).label
                                             }
                                         </option>
                                     ))}
@@ -471,19 +560,61 @@ export default function AiSettings({
                         {activeMeta.fields.model && (
                             <div className="grid gap-2">
                                 <Label htmlFor="model">Model</Label>
-                                <Input
-                                    id="model"
-                                    value={form.data.model}
-                                    onChange={(e) =>
-                                        form.setData('model', e.target.value)
-                                    }
-                                    placeholder={activeMeta.placeholders.model}
-                                />
-                                {activeMeta.hints.model && (
-                                    <p className="text-xs text-muted-foreground">
-                                        {activeMeta.hints.model}
+                                {availableModels.length > 0 ? (
+                                    <Select
+                                        value={form.data.model}
+                                        onValueChange={(value) =>
+                                            form.setData('model', value)
+                                        }
+                                    >
+                                        <SelectTrigger id="model">
+                                            <SelectValue placeholder="Select a model..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableModels.map((model) => (
+                                                <SelectItem
+                                                    key={model}
+                                                    value={model}
+                                                >
+                                                    {model}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <Input
+                                        id="model"
+                                        value={form.data.model}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'model',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder={
+                                            activeMeta.placeholders.model
+                                        }
+                                    />
+                                )}
+                                {loadingModels && (
+                                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <LoaderCircle className="h-3 w-3 animate-spin" />
+                                        Loading available models...
                                     </p>
                                 )}
+                                {modelsError && (
+                                    <p className="flex items-center gap-1 text-xs text-red-500">
+                                        <AlertTriangle className="h-3 w-3" />
+                                        {modelsError}
+                                    </p>
+                                )}
+                                {activeMeta.hints.model &&
+                                    !loadingModels &&
+                                    !modelsError && (
+                                        <p className="text-xs text-muted-foreground">
+                                            {activeMeta.hints.model}
+                                        </p>
+                                    )}
                                 <InputError message={form.errors.model} />
                             </div>
                         )}

@@ -7,7 +7,6 @@ use App\Jobs\ProcessResourceJob;
 use App\Models\Resource;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -16,6 +15,8 @@ class ResourceUploadService
 {
     /**
      * Upload a file and create a resource.
+     * This method is designed to be FAST - it stores locally and returns immediately.
+     * The actual S3 upload and vectorization happen async via a queued job.
      */
     public function upload(UploadedFile $file): Resource
     {
@@ -25,11 +26,12 @@ class ResourceUploadService
         $mimeType = $file->getMimeType();
         $size = $file->getSize();
 
-        // Generate a unique path in S3
-        $path = 'resources/'.Str::uuid().'.'.$extension;
+        // Generate a unique path
+        $uuid = Str::uuid();
+        $path = 'resources/' . $uuid . '.' . $extension;
 
-        // Store the file in S3
-        Storage::disk('s3')->put($path, file_get_contents($file));
+        // Store locally first (fast, always works)
+        $localPath = $file->storeAs('resources', $uuid . '.' . $extension, 'local');
 
         // Create the resource record in the database
         /** @var resource $resource */
@@ -42,87 +44,14 @@ class ResourceUploadService
             'status' => ResourceStatus::PENDING,
             'metadata' => [
                 'extension' => $extension,
+                'local_path' => $localPath,
             ],
         ]);
 
-        // Submit task to Go broker instead of Laravel queue
-        $this->submitToBroker($resource);
+        // Dispatch S3 upload + vectorization as a queued job
+        // Using afterResponse so it doesn't block the HTTP response
+        ProcessResourceJob::dispatch($resource->id)->afterResponse();
 
         return $resource;
-    }
-
-    /**
-     * Submit resource processing task to Go broker.
-     */
-    protected function submitToBroker(Resource $resource): void
-    {
-        $brokerUrl = config('services.broker.url', 'http://localhost:8080');
-        $fileUrl = Storage::disk('s3')->url($resource->s3_key);
-        $serviceId = config('app.name', 'intellix');
-
-        try {
-            $response = Http::timeout(5)
-                ->connectTimeout(3)
-                ->post($brokerUrl.'/api/tasks', [
-                    'service_id' => $serviceId,
-                    'file_url' => $fileUrl,
-                    'task_type' => 'vectorize',
-                ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-                Log::info("Resource {$resource->id} submitted to broker", [
-                    'task_id' => $data['task_id'] ?? null,
-                ]);
-
-                // Store broker task ID in resource metadata
-                $resource->update([
-                    'metadata' => array_merge($resource->metadata ?? [], [
-                        'broker_task_id' => $data['task_id'] ?? null,
-                        'broker_submitted_at' => now()->toDateTimeString(),
-                    ]),
-                ]);
-
-                return;
-            }
-
-            Log::error("Failed to submit resource {$resource->id} to broker", [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-        } catch (\Throwable $e) {
-            Log::error("Exception submitting resource {$resource->id} to broker: ".$e->getMessage());
-        }
-
-        $this->queueProcessing($resource);
-    }
-
-    /**
-     * Queue post-upload processing after the HTTP response (never block upload with ingest/embed).
-     */
-    protected function queueProcessing(Resource $resource): void
-    {
-        $resourceId = $resource->id;
-
-        try {
-            ProcessResourceJob::dispatch($resourceId)->afterResponse();
-
-            return;
-        } catch (\Throwable $e) {
-            Log::warning("Queue dispatch failed for resource {$resourceId}: {$e->getMessage()}");
-        }
-
-        try {
-            dispatch(function () use ($resourceId): void {
-                ProcessResourceJob::dispatchSync($resourceId);
-            })->afterResponse();
-        } catch (\Throwable $e) {
-            Log::error("Could not schedule processing for resource {$resourceId}: {$e->getMessage()}");
-            $resource->update([
-                'metadata' => array_merge($resource->metadata ?? [], [
-                    'processing_error' => 'Could not queue indexing. Start a queue worker or fix QUEUE_CONNECTION.',
-                ]),
-            ]);
-        }
     }
 }

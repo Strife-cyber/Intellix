@@ -10,6 +10,7 @@ import {
     Upload,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import DeleteResourceModal from '@/components/delete-resource-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -46,6 +47,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, Chapter, Prosit } from '@/types';
+import { toast } from 'sonner';
 
 export default function PrositsIndex({
     prosits,
@@ -85,8 +87,11 @@ export default function PrositsIndex({
         piste_de_solution: '',
         plan_d_action: '',
         texte: '',
-        generate_with_ai: false,
+        template_id: '',
     });
+
+    const [templates, setTemplates] = useState([]);
+    const [loadingTemplates, setLoadingTemplates] = useState(false);
 
     const {
         data: editData,
@@ -179,13 +184,30 @@ export default function PrositsIndex({
         });
     };
 
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [resourceToDelete, setResourceToDelete] = useState<string | null>(
+        null,
+    );
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const handleDelete = (id: string) => {
-        if (
-            confirm(
-                'Are you sure you want to delete this Prosit? Related resources and competences will be affected.',
-            )
-        ) {
-            router.delete(`/prosits/${id}`);
+        setResourceToDelete(id);
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!resourceToDelete) return;
+
+        setIsDeleting(true);
+        try {
+            await router.delete(`/prosits/${resourceToDelete}`);
+        } catch (error) {
+            console.error('Failed to delete prosit:', error);
+            toast.error('Failed to delete prosit');
+        } finally {
+            setIsDeleting(false);
+            setDeleteModalOpen(false);
+            setResourceToDelete(null);
         }
     };
 
@@ -197,6 +219,24 @@ export default function PrositsIndex({
         }
         return groups;
     }, [chapters]);
+
+    // Fetch templates when component mounts
+    useEffect(() => {
+        const fetchTemplates = async () => {
+            try {
+                setLoadingTemplates(true);
+                const response = await window.axios.get('/api/templates');
+                setTemplates(response.data.templates || []);
+            } catch (error) {
+                console.error('Failed to fetch templates:', error);
+                toast.error('Failed to load templates');
+            } finally {
+                setLoadingTemplates(false);
+            }
+        };
+
+        fetchTemplates();
+    }, []);
 
     const sourceBadge = (prosit: Prosit) => {
         switch (prosit.source) {
@@ -389,16 +429,84 @@ export default function PrositsIndex({
                                     )}
                                 </div>
 
+                                {createData.generate_with_ai && (
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">
+                                            Template
+                                        </label>
+                                        <Select
+                                            value={createData.template_id}
+                                            onValueChange={(value) =>
+                                                setCreateData(
+                                                    'template_id',
+                                                    value,
+                                                )
+                                            }
+                                            disabled={
+                                                loadingTemplates ||
+                                                templates.length === 0
+                                            }
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a template..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {loadingTemplates ? (
+                                                    <SelectItem
+                                                        value="loading"
+                                                        disabled
+                                                    >
+                                                        Loading templates...
+                                                    </SelectItem>
+                                                ) : templates.length > 0 ? (
+                                                    templates.map(
+                                                        (template) => (
+                                                            <SelectItem
+                                                                key={
+                                                                    template.id
+                                                                }
+                                                                value={
+                                                                    template.id
+                                                                }
+                                                            >
+                                                                {template.name}
+                                                            </SelectItem>
+                                                        ),
+                                                    )
+                                                ) : (
+                                                    <SelectItem
+                                                        value=""
+                                                        disabled
+                                                    >
+                                                        No templates available
+                                                    </SelectItem>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">
+                                            Choose a template to structure your
+                                            Prosit generation
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div className="flex items-center space-x-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
                                     <Checkbox
                                         id="generate_with_ai"
                                         checked={createData.generate_with_ai}
-                                        onCheckedChange={(checked) =>
+                                        onCheckedChange={(checked) => {
                                             setCreateData(
                                                 'generate_with_ai',
                                                 !!checked,
-                                            )
-                                        }
+                                            );
+                                            // Reset template when AI generation is toggled off
+                                            if (!checked) {
+                                                setCreateData(
+                                                    'template_id',
+                                                    '',
+                                                );
+                                            }
+                                        }}
                                     />
                                     <div className="grid gap-1.5 leading-none">
                                         <label
@@ -922,6 +1030,21 @@ export default function PrositsIndex({
                     </form>
                 </DialogContent>
             </Dialog>
+
+            {/* Delete Confirmation Modal */}
+            <DeleteResourceModal
+                isOpen={deleteModalOpen}
+                onClose={() => {
+                    setDeleteModalOpen(false);
+                    setResourceToDelete(null);
+                }}
+                onConfirm={confirmDelete}
+                resourceName={
+                    prosits.find((p) => p.id === resourceToDelete)?.title ||
+                    'this resource'
+                }
+                isLoading={isDeleting}
+            />
         </AppLayout>
     );
 }

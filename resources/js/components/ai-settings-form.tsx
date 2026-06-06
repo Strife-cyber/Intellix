@@ -1,6 +1,12 @@
 import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
-import { CheckCircle, LoaderCircle, XCircle } from 'lucide-react';
+import {
+    CheckCircle,
+    LoaderCircle,
+    XCircle,
+    FlaskConical,
+    AlertTriangle,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import InputError from '@/components/input-error';
@@ -47,6 +53,47 @@ type AiSettingsFormProps = {
     type?: 'embedding' | 'chat';
 };
 
+async function fetchModelsFromProvider(
+    providerType: string,
+    endpoint: string,
+    apiKey: string,
+): Promise<string[]> {
+    const csrfToken = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('XSRF-TOKEN='))
+        ?.split('=')[1];
+
+    const res = await fetch('/api/ai/list-models', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json',
+            ...(csrfToken
+                ? { 'X-XSRF-TOKEN': decodeURIComponent(csrfToken) }
+                : {}),
+        },
+        body: JSON.stringify({
+            provider_type: providerType,
+            endpoint: endpoint || null,
+            api_key: apiKey || null,
+        }),
+        credentials: 'same-origin',
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || `Failed to list models (${res.status})`);
+    }
+
+    const result = await res.json();
+    if (!result.success) {
+        throw new Error(result.error || 'Failed to list models');
+    }
+
+    return result.models || [];
+}
+
 export default function AiSettingsForm({
     setting,
     providerCatalog,
@@ -75,6 +122,9 @@ export default function AiSettingsForm({
 
     const [testResult, setTestResult] = useState<TestResult | null>(null);
     const [testLoading, setTestLoading] = useState(false);
+    const [availableModels, setAvailableModels] = useState<string[]>([]);
+    const [loadingModels, setLoadingModels] = useState(false);
+    const [modelsError, setModelsError] = useState<string | null>(null);
 
     useEffect(() => {
         if (setting) {
@@ -89,6 +139,40 @@ export default function AiSettingsForm({
     }, [setting?.provider_type]);
 
     const meta = getProviderMeta(data.provider_type, catalogMap);
+
+    // Fetch available models from the provider's own API
+    useEffect(() => {
+        const fetchModels = async () => {
+            if (!data.provider_type || !meta.fields.model) {
+                setAvailableModels([]);
+                return;
+            }
+
+            setLoadingModels(true);
+            setModelsError(null);
+
+            try {
+                const models = await fetchModelsFromProvider(
+                    data.provider_type,
+                    data.endpoint,
+                    data.api_key,
+                );
+                setAvailableModels(models);
+            } catch (error) {
+                setModelsError(
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to fetch models',
+                );
+                setAvailableModels([]);
+            } finally {
+                setLoadingModels(false);
+            }
+        };
+
+        const debounceTimer = setTimeout(fetchModels, 500);
+        return () => clearTimeout(debounceTimer);
+    }, [data.provider_type, data.endpoint, data.api_key]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -107,6 +191,12 @@ export default function AiSettingsForm({
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                     Accept: 'application/json',
+                    'X-XSRF-TOKEN': decodeURIComponent(
+                        document.cookie
+                            .split('; ')
+                            .find((row) => row.startsWith('XSRF-TOKEN='))
+                            ?.split('=')[1] || '',
+                    ),
                 },
                 body: JSON.stringify({
                     type,
@@ -204,13 +294,43 @@ export default function AiSettingsForm({
             {meta.fields.model && (
                 <div className="space-y-2">
                     <Label htmlFor="model">Model</Label>
-                    <Input
-                        id="model"
-                        value={data.model}
-                        onChange={(e) => setData('model', e.target.value)}
-                        placeholder={meta.placeholders.model}
-                    />
-                    {meta.hints.model && (
+                    {availableModels.length > 0 ? (
+                        <Select
+                            value={data.model}
+                            onValueChange={(value) => setData('model', value)}
+                        >
+                            <SelectTrigger id="model">
+                                <SelectValue placeholder="Select a model..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {availableModels.map((model) => (
+                                    <SelectItem key={model} value={model}>
+                                        {model}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    ) : (
+                        <Input
+                            id="model"
+                            value={data.model}
+                            onChange={(e) => setData('model', e.target.value)}
+                            placeholder={meta.placeholders.model}
+                        />
+                    )}
+                    {loadingModels && (
+                        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <LoaderCircle className="h-3 w-3 animate-spin" />
+                            Loading available models...
+                        </p>
+                    )}
+                    {modelsError && (
+                        <p className="flex items-center gap-1 text-xs text-red-500">
+                            <AlertTriangle className="h-3 w-3" />
+                            {modelsError}
+                        </p>
+                    )}
+                    {meta.hints.model && !loadingModels && !modelsError && (
                         <p className="text-xs text-muted-foreground">
                             {meta.hints.model}
                         </p>
@@ -300,7 +420,7 @@ export default function AiSettingsForm({
                     {testLoading ? (
                         <LoaderCircle className="h-4 w-4 animate-spin" />
                     ) : (
-                        <span className="text-lg leading-none">🧪</span>
+                        <FlaskConical className="h-4 w-4" />
                     )}
                     {testLoading ? 'Testing...' : 'Test connection'}
                 </Button>

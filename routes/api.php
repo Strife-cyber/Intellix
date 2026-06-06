@@ -31,4 +31,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/jobs', [CerMicroserviceProxyController::class, 'listJobs']);
     Route::get('/jobs/{id}', [CerMicroserviceProxyController::class, 'getJob']);
     Route::get('/jobs/{id}/{kind}', [CerMicroserviceProxyController::class, 'downloadJob']);
+
+    // ── AI Provider Model Listing ───────────────────────────────────────────────────
+    // List available models for a given provider (OpenAI, Ollama, etc.)
+    Route::post('/ai/list-models', [\App\Http\Controllers\Api\ListModelsController::class, '__invoke']);
 });

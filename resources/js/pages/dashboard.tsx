@@ -26,9 +26,11 @@ import {
     Trophy,
     Sparkles,
     Rocket,
+    FileUp,
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
+import StreakBadge from '@/components/streak-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -42,11 +44,10 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
+import { isOnline } from '@/lib/offline';
 import { cn } from '@/lib/utils';
 import { dashboard, upload, library, flashcards } from '@/routes';
 import type { BreadcrumbItem, Resource } from '@/types';
-import { isOnline } from '@/lib/offline';
-import StreakBadge from '@/components/streak-badge';
 
 interface DashboardProps {
     resources: Resource[];
@@ -135,7 +136,7 @@ interface SmartNudgeProps {
 }
 
 const SmartNudge: React.FC<SmartNudgeProps> = ({ message, action }) => (
-    <Card className="border-blue-200 bg-blue-50">
+    <Card className="border-blue-200 bg-blue-50 dark:bg-black/95">
         <CardContent className="p-4">
             <div className="flex items-center gap-3">
                 <div className="rounded-full bg-blue-100 p-2">
@@ -281,7 +282,7 @@ export default function Dashboard({
                             action={{ label: 'Upload', href: upload().url }}
                         />
                     )}
-                    {stats.study_streak.current > 0 && (
+                    {stats.study_streak?.current > 0 && (
                         <SmartNudge
                             message={`You're on a ${stats.study_streak.current}-day streak! Keep it going!`}
                             action={{
@@ -294,75 +295,86 @@ export default function Dashboard({
 
                 {/* Gamification Section */}
                 <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Study Streak
-                            </CardTitle>
-                            <Flame className="h-4 w-4 text-orange-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <StreakBadge
-                                currentStreak={stats.study_streak.current}
-                                longestStreak={stats.study_streak.longest}
-                                className="mb-2"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Keep your streak going to unlock new rewards!
-                            </p>
-                        </CardContent>
-                    </Card>
+                    {stats.study_streak && (
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">
+                                    Study Streak
+                                </CardTitle>
+                                <Flame className="h-4 w-4 text-orange-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <StreakBadge
+                                    currentStreak={
+                                        stats.study_streak.current || 0
+                                    }
+                                    longestStreak={
+                                        stats.study_streak.longest || 0
+                                    }
+                                    className="mb-2"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Keep your streak going to unlock new
+                                    rewards!
+                                </p>
+                            </CardContent>
+                        </Card>
+                    )}
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                XP Points
-                            </CardTitle>
-                            <Sparkles className="h-4 w-4 text-yellow-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-yellow-600">
-                                {stats.xp_points || 0} XP
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                +10 for uploads, +5 per flashcard review
-                            </p>
-                        </CardContent>
-                    </Card>
+                    {stats.xp_points !== undefined && (
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">
+                                    XP Points
+                                </CardTitle>
+                                <Sparkles className="h-4 w-4 text-yellow-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-yellow-600">
+                                    {stats.xp_points}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Earn more XP to level up!
+                                </p>
+                            </CardContent>
+                        </Card>
+                    )}
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Badges
-                            </CardTitle>
-                            <Trophy className="h-4 w-4 text-yellow-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex flex-wrap gap-2">
-                                {stats.badges && stats.badges.length > 0 ? (
-                                    stats.badges.map((badge, index) => (
-                                        <Badge
-                                            key={index}
-                                            variant="secondary"
-                                            className="flex items-center gap-1"
-                                        >
-                                            <span className="text-xs">
-                                                {badge.icon}
-                                            </span>
-                                            <span className="text-xs">
-                                                {badge.name}
-                                            </span>
-                                        </Badge>
-                                    ))
-                                ) : (
-                                    <p className="text-xs text-muted-foreground">
-                                        No badges yet. Keep studying to earn
-                                        your first badge!
-                                    </p>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {stats.badges !== undefined && (
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">
+                                    Badges
+                                </CardTitle>
+                                <Trophy className="h-4 w-4 text-amber-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex flex-wrap gap-2">
+                                    {stats.badges && stats.badges.length > 0 ? (
+                                        stats.badges.map((badge, index) => (
+                                            <Badge
+                                                key={index}
+                                                variant="secondary"
+                                                className="flex items-center gap-1"
+                                            >
+                                                <span className="text-xs">
+                                                    {badge.icon}
+                                                </span>
+                                                <span className="text-xs">
+                                                    {badge.name}
+                                                </span>
+                                            </Badge>
+                                        ))
+                                    ) : (
+                                        <p className="text-xs text-muted-foreground">
+                                            No badges yet. Keep studying to earn
+                                            your first badge!
+                                        </p>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
 
                 {/* Header Stats */}

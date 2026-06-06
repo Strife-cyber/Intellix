@@ -112,13 +112,28 @@ export const FloatingNoteFAB: React.FC = () => {
     }, []);
 
     return (
-        <div className="fixed right-8 bottom-8 z-40">
+        <div className="group fixed right-6 bottom-6 z-40">
+            {/* Tooltip hint */}
+            <div className="absolute right-16 bottom-3 hidden animate-in items-center gap-2 rounded-lg border bg-popover px-3 py-1.5 text-xs font-medium text-popover-foreground shadow-md fade-in slide-in-from-right-2 group-hover:flex">
+                <kbd className="rounded-md border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
+                    {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+K
+                </kbd>
+                Quick Note
+            </div>
+
             <button
                 onClick={() => setIsModalOpen(true)}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 focus:ring-2 focus:ring-primary/50 focus:outline-none"
+                className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-700 text-white shadow-lg shadow-violet-500/30 transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-violet-500/40 focus:ring-2 focus:ring-violet-500/50 focus:outline-none active:scale-95"
             >
-                <Plus size={24} />
+                {/* Pulsing ring */}
+                <span className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 opacity-30 blur-md transition-opacity duration-300 group-hover:opacity-50" />
+
+                {/* Inner icon */}
+                <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm transition-transform duration-300 group-hover:rotate-90">
+                    <Plus className="h-5 w-5" />
+                </span>
             </button>
+
             <QuickCaptureModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
