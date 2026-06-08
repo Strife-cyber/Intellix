@@ -28,7 +28,16 @@
 \usepackage{ragged2e}
 \usepackage{truncate}
 \usepackage{hyperref}
-\hypersetup{colorlinks=true, linkcolor=themePrimary, urlcolor=themePrimary}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=themePrimary!80!black,
+    urlcolor=themePrimary!80!black,
+    citecolor=themePrimary,
+    pdfauthor={[[ .docAuthor ]]},
+    pdftitle={[[ .title ]]},
+    pdfsubject={CER [[ .version_number ]]}
+}
+\usepackage{bookmark}
 \usepackage{enumitem}
 \usepackage{framed}
 

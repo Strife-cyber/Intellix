@@ -24,14 +24,15 @@ type Reference struct {
 }
 
 type Cer struct {
-	Version     float32
-	Title       string
-	Description string
-	Analyse     *Analyse
-	Plan        []string
-	Realisation string
-	Validation  string
-	Conclusion  string
-	Bilan       string
-	Reference   *Reference
+	Version      float32
+	Title        string
+	Description  string
+	Analyse      *Analyse
+	Plan         []string
+	Realisation  string
+	Validation   string
+	Conclusion   string
+	Bilan        string
+	Reference    *Reference
+	ReferencesMD string
 }

@@ -126,6 +126,7 @@ func (lr *LatexRenderer) Render(cer *Cer, baseOutputDir string, theme string) (s
 		"subtitle":       subtitle,
 		"header_title":   cer.Title,
 		"description":    cer.Description,
+		"docAuthor":      "Djiatsa Dunamis Junior",
 		"year":           currentYear,
 		"analyse": map[string]any{
 			"context":     safeString(analyse.Context),
@@ -137,6 +138,7 @@ func (lr *LatexRenderer) Render(cer *Cer, baseOutputDir string, theme string) (s
 		"validation":  safeString(cer.Validation),
 		"conclusion":  safeString(cer.Conclusion),
 		"bilan":       safeString(cer.Bilan),
+		"references_md": safeString(cer.ReferencesMD),
 		"references": map[string]any{
 			"Principale": safeSlice(references.Principale),
 			"Secondaire": safeSlice(references.Secondaire),

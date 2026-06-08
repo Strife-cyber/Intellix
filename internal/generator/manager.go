@@ -118,6 +118,9 @@ func (m *Manager) GenerateCER(ctx context.Context, clientID string, objectifs []
 		Ligne:      []string{},
 	}
 
+	// 5. Generate references section (after realisation context is in memory)
+	m.cer.ReferencesMD = m.references.GenerateSection(ctx, clientID, m.prosit.Context)
+
 	return m.cer
 }
 

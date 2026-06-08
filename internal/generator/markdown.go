@@ -33,6 +33,7 @@ func (e *latexExtension) Extend(m goldmark.Markdown) {
 			util.Prioritized(
 				gmlatex.NewRenderer(gmlatex.Config{
 					EnableTableCaptions: true,
+					Unsafe: true,
 				}),
 				1000,
 			),

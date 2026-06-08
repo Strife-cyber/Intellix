@@ -20,8 +20,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     texlive-latex-base \
     texlive-latex-extra \
+    texlive-latex-recommended \
     texlive-fonts-recommended \
     texlive-lang-french \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

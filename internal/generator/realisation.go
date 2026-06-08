@@ -38,14 +38,18 @@ func (r *Realisation) GenerateKeywords(ctx context.Context, clientID string, key
 - Utilise ` + "`$$...$$`" + ` pour les blocs mathématiques.
 - Utilise ` + "`-`" + ` pour les listes à puces.
 - Utilise ` + "`**texte**`" + ` pour mettre en gras les concepts importants.
-- N'utilise PAS de JSON, pas de XML, pas de code block inutile.
+- Utilise ` + "`|`" + ` pour les tableaux lorsque tu compares des concepts, technologies ou approches.
+- Utilise des blocs de code avec ` + "`" + "`" + "`" + ` et le langage spécifié (par exemple ` + "`" + "`" + "`java" + "`" + "`" + "`" + `, ` + "`" + "`" + "`python" + "`" + "`" + "`" + `, ` + "`" + "`" + "`sql" + "`" + "`" + "`" + `) pour les extraits de code.
+- Utilise ` + "`" + "`" + "`mermaid" + "`" + "`" + "`" + ` pour les diagrammes (flowcharts, architecture, diagrammes de séquence).
+- N'utilise PAS de JSON, pas de XML.
 
 ## Consignes rédactionnelles
-- Pour chaque mot-clé, fournis une définition détaillée et technique (3 à 5 phrases).
-- Inclus des exemples concrets d'application dans le domaine du génie logiciel.
-- Explique pourquoi ce concept est important et où il s'applique.
+- Pour chaque mot-clé, fournis une définition EXTRÊMEMENT détaillée et technique de 150 à 200 mots minimum.
+- Inclus des EXEMPLES CHIFFRÉS, des FORMULES RÉELLES (avec $...$), et des EXTRAITS DE CODE avec ` + "`" + "`" + "`" + ` pour illustrer les implémentations.
+- Explique le CONTEXTE D'INGÉNIERIE : applications pratiques, compromis (trade-offs), et cas d'usage réels.
+- Décris les RELATIONS entre les mots-clés : comment ils se connectent, se complètent ou s'opposent.
+- Fournis des ANALOGIES pédagogiques pour faciliter la compréhension.
 - Si le mot-clé implique des concepts mathématiques (complexité, algorithmes, etc.), utilise $...$ pour les noter.
-- Sois pédagogique : explique comme si tu t'adressais à un étudiant de niveau bac+2/3.
 
 Mots-clés à définir : ` + keywordsStr + `
 
@@ -53,19 +57,34 @@ Structure attendue pour chaque mot-clé :
 
 ## Mot-clé : [Nom du mot-clé]
 
-**Définition :** [Définition technique détaillée, 3-5 phrases]
+**Définition :** [Définition technique détaillée, 150-200 mots minimum]
 
-**Exemples concrets :**
-- [Exemple 1 avec explication]
-- [Exemple 2 avec explication]
+**Formules mathématiques :** [Formules pertinentes en $...$ ou $$...$$]
 
-**Applications en ingénierie :** [Comment ce concept est utilisé dans le domaine]
+**Exemples d'implémentation :**
+` + "`" + "`" + "`" + `[langage]
+[Code d'exemple réel]
+` + "`" + "`" + "`" + `
+
+**Applications en ingénierie :** [Comment ce concept est utilisé dans le domaine, avec des cas concrets et chiffrés]
+
+**Relations avec d'autres concepts :** [Comment ce mot-clé se connecte aux autres]
 
 À la fin de ta réponse, ajoute un bloc <CONTEXT_UPDATE> contenant les informations clés à retenir pour la suite, en 1 à 3 phrases. Par exemple :
 
 <CONTEXT_UPDATE>
 L'étudiant a étudié le concept X qui se base sur Y. Les résultats montrent Z.
-</CONTEXT_UPDATE>`
+</CONTEXT_UPDATE>
+
+## Exigences de longueur et de qualité
+- Rédige un contenu EXTRÊMEMENT détaillé et approfondi.
+- Pour chaque concept, fournis des ANALOGIES, des EXEMPLES CHIFFRÉS, et des CAS D'USAGE RÉELS.
+- Inclus des EXTRAITS DE CODE ou des PSEUDO-CODES pour illustrer les implémentations.
+- Quand c'est pertinent, ajoute des DIAGRAMMES avec ` + "`" + "`" + "`mermaid" + "`" + "`" + "`" + ` (flowcharts, séquences, architecture).
+- Utilise des TABLEAUX pour comparer les approches, technologies ou concepts.
+- ALIMENTE LE CONTEXTE : chaque réponse doit construire sur les précédentes pour former un ensemble cohérent.
+- La qualité doit être celle d'un CHAPITRE DE LIVRE TECHNIQUE : rigoureux, précis, et riche en détails.
+- N'hésite pas à faire 1500-2000 mots si le sujet le mérite.`
 
 	log.Printf("Requesting definitions for %d keywords in one batch...\n", len(keywords))
 
@@ -89,19 +108,25 @@ func (r *Realisation) StudyTopic(ctx context.Context, clientID, topic string) st
 ## Consignes de formatage
 - Rédige UNIQUEMENT en Markdown.
 - Utilise ` + "`##`" + ` pour le titre principal du sujet.
-- Utilise ` + "`###`" + ` pour les sous-sections (concepts, définitions, exemples).
+- Utilise ` + "`###`" + ` pour les sous-sections (concepts, définitions, exemples, comparaisons).
 - Utilise ` + "`$...$`" + ` pour les formules mathématiques inline.
 - Utilise ` + "`$$...$$`" + ` pour les blocs mathématiques si nécessaire.
 - Utilise ` + "`-`" + ` pour les listes à puces.
+- Utilise ` + "`|`" + ` pour les tableaux lorsque tu compares des concepts, technologies ou approches.
+- Utilise ` + "`" + "`" + "`" + ` avec le langage spécifié pour les blocs de code (par exemple ` + "`" + "`" + "`java" + "`" + "`" + "`" + `, ` + "`" + "`" + "`python" + "`" + "`" + "`" + `, ` + "`" + "`" + "`sql" + "`" + "`" + "`" + `).
+- Utilise ` + "`" + "`" + "`mermaid" + "`" + "`" + "`" + ` pour les diagrammes (flowcharts, architecture, diagrammes de séquence).
 - N'utilise PAS de JSON.
 
 ## Consignes rédactionnelles
-- Rédige une étude complète et détaillée (minimum 300-500 mots).
-- Structure ton étude en plusieurs sous-parties claires.
-- Explique les concepts fondamentaux liés au sujet.
-- Donne des exemples concrets d'implémentation ou d'application.
-- Si pertinent, inclus des comparaisons entre différentes approches ou technologies.
-- Utilise des notations mathématiques lorsque c'est approprié (complexité, formules, etc.).
+- Rédige une étude COMPLÈTE et EXTRÊMEMENT DÉTAILLÉE (minimum 800-1000 mots, idéalement plus).
+- Structure ton étude en plusieurs sous-parties claires avec des titres ` + "`###`" + `.
+- Inclus au MOINS 3 extraits de code ou pseudo-code dans des blocs ` + "`" + "`" + "`" + ` avec le langage spécifié pour illustrer les algorithmes ou implémentations.
+- Inclus au MOINS 2 diagrammes avec ` + "`" + "`" + "`mermaid" + "`" + "`" + "`" + ` (flowcharts d'architecture, diagrammes de séquence, etc.).
+- Explique les concepts fondamentaux liés au sujet avec des ANALOGIES et des EXEMPLES CHIFFRÉS.
+- Fournis des COMPARAISONS entre différentes approches ou technologies, idéalement dans un tableau.
+- Inclus des ÉTUDES DE CAS RÉELLES avec des métriques et des chiffres spécifiques.
+- Donne des EXPLICATIONS PAS-À-PAS du fonctionnement des concepts.
+- Fais référence à des TECHNOLOGIES SPÉCIFIQUES, FRAMEWORKS, OU ARTICLES DE RECHERCHE.
 - Conclus par une synthèse des points clés à retenir.
 
 Sujet à étudier : ` + topic + `
@@ -110,7 +135,17 @@ Sujet à étudier : ` + topic + `
 
 <CONTEXT_UPDATE>
 L'étudiant a étudié le concept X qui se base sur Y. Les résultats montrent Z.
-</CONTEXT_UPDATE>`
+</CONTEXT_UPDATE>
+
+## Exigences de longueur et de qualité
+- Rédige un contenu EXTRÊMEMENT détaillé et approfondi.
+- Pour chaque concept, fournis des ANALOGIES, des EXEMPLES CHIFFRÉS, et des CAS D'USAGE RÉELS.
+- Inclus des EXTRAITS DE CODE ou des PSEUDO-CODES pour illustrer les implémentations.
+- Quand c'est pertinent, ajoute des DIAGRAMMES avec ` + "`" + "`" + "`mermaid" + "`" + "`" + "`" + ` (flowcharts, séquences, architecture).
+- Utilise des TABLEAUX pour comparer les approches, technologies ou concepts.
+- ALIMENTE LE CONTEXTE : chaque réponse doit construire sur les précédentes pour former un ensemble cohérent.
+- La qualité doit être celle d'un CHAPITRE DE LIVRE TECHNIQUE : rigoureux, précis, et riche en détails.
+- N'hésite pas à faire 1500-2000 mots si le sujet le mérite.`
 
 	log.Printf("Generating study for topic: %s...\n", topic)
 
