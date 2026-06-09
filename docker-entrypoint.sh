@@ -3,10 +3,10 @@ set -e
 
 # ── If this is the dedicated worker container, skip DB-dependent setup ──
 if [ "${APP_IS_WORKER}" = "true" ]; then
-    echo "Worker container detected — skipping DB setup, starting queue directly."
+    echo "Worker container detected — clearing build-time cache, starting queue."
 
-    # The worker container already has config cached from the build step.
-    # Just start the queue worker immediately.
+    # Clear the build-time cached config so runtime env vars (CACHE_STORE, etc.) are read fresh
+    php artisan config:clear 2>/dev/null || true
     exec php artisan queue:work --sleep=3 --tries=3 --timeout=300
 fi
 

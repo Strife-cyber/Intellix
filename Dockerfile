@@ -47,8 +47,9 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Clear Laravel caches
-RUN php artisan config:clear \
+# Create SQLite file so build-time config:cache works (overridden by .env at runtime)
+RUN touch database/database.sqlite \
+    && php artisan config:clear \
     && php artisan config:cache \
     && php artisan route:cache \
     && php artisan view:cache

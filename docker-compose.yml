@@ -134,7 +134,7 @@ services:
       - APP_IS_WORKER=true
       - QUEUE_CONNECTION=redis
       - REDIS_HOST=redis
-      - CACHE_DRIVER=redis
+      - CACHE_STORE=redis
       - CER_BASE_URL=http://micro-cer:8080
       - CER_SHARED_SECRET=${CER_SHARED_SECRET:-a8b2c6d4-e0f1-4a3b-8c9d-0e1f2a3b4c5d}
     depends_on:
