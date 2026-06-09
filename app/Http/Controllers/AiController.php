@@ -23,8 +23,8 @@ class AiController extends Controller
     {
         $request->validate([
             'message' => 'required|string',
-            'resource_id' => 'required|string',
-            'session_id' => 'nullable', // Dexie session ids are numeric
+            'resource_id' => 'nullable|string',
+            'session_id' => 'nullable',
             'conversation_history' => 'nullable|array',
         ]);
 
@@ -34,15 +34,19 @@ class AiController extends Controller
             $request->input('conversation_history', []),
         );
 
-        // Search logic skipped as microservice migration is in progress
-        $context = 'Search context temporarily disabled during microservice migration.';
+        $context = '';
+        if ($resourceId) {
+            // Search logic skipped as microservice migration is in progress
+            $context = "Document Context:\nSearch context temporarily disabled during microservice migration.\n\n";
+        }
 
         set_time_limit(300);
 
         $messages = [];
 
-        // Add system instruction
-        $systemInstruction = <<<'SYS'
+        // System instruction based on mode
+        if ($resourceId) {
+            $systemInstruction = <<<'SYS'
 You are a helpful AI assistant with memory of our conversation.
 
 Rules:
@@ -54,6 +58,13 @@ Rules:
 - Remember our previous conversation context and build upon it.
 - Reference things we discussed earlier when relevant.
 SYS;
+        } else {
+            $systemInstruction = <<<'SYS'
+You are "Intellix AI", a helpful and intelligent assistant.
+You help users with their studies, document analysis, and general questions.
+Be concise, accurate, and professional.
+SYS;
+        }
 
         $messages[] = [
             'role' => 'system',
@@ -64,11 +75,18 @@ SYS;
             $messages[] = $msg;
         }
 
-        // Add current message with context
-        $messages[] = [
-            'role' => 'user',
-            'content' => "Document Context:\n".$context."\n\nCurrent Question:\n".$message,
-        ];
+        // Add current message
+        if ($resourceId) {
+            $messages[] = [
+                'role' => 'user',
+                'content' => $context . "Current Question:\n".$message,
+            ];
+        } else {
+            $messages[] = [
+                'role' => 'user',
+                'content' => $message,
+            ];
+        }
 
         try {
             $result = app(UserAiChatService::class)->chat(

@@ -155,6 +155,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('exams', [PbaWebController::class, 'indexExams'])->name('exams.index');
     Route::get('exams/{exam}', [PbaWebController::class, 'showExam'])->name('exams.show');
 
+    Route::get('/ai/chat', function () {
+        return Inertia::render('ai-chat');
+    })->name('ai.chat.page');
+
     Route::get('/ai/status', [AiController::class, 'status'])->name('ai.status');
     Route::post('/ai/chat', [AiController::class, 'chat'])->name('ai.chat');
 

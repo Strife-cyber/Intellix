@@ -49,7 +49,7 @@ export default function CerGeneratePage() {
 
     const sortedProsits = useMemo(
         () =>
-            [...prosits].sort(
+            [...(prosits ?? [])].sort(
                 (a, b) =>
                     new Date(b.uploaded_at).getTime() -
                     new Date(a.uploaded_at).getTime(),
@@ -62,7 +62,9 @@ export default function CerGeneratePage() {
         title: '',
         description: '',
         version: 1,
-        theme: themes.includes('coffee') ? 'coffee' : (themes[0] ?? 'coffee'),
+        theme: (themes ?? []).includes('coffee')
+            ? 'coffee'
+            : ((themes ?? [])[0] ?? 'coffee'),
         template_id: 'default',
         objectifs: [] as string[],
         difficulties: [] as string[],
@@ -99,8 +101,9 @@ export default function CerGeneratePage() {
                             Générer un CER
                         </h1>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Choisissez un PROSIT de la bibliothèque, renseignez les
-                            métadonnées, puis lancez la compilation LaTeX → PDF.
+                            Choisissez un PROSIT de la bibliothèque, renseignez
+                            les métadonnées, puis lancez la compilation LaTeX →
+                            PDF.
                         </p>
                     </div>
                     <Button variant="outline" className="rounded-2xl" asChild>
@@ -124,8 +127,8 @@ export default function CerGeneratePage() {
                     <CardHeader>
                         <CardTitle>Paramètres du CER</CardTitle>
                         <CardDescription>
-                            Le contenu PROSIT est lu depuis le microservice (isolé par
-                            utilisateur).
+                            Le contenu PROSIT est lu depuis le microservice
+                            (isolé par utilisateur).
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -134,7 +137,9 @@ export default function CerGeneratePage() {
                                 <Label htmlFor="cer-prosit">PROSIT actif</Label>
                                 <Select
                                     value={data.prosit_id || undefined}
-                                    onValueChange={(v) => setData('prosit_id', v)}
+                                    onValueChange={(v) =>
+                                        setData('prosit_id', v)
+                                    }
                                 >
                                     <SelectTrigger id="cer-prosit">
                                         <SelectValue placeholder="— Choisir —" />
@@ -170,7 +175,7 @@ export default function CerGeneratePage() {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {themes.map((t) => (
+                                        {(themes ?? []).map((t) => (
                                             <SelectItem key={t} value={t}>
                                                 {t}
                                             </SelectItem>
@@ -230,7 +235,11 @@ export default function CerGeneratePage() {
                                 <span className="font-medium text-foreground">
                                     {selectedProsit.filename}
                                 </span>{' '}
-                                ({Object.keys(selectedProsit.prosit as Prosit).length}{' '}
+                                (
+                                {
+                                    Object.keys(selectedProsit.prosit as Prosit)
+                                        .length
+                                }{' '}
                                 champs)
                             </p>
                         )}

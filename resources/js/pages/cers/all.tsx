@@ -62,15 +62,15 @@ export default function All({ generatedCers, microserviceError }: PageProps) {
                             Cahiers générés
                         </h1>
                         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                            Tous vos CER compilés : PDF final, LaTeX combiné (tous les
-                            chapitres fusionnés en un seul fichier) et archive ZIP des
-                            sources modulaires.
+                            Tous vos CER compilés : PDF final, LaTeX combiné
+                            (tous les chapitres fusionnés en un seul fichier) et
+                            archive ZIP des sources modulaires.
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
                         <Badge variant="secondary">
-                            {generatedCers.length} livrable
-                            {generatedCers.length !== 1 ? 's' : ''}
+                            {(generatedCers ?? []).length} livrable
+                            {(generatedCers ?? []).length !== 1 ? 's' : ''}
                         </Badge>
                         <Button className="rounded-2xl" asChild>
                             <Link href="/cers/generate">Générer un CER</Link>
@@ -84,7 +84,7 @@ export default function All({ generatedCers, microserviceError }: PageProps) {
                     </div>
                 )}
 
-                {generatedCers.length === 0 ? (
+                {(generatedCers ?? []).length === 0 ? (
                     <div className="rounded-2xl border bg-card p-10 text-center">
                         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                             <FolderOpen className="h-7 w-7" />
@@ -93,7 +93,8 @@ export default function All({ generatedCers, microserviceError }: PageProps) {
                             Aucun CER généré pour l&apos;instant
                         </h2>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            Importez un PROSIT, puis lancez une génération depuis{' '}
+                            Importez un PROSIT, puis lancez une génération
+                            depuis{' '}
                             <Link
                                 href="/cers/generate"
                                 className="font-medium text-primary underline"
@@ -106,7 +107,7 @@ export default function All({ generatedCers, microserviceError }: PageProps) {
                     </div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                        {generatedCers.map((cer) => (
+                        {(generatedCers ?? []).map((cer) => (
                             <Card key={cer.id} className="flex h-full flex-col">
                                 <CardHeader className="space-y-2">
                                     <div className="flex items-start justify-between gap-2">

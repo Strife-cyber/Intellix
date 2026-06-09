@@ -108,6 +108,25 @@ class UserEmbeddingService
             return $setting;
         }
 
+        // Auto-provision a default TEI setting if none exists
+        if (! $setting) {
+            try {
+                $setting = UserEmbeddingAiSetting::create([
+                    'user_id' => $user->id,
+                    'provider_type' => \App\Support\AiProviders::TEI,
+                    'endpoint' => config('services.tei.endpoint', 'http://tei:8080'),
+                    'model' => 'BAAI/bge-small-en-v1.5',
+                    'embedding_dimensions' => 384,
+                ]);
+                return $setting;
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Could not auto-provision embedding setting', [
+                    'user' => $user->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         return null;
     }
 
@@ -131,6 +150,7 @@ class UserEmbeddingService
             AiProviders::JINA => 'jina-embeddings-v3',
             AiProviders::VOYAGE => 'voyage-3',
             AiProviders::TOGETHER => 'BAAI/bge-large-en-v1.5',
+            AiProviders::TEI => 'BAAI/bge-small-en-v1.5',
             default => '',
         };
     }
@@ -367,6 +387,7 @@ class UserEmbeddingService
             AiProviders::JINA => rtrim($setting->endpoint ?: 'https://api.jina.ai', '/').'/v1/embeddings',
             AiProviders::VOYAGE => rtrim($setting->endpoint ?: 'https://api.voyageai.ai', '/').'/v1/embeddings',
             AiProviders::TOGETHER => rtrim($setting->endpoint ?: 'https://api.together.xyz', '/').'/v1/embeddings',
+            AiProviders::TEI => $this->withV1Path($setting->endpoint ?: 'http://tei:8080', 'embeddings'),
             default => throw new RuntimeException(
                 "Provider « {$setting->provider_type} » does not expose OpenAI-compatible embeddings.",
             ),

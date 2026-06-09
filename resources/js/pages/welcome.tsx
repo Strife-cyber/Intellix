@@ -119,7 +119,7 @@ export default function Welcome({
                     </nav>
 
                     <nav className="flex items-center gap-4">
-                        {auth.user ? (
+                        {auth?.user ? (
                             <Link
                                 href={dashboard()}
                                 className="inline-block rounded-sm border border-gray-200 px-5 py-1.5 text-sm leading-normal text-gray-900 hover:border-gray-300 dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"

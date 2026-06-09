@@ -22,6 +22,8 @@ final class AiProviders
 
     public const TOGETHER = 'together';
 
+    public const TEI = 'tei';
+
     /** @var list<string> */
     public const CHAT_TYPES = [
         self::GEMINI,
@@ -42,5 +44,6 @@ final class AiProviders
         self::JINA,
         self::VOYAGE,
         self::TOGETHER,
+        self::TEI,
     ];
 }

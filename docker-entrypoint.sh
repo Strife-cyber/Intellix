@@ -23,5 +23,9 @@ php artisan view:cache || true
 # Restart OPcache so PHP doesn't serve stale compiled files
 kill -USR2 1 2>/dev/null || true
 
+# Start queue worker in background
+php artisan queue:work --sleep=3 --tries=3 --timeout=300 &
+echo "Queue worker started in background"
+
 # Execute the main command
 exec "$@"

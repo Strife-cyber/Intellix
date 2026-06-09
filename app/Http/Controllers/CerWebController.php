@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\PrositSource;
 use App\Enums\ResourceStatus;
+use App\Mail\CerJobComplete;
 use App\Models\Prosit;
 use App\Models\Resource;
 use App\Services\CerMicroserviceClient;
@@ -12,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -303,8 +305,30 @@ class CerWebController extends Controller
             // Grant OWNER access to the user who generated it
             $resource->grantAccess($user, 'owner');
 
+            // Send email notification with download links
+            try {
+                $pdfUrl = route('cers.jobs.download', ['id' => $id, 'kind' => 'pdf']);
+                $latexUrl = route('cers.jobs.download', ['id' => $id, 'kind' => 'latex']);
+
+                Mail::to($user->email)
+                    ->queue(new CerJobComplete(
+                        jobId: $id,
+                        title: $fileName,
+                        userName: $user->name ?? $user->email,
+                        pdfUrl: $pdfUrl,
+                        latexUrl: $latexUrl,
+                        appUrl: config('app.url'),
+                    ));
+            } catch (\Throwable $e) {
+                Log::warning('Failed to send CER completion email', [
+                    'job_id' => $id,
+                    'user' => $user->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             return response()->json([
-                'message' => 'CER PDF saved as resource.',
+                'message' => 'CER PDF saved as resource. Email sent.',
                 'resource' => $resource,
             ]);
         } catch (RuntimeException $e) {

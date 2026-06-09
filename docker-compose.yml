@@ -19,7 +19,7 @@ services:
       - CER_SHARED_SECRET=${CER_SHARED_SECRET:-a8b2c6d4-e0f1-4a3b-8c9d-0e1f2a3b4c5d}
     # Health check — no dedicated endpoint, so we probe the TCP port
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8080/']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -53,6 +53,10 @@ services:
     depends_on:
       micro-cer:
         condition: service_started
+      redis:
+        condition: service_started
+      tei:
+        condition: service_started
 
   # ──────────────────────────────────────────────
   # Nginx reverse-proxy (Traefik-facing)
@@ -68,13 +72,13 @@ services:
       - traefik-net
       - intellix-local
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.intellix.rule=Host(`intellix.strife-cyber.org`)"
-      - "traefik.http.routers.intellix.entrypoints=https"
-      - "traefik.http.routers.intellix.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.intellix-router.service=intellix"
-      - "traefik.http.services.intellix.loadbalancer.server.port=80"
-      - "traefik.docker.network=traefik-net"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.intellix.rule=Host(`intellix.strife-cyber.org`)'
+      - 'traefik.http.routers.intellix.entrypoints=https'
+      - 'traefik.http.routers.intellix.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.intellix-router.service=intellix'
+      - 'traefik.http.services.intellix.loadbalancer.server.port=80'
+      - 'traefik.docker.network=traefik-net'
     depends_on:
       - app
 
@@ -87,6 +91,55 @@ services:
     restart: unless-stopped
     networks:
       - intellix-local
+
+  # ──────────────────────────────────────────────
+  # Text Embeddings Inference (built-in embeddings)
+  # ──────────────────────────────────────────────
+  tei:
+    image: ghcr.io/huggingface/text-embeddings-inference:latest
+    container_name: intellix-tei
+    restart: unless-stopped
+    command: ['--model-id', 'BAAI/bge-small-en-v1.5']
+    environment:
+      - RUST_LOG=info
+    networks:
+      - intellix-local
+    # Health check
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:80/health']
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+  # ──────────────────────────────────────────────
+  # Queue worker (processes embeddings, flashcard generation, etc.)
+  # ──────────────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: intellix-worker
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./storage:/var/www/html/storage
+      - ./.env:/var/www/html/.env
+    networks:
+      - intellix-local
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - QUEUE_CONNECTION=redis
+      - REDIS_HOST=redis
+      - CER_BASE_URL=http://micro-cer:8080
+      - CER_SHARED_SECRET=${CER_SHARED_SECRET:-a8b2c6d4-e0f1-4a3b-8c9d-0e1f2a3b4c5d}
+    depends_on:
+      redis:
+        condition: service_started
+      tei:
+        condition: service_started
+    command: php artisan queue:work --sleep=3 --tries=3 --timeout=300
 
 networks:
   traefik-net:

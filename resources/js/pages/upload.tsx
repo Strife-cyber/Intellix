@@ -119,7 +119,7 @@ export default function Upload() {
         e.stopPropagation();
         setDragCounter(0);
         setIsDraggingGlobal(false);
-        addFiles(e.dataTransfer.files);
+        addFiles(e.dataTransfer.files ?? new DataTransfer().files);
     };
 
     return (
@@ -194,7 +194,11 @@ export default function Upload() {
                                             multiple
                                             hidden
                                             onChange={(e) =>
-                                                addFiles(e.target.files!)
+                                                addFiles(
+                                                    e.target.files ??
+                                                        new DataTransfer()
+                                                            .files,
+                                                )
                                             }
                                         />
                                     </div>

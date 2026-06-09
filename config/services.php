@@ -76,6 +76,10 @@ return [
         'url' => env('BROKER_URL', 'http://localhost:8080'),
     ],
 
+    'tei' => [
+        'endpoint' => env('TEI_ENDPOINT', 'http://tei:8080'),
+    ],
+
     'cer' => [
         'base_url' => env('CER_BASE_URL', 'http://localhost:8080'),
         'shared_secret' => env('CER_SHARED_SECRET', ''),

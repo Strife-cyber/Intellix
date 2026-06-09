@@ -1,11 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
-import {
-    FileText,
-    LoaderCircle,
-    Pencil,
-    Trash2,
-    Upload,
-} from 'lucide-react';
+import { FileText, LoaderCircle, Pencil, Trash2, Upload } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -68,7 +62,7 @@ export default function CersLibrary() {
 
     const prosits = useMemo(
         () =>
-            [...serverProsits].sort(
+            [...(serverProsits ?? [])].sort(
                 (a, b) =>
                     new Date(b.uploaded_at).getTime() -
                     new Date(a.uploaded_at).getTime(),
@@ -92,8 +86,7 @@ export default function CersLibrary() {
     }, [selectedPrositId, prosits]);
 
     const statusMessage =
-        errors.prosit ??
-        (cerFlash?.message ? cerFlash.message : null);
+        errors.prosit ?? (cerFlash?.message ? cerFlash.message : null);
 
     const handleFilesAdded = (files: FileList) => {
         if (!files.length) return;
@@ -151,12 +144,18 @@ export default function CersLibrary() {
         });
     };
 
-    const renderSection = (key: keyof Prosit, label: string, prosit: Prosit) => {
+    const renderSection = (
+        key: keyof Prosit,
+        label: string,
+        prosit: Prosit,
+    ) => {
         const val = prosit[key];
         if (Array.isArray(val)) {
             if (!val.length) {
                 return (
-                    <p className="text-sm italic text-muted-foreground">— vide —</p>
+                    <p className="text-sm text-muted-foreground italic">
+                        — vide —
+                    </p>
                 );
             }
             return (
@@ -169,14 +168,12 @@ export default function CersLibrary() {
         }
         if (typeof val === 'string' && val.trim()) {
             return (
-                <p className="whitespace-pre-line text-sm text-muted-foreground">
+                <p className="text-sm whitespace-pre-line text-muted-foreground">
                     {formatSemicolonsToNewlines(val)}
                 </p>
             );
         }
-        return (
-            <p className="text-sm italic text-muted-foreground">— vide —</p>
-        );
+        return <p className="text-sm text-muted-foreground italic">— vide —</p>;
     };
 
     return (
@@ -221,7 +218,9 @@ export default function CersLibrary() {
                         <CardContent className="space-y-4">
                             {!pendingFile ? (
                                 //@ts-expect-error files added error
-                                <UploadDropzone onFilesAdded={handleFilesAdded} />
+                                <UploadDropzone
+                                    onFilesAdded={handleFilesAdded}
+                                />
                             ) : (
                                 <div className="space-y-3 rounded-xl border bg-muted/20 p-4">
                                     <p className="text-sm font-medium">
@@ -307,7 +306,9 @@ export default function CersLibrary() {
                                             <button
                                                 type="button"
                                                 className="min-w-0 flex-1 text-left"
-                                                onClick={() => setSelected(item)}
+                                                onClick={() =>
+                                                    setSelected(item)
+                                                }
                                             >
                                                 <div className="truncate font-medium">
                                                     {item.filename}
@@ -375,15 +376,16 @@ export default function CersLibrary() {
                         <CardContent>
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 {(
-                                    Object.entries(
-                                        PROSIT_SECTION_LABELS,
-                                    ) as [keyof Prosit, string][]
+                                    Object.entries(PROSIT_SECTION_LABELS) as [
+                                        keyof Prosit,
+                                        string,
+                                    ][]
                                 ).map(([key, label]) => (
                                     <div
                                         key={key}
                                         className="rounded-xl border bg-muted/20 p-4"
                                     >
-                                        <h4 className="text-xs font-semibold uppercase tracking-wider text-primary">
+                                        <h4 className="text-xs font-semibold tracking-wider text-primary uppercase">
                                             {label}
                                         </h4>
                                         <div className="mt-2">
@@ -421,7 +423,6 @@ export default function CersLibrary() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-
         </AppLayout>
     );
 }

@@ -8,6 +8,7 @@ import {
     BookOpen,
     Notebook,
     SearchCode,
+    Sparkles,
 } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -41,6 +42,11 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard().url,
         icon: LayoutGrid,
+    },
+    {
+        title: 'Ask AI',
+        href: '/ai/chat',
+        icon: Sparkles,
     },
     {
         title: 'Courses',

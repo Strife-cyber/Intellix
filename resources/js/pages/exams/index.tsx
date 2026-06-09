@@ -58,7 +58,7 @@ export default function ExamsIndex({ exams }: { exams: Exam[] }) {
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {exams.map((exam) => (
+                    {(exams ?? []).map((exam) => (
                         <Card
                             key={exam.id}
                             className="group flex flex-col overflow-hidden border-2 border-white/5 bg-card/30 backdrop-blur-md transition-all hover:border-primary/40"
@@ -119,7 +119,7 @@ export default function ExamsIndex({ exams }: { exams: Exam[] }) {
                         </Card>
                     ))}
 
-                    {exams.length === 0 && (
+                    {(exams ?? []).length === 0 && (
                         <div className="col-span-full flex flex-col items-center justify-center py-12 text-center opacity-70">
                             <CheckCircle2 className="mb-4 h-12 w-12 text-muted-foreground" />
                             <h3 className="text-lg font-bold">

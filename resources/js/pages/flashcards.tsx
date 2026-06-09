@@ -143,7 +143,8 @@ export default function Flashcards({ resources }: { resources?: Resource[] }) {
     };
 
     /* ── Due cards for review ── */
-    const dueCards = cards.filter((c) => {
+    // Due cards for review
+    const dueCards = (cards ?? []).filter((c) => {
         if (!c.next_review) return false;
         return new Date(c.next_review) <= new Date();
     });
@@ -185,7 +186,9 @@ export default function Flashcards({ resources }: { resources?: Resource[] }) {
                                             {r.original_name}
                                         </div>
                                         <div className="mt-0.5 text-[10px] text-muted-foreground opacity-60">
-                                            {(r.size_bytes / 1024).toFixed(0)}{' '}
+                                            {(
+                                                (r.size_bytes ?? 0) / 1024
+                                            ).toFixed(0)}{' '}
                                             KB
                                         </div>
                                     </button>
@@ -208,27 +211,30 @@ export default function Flashcards({ resources }: { resources?: Resource[] }) {
                                         {selectedResource.original_name}
                                     </h1>
                                     <p className="text-xs text-muted-foreground">
-                                        {cards.length} card
-                                        {cards.length !== 1 ? 's' : ''}
-                                        {dueCards.length > 0 && (
+                                        {(cards ?? []).length} card
+                                        {(cards ?? []).length !== 1 ? 's' : ''}
+                                        {(dueCards ?? []).length > 0 && (
                                             <span className="ml-2 font-semibold text-amber-400">
-                                                · {dueCards.length} due
+                                                · {(dueCards ?? []).length} due
                                             </span>
                                         )}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    {dueCards.length > 0 && mode === 'list' && (
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="gap-1.5 border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
-                                            onClick={() => setMode('review')}
-                                        >
-                                            <Zap className="h-3.5 w-3.5" />
-                                            Review {dueCards.length}
-                                        </Button>
-                                    )}
+                                    {(dueCards ?? []).length > 0 &&
+                                        mode === 'list' && (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="gap-1.5 border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                                                onClick={() =>
+                                                    setMode('review')
+                                                }
+                                            >
+                                                <Zap className="h-3.5 w-3.5" />
+                                                Review {(dueCards ?? []).length}
+                                            </Button>
+                                        )}
                                     {mode === 'review' && (
                                         <Button
                                             size="sm"
@@ -346,7 +352,7 @@ function CardListPanel({
 }) {
     const [editingCard, setEditingCard] = useState<FlashCard | null>(null);
 
-    if (cards.length === 0) {
+    if ((cards ?? []).length === 0) {
         return (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 text-center">
                 <BookOpen className="h-10 w-10 text-muted-foreground/30" />
@@ -409,7 +415,7 @@ function CardTile({
     const [deleting, setDeleting] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
 
-    const isDue = card.next_review
+    const isDue = card?.next_review
         ? new Date(card.next_review) <= new Date()
         : false;
 

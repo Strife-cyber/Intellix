@@ -222,6 +222,23 @@ class UserEmbeddingAiSetting extends Model
                     'apiKey' => 'Required — from together.ai',
                 ],
             ],
+            [
+                'type' => AiProviders::TEI,
+                'label' => 'IntelliX Built-in (HuggingFace)',
+                'summary' => 'Local BGE-small-en-v1.5 via Text Embeddings Inference. Pre-configured, no setup needed.',
+                'fields' => [
+                    'apiKey' => false,
+                    'apiKeyRequired' => false,
+                    'endpoint' => false,
+                    'model' => false,
+                ],
+                'placeholders' => [
+                    'model' => 'BAAI/bge-small-en-v1.5',
+                ],
+                'hints' => [
+                    'endpoint' => 'http://tei:8080 — auto-configured in Docker',
+                ],
+            ],
         ];
     }
 }

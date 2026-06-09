@@ -35,7 +35,7 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, Course } from '@/types';
 
-export default function CoursesIndex({ courses }: { courses: Course[] }) {
+export default function CoursesIndex({ courses = [] }: { courses?: Course[] }) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Courses', href: '/courses' },
     ];
@@ -111,7 +111,7 @@ export default function CoursesIndex({ courses }: { courses: Course[] }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Courses - PBA Learning" />
-            <div className=" space-y-6 p-6">
+            <div className="space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">

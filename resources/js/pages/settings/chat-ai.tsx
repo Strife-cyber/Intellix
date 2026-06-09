@@ -112,12 +112,12 @@ function ProviderSummary({
 }
 
 export default function AiSettings({
-    settings,
-    providerCatalog,
+    settings = [],
+    providerCatalog = [],
     status,
 }: {
-    settings: AiSettingRow[];
-    providerCatalog: ProviderCatalogEntry[];
+    settings?: AiSettingRow[];
+    providerCatalog?: ProviderCatalogEntry[];
     status?: string;
 }) {
     const catalogMap = useMemo(

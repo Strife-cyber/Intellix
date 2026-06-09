@@ -58,7 +58,7 @@ const Index: React.FC<Props> = ({ notes, recent_notes }) => {
 
                             <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
                                 <ul className="divide-y divide-border">
-                                    {notes.data.map((note) => (
+                                    {(notes?.data ?? []).map((note) => (
                                         <li key={note.id}>
                                             <Link
                                                 href={
@@ -100,7 +100,7 @@ const Index: React.FC<Props> = ({ notes, recent_notes }) => {
                                             </Link>
                                         </li>
                                     ))}
-                                    {notes.data.length === 0 && (
+                                    {(notes?.data ?? []).length === 0 && (
                                         <li className="px-6 py-12 text-center text-muted-foreground">
                                             <FileText
                                                 className="mx-auto mb-4 opacity-20"
@@ -127,7 +127,7 @@ const Index: React.FC<Props> = ({ notes, recent_notes }) => {
                         </div>
                     </div>
                 </main>
-                <NoteSidebar recentNotes={recent_notes} />
+                <NoteSidebar recentNotes={recent_notes ?? []} />
             </div>
         </AppLayout>
     );

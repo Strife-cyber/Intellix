@@ -188,10 +188,10 @@ export default function PrositShow({
                 );
                 const status = response.data.data;
 
-                setGenerationProgress(status.progress || 0);
-                setGenerationStatus(status.message || 'Processing...');
+                setGenerationProgress(status?.progress || 0);
+                setGenerationStatus(status?.message || 'Processing...');
 
-                if (status.status === 'completed') {
+                if (status?.status === 'completed') {
                     clearInterval(pollInterval);
                     setGenerationProgress(100);
                     setGenerationStatus('Exam generation completed!');
@@ -202,7 +202,7 @@ export default function PrositShow({
                     setTimeout(() => {
                         router.visit('/exams');
                     }, 2000);
-                } else if (status.status === 'failed') {
+                } else if (status?.status === 'failed') {
                     clearInterval(pollInterval);
                     setGenerationStatus('Exam generation failed');
                     setIsGenerating(false);
@@ -299,7 +299,7 @@ export default function PrositShow({
                                 size="lg"
                                 disabled={
                                     isGenerating ||
-                                    prosit.competences.length === 0
+                                    (prosit?.competences ?? []).length === 0
                                 }
                                 className="shrink-0 gap-2 rounded-full bg-gradient-to-r from-primary to-purple-600 px-8 shadow-xl shadow-primary/20 hover:from-primary/90 hover:to-purple-600/90"
                             >
@@ -414,7 +414,7 @@ export default function PrositShow({
                     </Dialog>
                 </div>
 
-                {prosit.competences.length === 0 && (
+                {(prosit?.competences ?? []).length === 0 && (
                     <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-500">
                         Cannot generate an AI exam: This prosit has no mapped
                         competences. Please add competences using the button
@@ -731,28 +731,28 @@ export default function PrositShow({
                                 </Dialog>
                             </CardHeader>
                             <CardContent className="space-y-3 pt-0">
-                                {prosit.competences &&
-                                prosit.competences.length > 0 ? (
+                                {(prosit?.competences ?? []).length > 0 ? (
                                     prosit.competences.map((comp) => (
                                         <div
                                             key={comp.id}
                                             className="group relative rounded-lg border border-white/5 bg-white/5 p-3"
                                         >
                                             <p className="mb-1 text-sm leading-tight font-semibold">
-                                                {comp.title}
+                                                {comp?.title ?? 'Untitled'}
                                             </p>
                                             <div className="flex gap-2">
                                                 <Badge
                                                     variant="outline"
                                                     className="border-white/20 text-[10px] text-primary uppercase"
                                                 >
-                                                    {comp.taxonomy_level}
+                                                    {comp?.taxonomy_level ??
+                                                        'N/A'}
                                                 </Badge>
                                                 <Badge
                                                     variant="secondary"
                                                     className="text-[10px]"
                                                 >
-                                                    Weight: {comp.weight}
+                                                    Weight: {comp?.weight ?? 0}
                                                 </Badge>
                                             </div>
                                             <Button
@@ -811,7 +811,8 @@ export default function PrositShow({
                                                 </DialogDescription>
                                             </DialogHeader>
                                             <div className="max-h-[50vh] space-y-2 overflow-y-auto py-2">
-                                                {allResources.length > 0 ? (
+                                                {(allResources ?? []).length >
+                                                0 ? (
                                                     <div className="grid gap-2">
                                                         {allResources.map(
                                                             (res) => (
@@ -821,7 +822,10 @@ export default function PrositShow({
                                                                 >
                                                                     <Checkbox
                                                                         id={`res-${res.id}`}
-                                                                        checked={resData.resource_ids.includes(
+                                                                        checked={(
+                                                                            resData?.resource_ids ??
+                                                                            []
+                                                                        ).includes(
                                                                             res.id,
                                                                         )}
                                                                         onCheckedChange={() =>
@@ -840,12 +844,12 @@ export default function PrositShow({
                                                                     </label>
                                                                     <Badge
                                                                         variant="outline"
-                                                                        className={`text-[9px] uppercase ${res.type === 'cer' ? 'border-purple-500/30 text-purple-500' : ''}`}
+                                                                        className={`text-[9px] uppercase ${res?.type === 'cer' ? 'border-purple-500/30 text-purple-500' : ''}`}
                                                                     >
-                                                                        {res.type ===
+                                                                        {res?.type ===
                                                                         'cer'
                                                                             ? 'CER'
-                                                                            : res.type ||
+                                                                            : res?.type ||
                                                                               'File'}
                                                                     </Badge>
                                                                 </div>
@@ -887,8 +891,7 @@ export default function PrositShow({
                                 </Dialog>
                             </CardHeader>
                             <CardContent className="space-y-2 pt-0">
-                                {prosit.resources &&
-                                prosit.resources.length > 0 ? (
+                                {(prosit?.resources ?? []).length > 0 ? (
                                     prosit.resources.map((res) => (
                                         <div
                                             key={res.id}
@@ -899,12 +902,13 @@ export default function PrositShow({
                                             </div>
                                             <div className="overflow-hidden pr-8">
                                                 <p className="truncate text-sm leading-none font-semibold">
-                                                    {res.original_name}
+                                                    {res?.original_name ??
+                                                        'Unknown'}
                                                 </p>
                                                 <p className="text-[10px] text-muted-foreground uppercase">
-                                                    {res.type === 'cer'
+                                                    {res?.type === 'cer'
                                                         ? 'CER'
-                                                        : res.type ||
+                                                        : res?.type ||
                                                           'Document'}
                                                 </p>
                                             </div>

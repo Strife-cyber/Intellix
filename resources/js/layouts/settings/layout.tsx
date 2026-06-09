@@ -37,11 +37,6 @@ const sidebarNavItems: NavItem[] = [
         href: '/settings/ai/chat',
         icon: null,
     },
-    {
-        title: 'Embeddings AI',
-        href: '/settings/ai/embeddings',
-        icon: null,
-    },
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {

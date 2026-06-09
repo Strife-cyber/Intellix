@@ -1,8 +1,6 @@
 <?php
 
-use App\Http\Controllers\AiTestController;
 use App\Http\Controllers\Settings\ChatAiSettingsController;
-use App\Http\Controllers\Settings\EmbeddingAiSettingsController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
@@ -40,9 +38,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('settings/ai/chat/{user_chat_ai_setting}', [ChatAiSettingsController::class, 'destroy'])->name('settings.ai.chat.destroy');
     Route::post('settings/ai/chat/{user_chat_ai_setting}/default', [ChatAiSettingsController::class, 'makeDefault'])->name('settings.ai.chat.default');
 
-    Route::get('settings/ai/embeddings', [EmbeddingAiSettingsController::class, 'edit'])->name('settings.ai.embedding.edit');
-    Route::put('settings/ai/embeddings', [EmbeddingAiSettingsController::class, 'update'])->name('settings.ai.embedding.update');
-
-    // AI provider test endpoint (used by both chat and embedding settings)
-    Route::post('settings/ai/test', [AiTestController::class, 'test'])->name('settings.ai.test');
+    // AI provider test endpoint
+    Route::post('settings/ai/test', [\App\Http\Controllers\AiTestController::class, 'test'])->name('settings.ai.test');
 });

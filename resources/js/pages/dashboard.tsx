@@ -160,9 +160,9 @@ const SmartNudge: React.FC<SmartNudgeProps> = ({ message, action }) => (
 );
 
 export default function Dashboard({
-    resources,
-    stats,
-    recent_resources,
+    resources = [],
+    stats = {} as DashboardProps['stats'],
+    recent_resources = [],
 }: DashboardProps) {
     const [activeSession, setActiveSession] = useState<StudySession | null>(
         null,
@@ -270,13 +270,13 @@ export default function Dashboard({
 
                 {/* Smart Nudges */}
                 <div className="flex flex-col gap-3">
-                    {stats.flashcards_due_today > 0 && (
+                    {(stats?.flashcards_due_today ?? 0) > 0 && (
                         <SmartNudge
-                            message={`You have ${stats.flashcards_due_today} flashcards due today — review now (${Math.ceil(stats.flashcards_due_today * 0.5)} min)`}
+                            message={`You have ${stats?.flashcards_due_today ?? 0} flashcards due today — review now (${Math.ceil((stats?.flashcards_due_today ?? 0) * 0.5)} min)`}
                             action={{ label: 'Review', href: flashcards().url }}
                         />
                     )}
-                    {stats.resources_count === 0 && (
+                    {(stats?.resources_count ?? 0) === 0 && (
                         <SmartNudge
                             message="No study materials yet — upload your first PDF to get started!"
                             action={{ label: 'Upload', href: upload().url }}
@@ -388,7 +388,7 @@ export default function Dashboard({
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {stats.resources_count}
+                                {stats?.resources_count ?? 0}
                             </div>
                             <p className="text-xs text-muted-foreground">
                                 Total study materials
@@ -405,10 +405,10 @@ export default function Dashboard({
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {stats.flashcards_count}
+                                {stats?.flashcards_count ?? 0}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                {stats.flashcards_due_today} due today
+                                {stats?.flashcards_due_today ?? 0} due today
                             </p>
                         </CardContent>
                     </Card>
@@ -422,7 +422,7 @@ export default function Dashboard({
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {stats.courses_count}
+                                {stats?.courses_count ?? 0}
                             </div>
                             <p className="text-xs text-muted-foreground">
                                 Available courses
@@ -439,7 +439,7 @@ export default function Dashboard({
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {stats.flashcards_due_today}
+                                {stats?.flashcards_due_today ?? 0}
                             </div>
                             <p className="text-xs text-muted-foreground">
                                 Flashcards to review
@@ -603,41 +603,43 @@ export default function Dashboard({
                         <CardContent>
                             <ScrollArea className="h-64">
                                 <div className="space-y-3">
-                                    {recent_resources.length > 0 ? (
-                                        recent_resources.map((resource) => (
-                                            <div
-                                                key={resource.id}
-                                                className="flex items-center justify-between rounded-lg border p-3"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <FileText className="h-5 w-5 text-muted-foreground" />
-                                                    <div>
-                                                        <h4 className="max-w-50 truncate font-medium">
-                                                            {resource.name}
-                                                        </h4>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {
-                                                                resource.created_at
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <Badge
-                                                    variant="outline"
-                                                    className={cn(
-                                                        'flex items-center gap-1',
-                                                        getStatusColor(
-                                                            resource.status,
-                                                        ),
-                                                    )}
+                                    {(recent_resources ?? []).length > 0 ? (
+                                        (recent_resources ?? []).map(
+                                            (resource) => (
+                                                <div
+                                                    key={resource.id}
+                                                    className="flex items-center justify-between rounded-lg border p-3"
                                                 >
-                                                    {getStatusIcon(
-                                                        resource.status,
-                                                    )}
-                                                    {resource.status}
-                                                </Badge>
-                                            </div>
-                                        ))
+                                                    <div className="flex items-center gap-3">
+                                                        <FileText className="h-5 w-5 text-muted-foreground" />
+                                                        <div>
+                                                            <h4 className="max-w-50 truncate font-medium">
+                                                                {resource.name}
+                                                            </h4>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                {
+                                                                    resource.created_at
+                                                                }
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={cn(
+                                                            'flex items-center gap-1',
+                                                            getStatusColor(
+                                                                resource.status,
+                                                            ),
+                                                        )}
+                                                    >
+                                                        {getStatusIcon(
+                                                            resource.status,
+                                                        )}
+                                                        {resource.status}
+                                                    </Badge>
+                                                </div>
+                                            ),
+                                        )
                                     ) : (
                                         <div className="py-8 text-center">
                                             <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
@@ -680,7 +682,7 @@ export default function Dashboard({
                                             Resources Progress
                                         </span>
                                         <span className="text-sm text-muted-foreground">
-                                            {stats.resources_count} files
+                                            {stats?.resources_count ?? 0} files
                                         </span>
                                     </div>
                                     <Progress
@@ -697,7 +699,7 @@ export default function Dashboard({
                                             Flashcard Mastery
                                         </span>
                                         <span className="text-sm text-muted-foreground">
-                                            {stats.flashcards_count} cards
+                                            {stats?.flashcards_count ?? 0} cards
                                         </span>
                                     </div>
                                     <Progress
@@ -712,7 +714,7 @@ export default function Dashboard({
                                 <div className="grid grid-cols-2 gap-4 pt-4">
                                     <div className="rounded-lg border p-4 text-center">
                                         <div className="text-2xl font-bold text-blue-600">
-                                            {stats.flashcards_due_today}
+                                            {stats?.flashcards_due_today ?? 0}
                                         </div>
                                         <p className="text-sm text-muted-foreground">
                                             Due Today
@@ -720,7 +722,7 @@ export default function Dashboard({
                                     </div>
                                     <div className="rounded-lg border p-4 text-center">
                                         <div className="text-2xl font-bold text-green-600">
-                                            {stats.courses_count}
+                                            {stats?.courses_count ?? 0}
                                         </div>
                                         <p className="text-sm text-muted-foreground">
                                             Courses

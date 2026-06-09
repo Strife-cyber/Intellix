@@ -9,7 +9,7 @@ import {
     FolderOpen,
     Upload,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import DeleteResourceModal from '@/components/delete-resource-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -50,13 +50,13 @@ import type { BreadcrumbItem, Chapter, Prosit } from '@/types';
 import { toast } from 'sonner';
 
 export default function PrositsIndex({
-    prosits,
-    chapters,
-    unallocatedProsits,
+    prosits = [],
+    chapters = [],
+    unallocatedProsits = [],
 }: {
-    prosits: Prosit[];
-    chapters: Chapter[];
-    unallocatedProsits: Prosit[];
+    prosits?: Prosit[];
+    chapters?: Chapter[];
+    unallocatedProsits?: Prosit[];
 }) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Prosits', href: '/prosits' },
@@ -214,8 +214,10 @@ export default function PrositsIndex({
     const groupedChapters = useMemo(() => {
         const groups: Record<string, Chapter[]> = {};
         for (const chap of chapters) {
-            if (!groups[chap.course.title]) groups[chap.course.title] = [];
-            groups[chap.course.title].push(chap);
+            const courseTitle = chap?.course?.title;
+            if (!courseTitle) continue;
+            if (!groups[courseTitle]) groups[courseTitle] = [];
+            groups[courseTitle].push(chap);
         }
         return groups;
     }, [chapters]);
@@ -306,9 +308,9 @@ export default function PrositsIndex({
                 <CardTitle
                     className="line-clamp-2 cursor-pointer pr-6 text-lg transition-colors hover:text-primary"
                     onClick={() =>
-                        prosit.chapter
+                        prosit?.chapter
                             ? router.visit(
-                                  `/courses/${prosit.chapter.course.id}/prosits/${prosit.id}`,
+                                  `/courses/${prosit?.chapter?.course?.id}/prosits/${prosit?.id}`,
                               )
                             : openAllocate(prosit)
                     }
@@ -316,11 +318,11 @@ export default function PrositsIndex({
                     {prosit.generalisation || 'Prosit sans titre'}
                 </CardTitle>
                 <CardDescription className="mt-1 flex items-center gap-1 text-xs">
-                    {prosit.chapter ? (
+                    {prosit?.chapter ? (
                         <>
                             <LayoutGrid className="h-3 w-3" />{' '}
-                            {prosit.chapter.course.title} &gt;{' '}
-                            {prosit.chapter.title}
+                            {prosit?.chapter?.course?.title} &gt;{' '}
+                            {prosit?.chapter?.title}
                         </>
                     ) : (
                         <span className="text-amber-500">
@@ -334,9 +336,9 @@ export default function PrositsIndex({
                 <div className="mb-4 flex items-center gap-2">
                     {sourceBadge(prosit)}
                 </div>
-                {prosit.chapter ? (
+                {prosit?.chapter ? (
                     <Link
-                        href={`/courses/${prosit.chapter.course.id}/prosits/${prosit.id}`}
+                        href={`/courses/${prosit?.chapter?.course?.id}/prosits/${prosit?.id}`}
                     >
                         <Button variant="outline" className="w-full">
                             View Details

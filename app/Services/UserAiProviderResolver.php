@@ -9,17 +9,47 @@ use Illuminate\Support\Facades\Http;
 
 class UserAiProviderResolver
 {
-    public function defaultSetting(User $user): ?UserChatAiSetting
+    public function defaultSetting(?User $user): ?UserChatAiSetting
     {
-        $default = $user->chatAiSettings()->where('is_default', true)->first();
-        if ($default) {
-            return $default;
+        if ($user) {
+            $default = $user->chatAiSettings()->where('is_default', true)->first();
+            if ($default) {
+                return $default;
+            }
+
+            $first = $user->chatAiSettings()->orderBy('provider_type')->first();
+            if ($first) {
+                return $first;
+            }
         }
 
-        return $user->chatAiSettings()->orderBy('provider_type')->first();
+        return $this->systemDefaultSetting();
     }
 
-    public function resolveEndpoint(User $user): ?string
+    public function systemDefaultSetting(): ?UserChatAiSetting
+    {
+        if (config('services.gemini.api_key')) {
+            $setting = new UserChatAiSetting();
+            $setting->provider_type = AiProviders::GEMINI;
+            $setting->model = 'gemini-2.0-flash';
+            $setting->is_default = true;
+
+            return $setting;
+        }
+
+        if (config('services.openrouter.api_key')) {
+            $setting = new UserChatAiSetting();
+            $setting->provider_type = AiProviders::OPENROUTER;
+            $setting->model = 'openai/gpt-4o-mini';
+            $setting->is_default = true;
+
+            return $setting;
+        }
+
+        return null;
+    }
+
+    public function resolveEndpoint(?User $user): ?string
     {
         $setting = $this->defaultSetting($user);
         if (! $setting) {
@@ -29,7 +59,7 @@ class UserAiProviderResolver
         return $this->endpointForSetting($setting);
     }
 
-    public function resolveModel(User $user): ?string
+    public function resolveModel(?User $user): ?string
     {
         $setting = $this->defaultSetting($user);
         if (! $setting) {
@@ -39,19 +69,19 @@ class UserAiProviderResolver
         return $setting->model ?: $this->defaultModelForProvider($setting->provider_type);
     }
 
-    public function resolveApiKey(User $user): ?string
+    public function resolveApiKey(?User $user): ?string
     {
         return $this->defaultSetting($user)?->effectiveApiKey();
     }
 
-    public function resolveTemperature(User $user): float
+    public function resolveTemperature(?User $user): float
     {
         $setting = $this->defaultSetting($user);
 
         return $setting ? (float) $setting->temperature : 0.7;
     }
 
-    public function cerProviderPayload(User $user): ?array
+    public function cerProviderPayload(?User $user): ?array
     {
         $setting = $this->defaultSetting($user);
         if (! $setting) {
@@ -68,7 +98,7 @@ class UserAiProviderResolver
     /**
      * @return array<string, mixed>
      */
-    public function status(User $user): array
+    public function status(?User $user): array
     {
         $setting = $this->defaultSetting($user);
         if (! $setting) {
@@ -77,10 +107,11 @@ class UserAiProviderResolver
                 'provider' => null,
                 'endpoint' => config('services.ai.endpoint'),
                 'model' => null,
-                'message' => 'No chat AI configured. Open Settings → Chat AI.',
+                'message' => 'No chat AI configured and no system fallback available.',
             ];
         }
 
+        $isSystem = ! $user || ! $user->chatAiSettings()->where('id', $setting->id)->exists();
         $endpoint = $this->endpointForSetting($setting);
         $model = $this->resolveModel($user);
         $configured = $this->isConfigured($setting);
@@ -91,10 +122,11 @@ class UserAiProviderResolver
             'provider' => $setting->provider_type,
             'endpoint' => $endpoint,
             'model' => $model,
+            'is_system' => $isSystem,
             'message' => ! $configured
                 ? 'Chat AI is missing required settings (e.g. API key).'
                 : ($reachable
-                    ? 'Chat AI is configured.'
+                    ? ($isSystem ? 'Using system default Chat AI.' : 'Chat AI is configured.')
                     : 'Chat AI is configured but the service is not reachable.'),
         ];
     }

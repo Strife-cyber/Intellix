@@ -30,14 +30,14 @@ const Show: React.FC<Props> = ({ note, root_note, all_versions }) => {
 
     // Form for updating CURRENT note
     const updateForm = useForm({
-        content: JSON.stringify(note.content),
+        content: JSON.stringify(note?.content ?? []),
         title: note.title,
     });
 
     // Form for creating NEW version (Retour)
     const versionForm = useForm({
-        title: `Retour: ${root_note.title} (v${all_versions.length + 1})`,
-        content: JSON.stringify(note.content),
+        title: `Retour: ${root_note?.title ?? 'Untitled'} (v${(all_versions ?? []).length + 1})`,
+        content: JSON.stringify(note?.content ?? []),
         type: 'retour',
         parent_id: root_note.id,
     });
@@ -66,7 +66,7 @@ const Show: React.FC<Props> = ({ note, root_note, all_versions }) => {
         if (confirm('Are you sure you want to delete this note?')) {
             updateForm.delete(notesRoutes.destroy(note.id).url);
         }
-    }
+    };
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Notes', href: notesRoutes.index().url },

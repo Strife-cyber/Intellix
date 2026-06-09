@@ -1,13 +1,7 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import {
-    ChevronRight,
-    Plus,
-    MoreVertical,
-} from 'lucide-react';
+import { ChevronRight, Plus, MoreVertical } from 'lucide-react';
 import { useState } from 'react';
-import {
-    Button,
-} from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -89,8 +83,8 @@ export default function CourseShow({ course }: { course: Course }) {
     };
 
     const totalProsits =
-        course.chapters?.reduce(
-            (acc, chapter) => acc + (chapter.prosits?.length || 0),
+        course?.chapters?.reduce(
+            (acc, chapter) => acc + (chapter?.prosits?.length || 0),
             0,
         ) || 0;
 
@@ -98,18 +92,17 @@ export default function CourseShow({ course }: { course: Course }) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`${course.title} - Overview`} />
+            <Head title={`${course?.title ?? 'Course'} - Overview`} />
 
             <div className="min-h-screen bg-background">
-
                 {/* Course Header */}
                 <div className="border-b px-6 py-8">
                     <div className="max-w-5xl">
-                        <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                        <p className="text-xs tracking-widest text-muted-foreground uppercase">
                             Course
                         </p>
                         <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-                            {course.title}
+                            {course?.title ?? 'Untitled'}
                         </h1>
                         <p className="mt-4 max-w-3xl text-muted-foreground">
                             {course.description ||
@@ -121,19 +114,16 @@ export default function CourseShow({ course }: { course: Course }) {
                 {/* Stats Bar */}
                 <div className="border-b px-6 py-4 text-sm text-muted-foreground">
                     <div className="flex gap-8">
-                        <span>{course.chapters?.length || 0} Chapters</span>
+                        <span>{course?.chapters?.length ?? 0} Chapters</span>
                         <span>{totalProsits} Prosits</span>
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="px-6 py-10 space-y-10 max-w-6xl">
-
+                <div className="max-w-6xl space-y-10 px-6 py-10">
                     {/* Section Header */}
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-semibold">
-                            Chapters
-                        </h2>
+                        <h2 className="text-xl font-semibold">Chapters</h2>
 
                         <Dialog
                             open={isCreateChapterOpen}
@@ -148,9 +138,7 @@ export default function CourseShow({ course }: { course: Course }) {
 
                             <DialogContent>
                                 <DialogHeader>
-                                    <DialogTitle>
-                                        Create Chapter
-                                    </DialogTitle>
+                                    <DialogTitle>Create Chapter</DialogTitle>
                                 </DialogHeader>
 
                                 <form
@@ -219,7 +207,6 @@ export default function CourseShow({ course }: { course: Course }) {
                     {/* Chapters List */}
                     {course.chapters && course.chapters.length > 0 ? (
                         <div className="space-y-6">
-
                             {course.chapters.map((chapter) => (
                                 <div
                                     key={chapter.id}
@@ -268,11 +255,12 @@ export default function CourseShow({ course }: { course: Course }) {
                                                 <Link
                                                     key={prosit.id}
                                                     href={`/courses/${course.id}/prosits/${prosit.id}`}
-                                                    className="flex items-center justify-between px-6 py-3 hover:bg-muted/40 transition-colors"
+                                                    className="flex items-center justify-between px-6 py-3 transition-colors hover:bg-muted/40"
                                                 >
                                                     <div>
                                                         <p className="text-sm font-medium">
-                                                            {prosit.generalisation}
+                                                            {prosit?.generalisation ??
+                                                                'Prosit'}
                                                         </p>
                                                         {prosit.difficulty_level && (
                                                             <p className="text-xs text-muted-foreground">
@@ -288,7 +276,8 @@ export default function CourseShow({ course }: { course: Course }) {
                                             ))
                                         ) : (
                                             <div className="px-6 py-6 text-sm text-muted-foreground">
-                                                No prosits defined for this chapter.
+                                                No prosits defined for this
+                                                chapter.
                                             </div>
                                         )}
                                     </div>
@@ -301,13 +290,12 @@ export default function CourseShow({ course }: { course: Course }) {
                                 No chapters yet
                             </h3>
                             <p className="mt-2 text-sm text-muted-foreground">
-                                Create your first chapter to structure this course.
+                                Create your first chapter to structure this
+                                course.
                             </p>
                             <Button
                                 className="mt-4"
-                                onClick={() =>
-                                    setIsCreateChapterOpen(true)
-                                }
+                                onClick={() => setIsCreateChapterOpen(true)}
                             >
                                 Add Chapter
                             </Button>
