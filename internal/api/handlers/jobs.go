@@ -74,6 +74,16 @@ type cerGenerateRequest struct {
 	Difficulties []string              `json:"difficulties"`
 	Perspectives []string              `json:"perspectives"`
 	Provider     *jobs.ProviderConfig  `json:"provider"`
+
+	// DocumentInfo customizations — optional
+	Author         string `json:"author,omitempty"`
+	Pilot          string `json:"pilot,omitempty"`
+	Promotion      string `json:"promotion,omitempty"`
+	BrandLabel     string `json:"brand_label,omitempty"`
+	CopyrightOwner string `json:"copyright_owner,omitempty"`
+	DocStatus      string `json:"doc_status,omitempty"`
+	DocTitle       string `json:"doc_title,omitempty"`
+	LogoBase64     string `json:"logo_base64,omitempty"`
 }
 
 // StartCERGenerateJob enqueues async CER generation from a JSON prosit payload.
@@ -110,6 +120,14 @@ func StartCERGenerateJob(w http.ResponseWriter, r *http.Request) {
 	prosit.Difficulties = req.Difficulties
 	prosit.Perspectives = req.Perspectives
 	prosit.Provider = req.Provider
+	prosit.Author = req.Author
+	prosit.Pilot = req.Pilot
+	prosit.Promotion = req.Promotion
+	prosit.BrandLabel = req.BrandLabel
+	prosit.CopyrightOwner = req.CopyrightOwner
+	prosit.DocStatus = req.DocStatus
+	prosit.DocTitle = req.DocTitle
+	prosit.LogoBase64 = req.LogoBase64
 
 	if prosit.TemplateID != "" && prosit.TemplateID != "default" {
 		if result, err := deps.Templates.Validate(prosit.TemplateID); err != nil {

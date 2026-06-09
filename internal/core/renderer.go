@@ -13,6 +13,37 @@ import (
 	"time"
 )
 
+// DocumentInfo holds configurable document metadata that replaces hardcoded values
+// in LaTeX templates. All fields have sensible defaults.
+type DocumentInfo struct {
+	Title            string
+	Subtitle         string
+	Version          float32
+	Author           string
+	Pilot            string
+	Promotion        string
+	BrandLabel       string
+	LogoPath         string
+	CopyrightOwner   string
+	HeaderTitle      string
+	Status           string
+	DocID            string
+}
+
+// DefaultDocumentInfo returns the default document metadata.
+func DefaultDocumentInfo() DocumentInfo {
+	return DocumentInfo{
+		Title:          "Cahier d'étude \\ et de recherche",
+		Author:         "Djiatsa Dunamis Junior",
+		Pilot:          "Mr. Bruce Jouguem Youmbi",
+		Promotion:      "X 2028",
+		BrandLabel:     "UCAC-ICAM",
+		LogoPath:       "logo_ucac_icam.jpg",
+		CopyrightOwner: "UCAC-ICAM",
+		Status:         "Version finale",
+	}
+}
+
 type LatexRenderer struct {
 	TemplateDir string
 	funcs       template.FuncMap
@@ -68,7 +99,7 @@ func NewLatexRenderer(templateDir string) (*LatexRenderer, error) {
 	}, nil
 }
 
-func (lr *LatexRenderer) Render(cer *Cer, baseOutputDir string, theme string) (string, error) {
+func (lr *LatexRenderer) Render(cer *Cer, baseOutputDir string, theme string, docInfo DocumentInfo) (string, error) {
 	now := time.Now()
 	timestamp := now.Format("20060102_150405")
 	currentYear := now.Format("2006")
@@ -119,25 +150,33 @@ func (lr *LatexRenderer) Render(cer *Cer, baseOutputDir string, theme string) (s
 		references.Ligne = []string{}
 	}
 
-	// Build the context data map
+	// Build the context data map from DocumentInfo + Cer data
 	contextMap := map[string]any{
 		"title":          cer.Title,
 		"version_number": cer.Version,
 		"subtitle":       subtitle,
 		"header_title":   cer.Title,
 		"description":    cer.Description,
-		"docAuthor":      "Djiatsa Dunamis Junior",
+		"docAuthor":      docInfo.Author,
+		"docTitle":       docInfo.Title,
+		"docPilot":       docInfo.Pilot,
+		"docPromotion":   docInfo.Promotion,
+		"docBrandLabel":  docInfo.BrandLabel,
+		"docLogoPath":    docInfo.LogoPath,
+		"docCopyrightOwner": docInfo.CopyrightOwner,
+		"docStatus":      docInfo.Status,
+		"docID":          docInfo.DocID,
 		"year":           currentYear,
 		"analyse": map[string]any{
 			"context":     safeString(analyse.Context),
 			"problems":    safeSlice(analyse.Problems),
 			"constraints": safeSlice(analyse.Constraints),
 		},
-		"plan":        safeSlice(cer.Plan),
-		"realisation": safeString(cer.Realisation),
-		"validation":  safeString(cer.Validation),
-		"conclusion":  safeString(cer.Conclusion),
-		"bilan":       safeString(cer.Bilan),
+		"plan":          safeSlice(cer.Plan),
+		"realisation":   safeString(cer.Realisation),
+		"validation":    safeString(cer.Validation),
+		"conclusion":    safeString(cer.Conclusion),
+		"bilan":         safeString(cer.Bilan),
 		"references_md": safeString(cer.ReferencesMD),
 		"references": map[string]any{
 			"Principale": safeSlice(references.Principale),

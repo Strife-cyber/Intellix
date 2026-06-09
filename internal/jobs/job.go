@@ -55,6 +55,16 @@ type CERGeneratePayload struct {
 	Difficulties []string      `json:"difficulties,omitempty"`
 	Perspectives []string      `json:"perspectives,omitempty"`
 	Provider     *ProviderConfig `json:"provider,omitempty"`
+
+	// DocumentInfo customizations — optional, defaults from core.DefaultDocumentInfo.
+	Author         string `json:"author,omitempty"`
+	Pilot          string `json:"pilot,omitempty"`
+	Promotion      string `json:"promotion,omitempty"`
+	BrandLabel     string `json:"brand_label,omitempty"`
+	CopyrightOwner string `json:"copyright_owner,omitempty"`
+	DocStatus      string `json:"doc_status,omitempty"`
+	DocTitle       string `json:"doc_title,omitempty"`
+	LogoBase64     string `json:"logo_base64,omitempty"`
 }
 
 type ProviderConfig struct {

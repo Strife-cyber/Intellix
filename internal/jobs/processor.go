@@ -3,6 +3,7 @@ package jobs
 import (
 	"archive/zip"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"micro-cer/internal/ai"
@@ -100,9 +101,28 @@ func processCERGenerate(ctx context.Context, store *Store, jobID string, job *Jo
 
 			_ = store.Update(jobID, func(j *Job) { j.Progress = "rendering_latex" })
 
-			outputDir, err := renderer.Render(cer, jobOut, p.Theme)
+			docInfo := buildDocumentInfo(p, cer)
+			if p.LogoBase64 != "" {
+				if logoFile, err := decodeAndWriteLogo(jobOut, p.LogoBase64); err == nil {
+					docInfo.LogoPath = logoFile
+				}
+			}
+			outputDir, err := renderer.Render(cer, jobOut, p.Theme, docInfo)
 			if err != nil {
 				return err
+			}
+			// If we wrote a custom logo, copy it into the output directory so
+			// LaTeX can find it during compilation.
+			if docInfo.LogoPath != "" && docInfo.LogoPath != "logo_ucac_icam.jpg" {
+				srcLogo := filepath.Join(jobOut, docInfo.LogoPath)
+				dstLogo := filepath.Join(outputDir, docInfo.LogoPath)
+				if r, err := os.Open(srcLogo); err == nil {
+					if w, err2 := os.Create(dstLogo); err2 == nil {
+						_, _ = io.Copy(w, r)
+						_ = w.Close()
+					}
+					_ = r.Close()
+				}
 			}
 
 			zipPath := filepath.Join(jobOut, "cer_output.zip")
@@ -183,4 +203,53 @@ func zipDirectory(zipPath, dir string) error {
 		_, err = io.Copy(f, src)
 		return err
 	})
+}
+
+// buildDocumentInfo constructs a DocumentInfo from the job payload, falling back
+// to sensible defaults for any field not explicitly set.
+func buildDocumentInfo(p *CERGeneratePayload, cer *core.Cer) core.DocumentInfo {
+	docInfo := core.DefaultDocumentInfo()
+
+	if p.Author != "" {
+		docInfo.Author = p.Author
+	}
+	if p.Pilot != "" {
+		docInfo.Pilot = p.Pilot
+	}
+	if p.Promotion != "" {
+		docInfo.Promotion = p.Promotion
+	}
+	if p.BrandLabel != "" {
+		docInfo.BrandLabel = p.BrandLabel
+	}
+	if p.CopyrightOwner != "" {
+		docInfo.CopyrightOwner = p.CopyrightOwner
+	}
+	if p.DocStatus != "" {
+		docInfo.Status = p.DocStatus
+	}
+
+	// Override title/subtitle/version from the CER (these are always explicit).
+	docInfo.Title = cer.Title
+	docInfo.Subtitle = cer.Description
+	docInfo.Version = cer.Version
+
+	return docInfo
+}
+
+// decodeAndWriteLogo decodes a base64-encoded PNG and writes it to the given
+// directory. It returns the filename ("custom_logo.png") on success, or an error.
+func decodeAndWriteLogo(dir, b64 string) (string, error) {
+	decoded, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return "", fmt.Errorf("decode logo: %w", err)
+	}
+	if len(decoded) == 0 {
+		return "", fmt.Errorf("decoded logo is empty")
+	}
+	logoPath := filepath.Join(dir, "custom_logo.png")
+	if err := os.WriteFile(logoPath, decoded, 0644); err != nil {
+		return "", fmt.Errorf("write logo: %w", err)
+	}
+	return "custom_logo.png", nil
 }

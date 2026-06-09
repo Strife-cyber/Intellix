@@ -39,6 +39,7 @@
 \usepackage{bookmark}
 \usepackage{enumitem}
 \usepackage{framed}
+\usepackage[framemethod=TikZ]{mdframed}
 
 % ── Fonts ──
 \usepackage{lmodern}
@@ -58,6 +59,20 @@
 \definecolor{codeComment}{HTML}{718096}
 \definecolor{codeKeyword}{HTML}{D53F8C}
 \definecolor{codeString}{HTML}{38A169}
+
+% Code block styling with mdframed
+\mdfdefinestyle{codeblock}{%
+    backgroundcolor=codeBg!30,
+    innertopmargin=8pt,
+    innerbottommargin=8pt,
+    innerleftmargin=10pt,
+    innerrightmargin=10pt,
+    roundcorner=3pt,
+    skipabove=1.2em,
+    skipbelow=1.2em,
+    linecolor=themePrimary!20,
+    linewidth=0.5pt,
+}
 
 % ── Code Listing ──
 \lstdefinelanguage{Dart}{
@@ -80,20 +95,20 @@
 }
 
 % ── Document Info ──
-\newcommand{\docTitle}{Cahier d'étude \\ et de recherche}
+\newcommand{\docTitle}{[[ .docTitle ]]}
 \newcommand{\docNumber}{[[ .version_number ]]}
 \newcommand{\docSubtitle}{[[ .title ]]}
 \newcommand{\docHeaderTitle}{[[ .title ]]}
 \newcommand{\docAbstract}{[[ .description ]]}
-\newcommand{\docBrandLabel}{UCAC-ICAM}
-\newcommand{\docAuthor}{Djiatsa Dunamis Junior}
-\newcommand{\docPilot}{Mr. Bruce Jouguem Youmbi}
-\newcommand{\docPromotion}{X 2028}
+\newcommand{\docBrandLabel}{[[ .docBrandLabel ]]}
+\newcommand{\docAuthor}{[[ .docAuthor ]]}
+\newcommand{\docPilot}{[[ .docPilot ]]}
+\newcommand{\docPromotion}{[[ .docPromotion ]]}
 \newcommand{\docDate}{\today}
-\newcommand{\docStatus}{Version finale}
+\newcommand{\docStatus}{[[ .docStatus ]]}
 \newcommand{\docID}{CDC-[[ .year ]]-[[ .version_number ]]}
-\newcommand{\docLogoPath}{logo_ucac_icam.jpg}
-\newcommand{\docCopyrightOwner}{UCAC-ICAM}
+\newcommand{\docLogoPath}{[[ .docLogoPath ]]}
+\newcommand{\docCopyrightOwner}{[[ .docCopyrightOwner ]]}
 
 % ── Section Styles ──
 \titleformat{\section}{\color{themeDark}\Large\bfseries}{\thesection}{1em}{}[\vspace{0.3em}]

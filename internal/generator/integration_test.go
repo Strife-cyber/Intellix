@@ -217,7 +217,7 @@ func TestFullCERGeneration(t *testing.T) {
 		t.Fatalf("Failed to create renderer: %v", err)
 	}
 
-	outputDir, err := renderer.Render(cer, t.TempDir(), "icam")
+	outputDir, err := renderer.Render(cer, t.TempDir(), "icam", core.DefaultDocumentInfo())
 	if err != nil {
 		t.Fatalf("Failed to render LaTeX: %v", err)
 	}
