@@ -10,44 +10,52 @@ import (
 
 	"micro-cer/internal/ai"
 
+	gmlatex "github.com/soypat/goldmark-latex"
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/util"
-	gmlatex "github.com/soypat/goldmark-latex"
 )
 
-// latexExtension implements goldmark.Extension to register the LaTeX renderer
-// and the inline math/citation parsers with goldmark.
-type latexExtension struct{}
+// mdConverter converts Markdown to LaTeX using goldmark with a LaTeX renderer.
+// This is built the same way as the md2latex CLI — directly setting the renderer,
+// not via extensions, to avoid the default HTML renderer taking priority.
+var mdConverter = createConverter()
 
-func (e *latexExtension) Extend(m goldmark.Markdown) {
-	m.Parser().AddOptions(
-		parser.WithInlineParsers(
-			util.Prioritized(gmlatex.InlineMathParser, 500),
-			util.Prioritized(gmlatex.CitationParser, 200),
-		),
-	)
-	m.Renderer().AddOptions(
+func createConverter() goldmark.Markdown {
+	rd := renderer.NewRenderer(
 		renderer.WithNodeRenderers(
 			util.Prioritized(
 				gmlatex.NewRenderer(gmlatex.Config{
-					EnableTableCaptions: true,
-					Unsafe: true,
-				}),
+						EnableTableCaptions: true,
+						Unsafe:             true,
+						NoPreamble:         true,
+					}),
 				1000,
 			),
 		),
 	)
-}
 
-// mdConverter is the shared goldmark instance configured with the LaTeX renderer.
-// It converts CommonMark + GFM extensions to LaTeX body content (no preamble).
-var mdConverter = goldmark.New(
-	goldmark.WithExtensions(
-		&latexExtension{},
-	),
-)
+	parserOpts := []parser.Option{
+		parser.WithParagraphTransformers(
+			util.Prioritized(extension.NewTableParagraphTransformer(), 200),
+		),
+		parser.WithASTTransformers(
+			util.Prioritized(extension.NewTableASTTransformer(), 0),
+			util.Prioritized(gmlatex.TableCaptionTransformer, -1),
+		),
+		parser.WithInlineParsers(
+			util.Prioritized(gmlatex.InlineMathParser, 150),
+			util.Prioritized(gmlatex.CitationParser, 150),
+		),
+	}
+
+	return goldmark.New(
+		goldmark.WithRenderer(rd),
+		goldmark.WithParserOptions(parserOpts...),
+	)
+}
 
 // MarkdownToLatex converts a Markdown string to a LaTeX fragment (body content only).
 // The output is suitable for inclusion in a larger LaTeX document via \input{}.
@@ -65,8 +73,7 @@ func MarkdownToLatex(md string) (string, error) {
 }
 
 // MustMarkdownToLatex converts Markdown to LaTeX, logging and returning the raw
-// Markdown on error. This is used in generator methods where a graceful fallback
-// is preferred over a hard failure.
+// Markdown on error.
 func MustMarkdownToLatex(md string) string {
 	result, err := MarkdownToLatex(md)
 	if err != nil {
@@ -80,8 +87,6 @@ func MustMarkdownToLatex(md string) string {
 var mdResponseCache = ai.NewResponseCache(5*time.Minute, 200)
 
 // GenerateMarkdown is the generic engine for getting Markdown from the AI.
-// It replaces GenerateJSON[T] — no JSON parsing, no retry/repair logic.
-// The AI is instructed to produce Markdown, which is vastly more reliable.
 func GenerateMarkdown(
 	ctx context.Context,
 	assistant *ai.Assistant,
