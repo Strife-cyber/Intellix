@@ -96,13 +96,12 @@ services:
   # Text Embeddings Inference (built-in embeddings)
   # ──────────────────────────────────────────────
   tei:
-    image: ghcr.io/huggingface/text-embeddings-inference:latest
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-latest
     container_name: intellix-tei
     restart: unless-stopped
-    command: ['--model-id', 'BAAI/bge-small-en-v1.5', '--no-cuda']
+    command: ['--model-id', 'BAAI/bge-small-en-v1.5']
     environment:
       - RUST_LOG=info
-      - CUDA_VISIBLE_DEVICES=-1
     networks:
       - intellix-local
     # Health check
@@ -135,6 +134,7 @@ services:
       - APP_IS_WORKER=true
       - QUEUE_CONNECTION=redis
       - REDIS_HOST=redis
+      - CACHE_DRIVER=redis
       - CER_BASE_URL=http://micro-cer:8080
       - CER_SHARED_SECRET=${CER_SHARED_SECRET:-a8b2c6d4-e0f1-4a3b-8c9d-0e1f2a3b4c5d}
     depends_on:
