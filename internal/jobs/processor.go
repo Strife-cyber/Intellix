@@ -228,9 +228,11 @@ func buildDocumentInfo(p *CERGeneratePayload, cer *core.Cer) core.DocumentInfo {
 	if p.DocStatus != "" {
 		docInfo.Status = p.DocStatus
 	}
+	if p.DocTitle != "" {
+		docInfo.Title = p.DocTitle
+	}
 
-	// Override title/subtitle/version from the CER (these are always explicit).
-	docInfo.Title = cer.Title
+	// Override subtitle/version from the CER (these are always explicit).
 	docInfo.Subtitle = cer.Description
 	docInfo.Version = cer.Version
 
