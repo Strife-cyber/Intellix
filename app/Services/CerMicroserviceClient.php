@@ -115,6 +115,16 @@ class CerMicroserviceClient
     /**
      * @return list<array<string, mixed>>
      */
+    public function listTemplates(User $user): array
+    {
+        $data = $this->call(fn () => $this->signedRequest($user, 'GET', 'templates')->get($this->target('templates')));
+
+        return $data['templates'] ?? [];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
     public function listProsits(User $user): array
     {
         $data = $this->call(fn () => $this->signedRequest($user, 'GET', 'prosits')->get($this->target('prosits')));

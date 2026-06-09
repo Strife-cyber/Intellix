@@ -32,10 +32,12 @@ class CerWebController extends Controller
         $microserviceError = null;
         $prosits = [];
         $themes = ['coffee'];
+        $templates = [['id' => 'default', 'name' => 'Classic', 'builtin' => true]];
 
         try {
             $prosits = $this->client->listProsits($user);
             $themes = $this->client->listThemes($user) ?: $themes;
+            $templates = $this->client->listTemplates($user) ?: $templates;
         } catch (RuntimeException $e) {
             $microserviceError = $e->getMessage();
         }
@@ -43,6 +45,7 @@ class CerWebController extends Controller
         return Inertia::render('cers/generate', [
             'prosits' => $prosits,
             'themes' => $themes,
+            'templates' => $templates,
             'microserviceError' => $microserviceError,
             'initialPrositId' => $request->query('prosit'),
         ]);
@@ -171,6 +174,14 @@ class CerWebController extends Controller
             'difficulties.*' => ['string'],
             'perspectives' => ['nullable', 'array'],
             'perspectives.*' => ['string'],
+            // Optional document info fields
+            'author' => ['nullable', 'string', 'max:255'],
+            'pilot' => ['nullable', 'string', 'max:255'],
+            'promotion' => ['nullable', 'string', 'max:100'],
+            'brand_label' => ['nullable', 'string', 'max:255'],
+            'copyright_owner' => ['nullable', 'string', 'max:255'],
+            'doc_title' => ['nullable', 'string', 'max:500'],
+            'doc_status' => ['nullable', 'string', 'max:100'],
         ]);
 
         $user = $request->user();
@@ -192,7 +203,7 @@ class CerWebController extends Controller
         }
 
         try {
-            $job = $this->client->startCerJob($user, [
+            $job = $this->client->startCerJob($user, array_filter([
                 'prosit' => $prositPayload,
                 'title' => $validated['title'],
                 'description' => $validated['description'],
@@ -202,7 +213,15 @@ class CerWebController extends Controller
                 'objectifs' => $validated['objectifs'] ?? [],
                 'difficulties' => $validated['difficulties'] ?? [],
                 'perspectives' => $validated['perspectives'] ?? [],
-            ]);
+                // Optional fields — only send if filled
+                'author' => $validated['author'] ?? '',
+                'pilot' => $validated['pilot'] ?? '',
+                'promotion' => $validated['promotion'] ?? '',
+                'brand_label' => $validated['brand_label'] ?? '',
+                'copyright_owner' => $validated['copyright_owner'] ?? '',
+                'doc_title' => $validated['doc_title'] ?? '',
+                'doc_status' => $validated['doc_status'] ?? '',
+            ], fn ($value) => $value !== null));
 
             $jobId = $job['id'] ?? null;
             if (! is_string($jobId) || $jobId === '') {

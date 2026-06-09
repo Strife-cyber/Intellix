@@ -23,6 +23,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { Prosit, StoredProsit } from '@/lib/cer-api';
+import type { Auth } from '@/types/auth';
 import cers from '@/routes/cers';
 import type { BreadcrumbItem } from '@/types';
 
@@ -31,9 +32,16 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Générer un CER', href: '/cers/generate' },
 ];
 
+type TemplateInfo = {
+    id: string;
+    name: string;
+    builtin?: boolean;
+};
+
 type PageProps = {
     prosits: StoredProsit[];
     themes: string[];
+    templates: TemplateInfo[];
     microserviceError: string | null;
     initialPrositId: string | null;
 };
@@ -44,8 +52,9 @@ function displayNameWithoutExt(filename: string): string {
 }
 
 export default function CerGeneratePage() {
-    const { prosits, themes, microserviceError, initialPrositId } =
-        usePage<PageProps>().props;
+    const page = usePage<PageProps & { auth: Auth }>();
+    const { prosits, themes, templates, microserviceError, initialPrositId } =
+        page.props;
 
     const sortedProsits = useMemo(
         () =>
@@ -69,6 +78,14 @@ export default function CerGeneratePage() {
         objectifs: [] as string[],
         difficulties: [] as string[],
         perspectives: [] as string[],
+        // Optional document info fields
+        author: page.props.auth?.user?.name ?? '',
+        pilot: '',
+        promotion: '',
+        brand_label: '',
+        copyright_owner: '',
+        doc_title: '',
+        doc_status: '',
     });
 
     useEffect(() => {
@@ -211,6 +228,37 @@ export default function CerGeneratePage() {
                                     }
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="cer-template">Template</Label>
+                                <Select
+                                    value={data.template_id}
+                                    onValueChange={(v) =>
+                                        setData('template_id', v)
+                                    }
+                                >
+                                    <SelectTrigger
+                                        id="cer-template"
+                                        className="font-mono text-xs"
+                                    >
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {(templates ?? []).map((t) => (
+                                            <SelectItem key={t.id} value={t.id}>
+                                                <span className="font-medium">
+                                                    {t.name}
+                                                </span>
+                                                <span className="ml-2 text-xs text-muted-foreground">
+                                                    {t.id}
+                                                    {t.builtin
+                                                        ? ''
+                                                        : ' • personnalisé'}
+                                                </span>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
                         <div className="space-y-2">
@@ -265,6 +313,138 @@ export default function CerGeneratePage() {
                             values={data.perspectives}
                             onChange={(v) => setData('perspectives', v)}
                         />
+
+                        <details className="group rounded-lg border border-dashed border-muted-foreground/30 p-4">
+                            <summary className="cursor-pointer text-sm font-medium text-muted-foreground transition hover:text-foreground">
+                                Informations documentaires{' '}
+                                <span className="text-xs text-muted-foreground/60">
+                                    — optionnel
+                                </span>
+                            </summary>
+                            <div className="mt-4 grid gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="cer-author">
+                                        Auteur{' '}
+                                        <span className="text-xs text-muted-foreground/60">
+                                            (optionnel)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="cer-author"
+                                        value={data.author}
+                                        onChange={(e) =>
+                                            setData('author', e.target.value)
+                                        }
+                                        placeholder="Nom de l'auteur"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="cer-pilot">
+                                        Pilote{' '}
+                                        <span className="text-xs text-muted-foreground/60">
+                                            (optionnel)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="cer-pilot"
+                                        value={data.pilot}
+                                        onChange={(e) =>
+                                            setData('pilot', e.target.value)
+                                        }
+                                        placeholder="Nom du pilote"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="cer-promotion">
+                                        Promotion{' '}
+                                        <span className="text-xs text-muted-foreground/60">
+                                            (optionnel)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="cer-promotion"
+                                        value={data.promotion}
+                                        onChange={(e) =>
+                                            setData('promotion', e.target.value)
+                                        }
+                                        placeholder="e.g. 2025-2026"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="cer-doc-status">
+                                        Statut du document{' '}
+                                        <span className="text-xs text-muted-foreground/60">
+                                            (optionnel)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="cer-doc-status"
+                                        value={data.doc_status}
+                                        onChange={(e) =>
+                                            setData(
+                                                'doc_status',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="e.g. Version provisoire"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="cer-doc-title">
+                                        Titre du document{' '}
+                                        <span className="text-xs text-muted-foreground/60">
+                                            (optionnel)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="cer-doc-title"
+                                        value={data.doc_title}
+                                        onChange={(e) =>
+                                            setData('doc_title', e.target.value)
+                                        }
+                                        placeholder="Si différent du titre du CER"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="cer-brand-label">
+                                        Label / Marque{' '}
+                                        <span className="text-xs text-muted-foreground/60">
+                                            (optionnel)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="cer-brand-label"
+                                        value={data.brand_label}
+                                        onChange={(e) =>
+                                            setData(
+                                                'brand_label',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="e.g. IUT de Metz"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="cer-copyright-owner">
+                                        Titulaire du copyright{' '}
+                                        <span className="text-xs text-muted-foreground/60">
+                                            (optionnel)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="cer-copyright-owner"
+                                        value={data.copyright_owner}
+                                        onChange={(e) =>
+                                            setData(
+                                                'copyright_owner',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="e.g. Université de Lorraine"
+                                    />
+                                </div>
+                            </div>
+                        </details>
 
                         <div className="flex flex-wrap items-center gap-4 border-t pt-6">
                             <Button
