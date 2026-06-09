@@ -99,9 +99,10 @@ services:
     image: ghcr.io/huggingface/text-embeddings-inference:latest
     container_name: intellix-tei
     restart: unless-stopped
-    command: ['--model-id', 'BAAI/bge-small-en-v1.5']
+    command: ['--model-id', 'BAAI/bge-small-en-v1.5', '--no-cuda']
     environment:
       - RUST_LOG=info
+      - CUDA_VISIBLE_DEVICES=-1
     networks:
       - intellix-local
     # Health check
@@ -126,10 +127,12 @@ services:
       - ./storage:/var/www/html/storage
       - ./.env:/var/www/html/.env
     networks:
+      - internal
       - intellix-local
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
+      - APP_IS_WORKER=true
       - QUEUE_CONNECTION=redis
       - REDIS_HOST=redis
       - CER_BASE_URL=http://micro-cer:8080

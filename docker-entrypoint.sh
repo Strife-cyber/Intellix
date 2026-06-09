@@ -1,6 +1,17 @@
 #!/bin/bash
 set -e
 
+# ── If this is the dedicated worker container, skip DB-dependent setup ──
+if [ "${APP_IS_WORKER}" = "true" ]; then
+    echo "Worker container detected — skipping DB setup, starting queue directly."
+
+    # The worker container already has config cached from the build step.
+    # Just start the queue worker immediately.
+    exec php artisan queue:work --sleep=3 --tries=3 --timeout=300
+fi
+
+# ── App container: full bootstrap ──
+
 # Wait for PostgreSQL to be ready (if using docker-compose)
 if [ -n "$DB_HOST" ]; then
     echo "Waiting for PostgreSQL database..."
@@ -22,10 +33,6 @@ php artisan view:cache || true
 
 # Restart OPcache so PHP doesn't serve stale compiled files
 kill -USR2 1 2>/dev/null || true
-
-# Start queue worker in background
-php artisan queue:work --sleep=3 --tries=3 --timeout=300 &
-echo "Queue worker started in background"
 
 # Execute the main command
 exec "$@"
